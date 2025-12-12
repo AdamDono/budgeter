@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Calendar, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { goalsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
-import { Plus, Target, Calendar, TrendingUp, Trash2 } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
-import toast from 'react-hot-toast'
 
 export default function Goals() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -126,10 +126,19 @@ export default function Goals() {
             />
           ))
         ) : (
-          <div className="empty-state">
-            <Target size={48} />
-            <h3>No Goals Yet</h3>
-            <p>Create your first financial goal to start saving with purpose</p>
+          <div className="empty-state-improved">
+            <div className="empty-icon">🎯</div>
+            <h3>No Goals Set Yet</h3>
+            <p>Set your first financial goal and start saving with purpose!</p>
+            <div className="empty-tips">
+              <p><strong>💡 Suggested Goals:</strong></p>
+              <ul>
+                <li>Emergency Fund (3-6 months expenses)</li>
+                <li>Vacation or Travel Fund</li>
+                <li>Down Payment for Home/Car</li>
+                <li>Retirement Savings</li>
+              </ul>
+            </div>
             <button 
               className="btn primary"
               onClick={() => setShowAddForm(true)}

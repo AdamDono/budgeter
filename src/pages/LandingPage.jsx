@@ -3,15 +3,64 @@ import {
     BarChart3,
     Calculator,
     CheckCircle,
+    ChevronLeft,
+    ChevronRight,
     DollarSign,
+    Quote,
     Shield,
     Target,
     TrendingUp
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import '../styles/landing.css'
 
 export default function LandingPage() {
+  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+
+  const testimonials = [
+    {
+      name: "Thabo Mthembu",
+      role: "Software Engineer, Johannesburg",
+      image: "👨🏾‍💼",
+      quote: "Budgeter helped me pay off R45,000 in debt in just 8 months. The debt snowball feature is a game-changer!"
+    },
+    {
+      name: "Sarah van der Merwe",
+      role: "Teacher, Cape Town",
+      image: "👩🏼‍🏫",
+      quote: "I finally understand where my money goes each month. Saved R12,000 for my dream vacation in 6 months!"
+    },
+    {
+      name: "Lindiwe Ndlovu",
+      role: "Entrepreneur, Durban",
+      image: "👩🏿‍💼",
+      quote: "The tax deduction tracker saved me R8,000 on my tax return. This app pays for itself!"
+    },
+    {
+      name: "Michael Chen",
+      role: "Accountant, Pretoria",
+      image: "👨🏻‍💼",
+      quote: "Best budgeting app I've used. Clean interface, powerful features, and actually helps me save money."
+    }
+  ]
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+    }, 5000) // Change every 5 seconds
+
+    return () => clearInterval(timer)
+  }, [testimonials.length])
+
+  const nextTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+  }
+
+  const prevTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev - 1 + testimonials.length) % testimonials.length)
+  }
+
   return (
     <div className="landing-page">
       {/* Navigation */}
@@ -261,6 +310,48 @@ export default function LandingPage() {
               <div className="stat-number">95%</div>
               <div className="stat-label">Goal Success Rate</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Carousel */}
+      <section className="testimonials">
+        <div className="container">
+          <div className="section-header">
+            <h2>Loved by Thousands of South Africans</h2>
+            <p>See what our users have to say about their financial transformation</p>
+          </div>
+          
+          <div className="testimonial-carousel">
+            <button className="carousel-btn prev" onClick={prevTestimonial}>
+              <ChevronLeft size={24} />
+            </button>
+            
+            <div className="testimonial-card">
+              <Quote className="quote-icon" size={48} />
+              <p className="testimonial-quote">"{testimonials[currentTestimonial].quote}"</p>
+              <div className="testimonial-author">
+                <div className="author-image">{testimonials[currentTestimonial].image}</div>
+                <div className="author-info">
+                  <p className="author-name">{testimonials[currentTestimonial].name}</p>
+                  <p className="author-role">{testimonials[currentTestimonial].role}</p>
+                </div>
+              </div>
+            </div>
+            
+            <button className="carousel-btn next" onClick={nextTestimonial}>
+              <ChevronRight size={24} />
+            </button>
+          </div>
+          
+          <div className="carousel-dots">
+            {testimonials.map((_, index) => (
+              <button
+                key={index}
+                className={`dot ${index === currentTestimonial ? 'active' : ''}`}
+                onClick={() => setCurrentTestimonial(index)}
+              />
+            ))}
           </div>
         </div>
       </section>

@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { analyticsAPI, transactionsAPI, goalsAPI } from '../lib/api'
-import { formatCurrency } from '../utils/format'
-import { TrendingUp, TrendingDown, Target, CreditCard, Calendar } from 'lucide-react'
+import { Calendar, CreditCard, Target, TrendingDown, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { analyticsAPI, goalsAPI, transactionsAPI } from '../lib/api'
+import { formatCurrency } from '../utils/format'
 
 export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
@@ -124,7 +124,15 @@ export default function Dashboard() {
               </div>
             ))}
             {(!recentTransactions?.transactions?.length) && (
-              <p className="empty-state">No transactions yet. Add your first transaction!</p>
+              <div className="empty-state-improved">
+                <div className="empty-icon">💳</div>
+                <h3>No Transactions Yet</h3>
+                <p>Start tracking your spending by adding your first transaction.</p>
+                <div className="empty-tips">
+                  <p><strong>💡 Quick Tip:</strong> Add both income and expenses to see your net income</p>
+                  <p><strong>🎯 Pro Tip:</strong> Categorize transactions to track spending patterns</p>
+                </div>
+              </div>
             )}
           </div>
         </div>

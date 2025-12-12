@@ -969,6 +969,62 @@ body {
   color: var(--muted)
 }
 
+/* Improved Empty States */
+.empty-state-improved {
+  text-align: center;
+  padding: 60px 40px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.empty-state-improved h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+}
+
+.empty-state-improved>p {
+  color: var(--muted);
+  margin-bottom: 2rem;
+  font-size: 1.125rem;
+}
+
+.empty-tips {
+  background: rgba(79, 140, 255, 0.1);
+  border: 1px solid rgba(79, 140, 255, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.empty-tips p {
+  margin: 0 0 0.75rem 0;
+  color: var(--text);
+}
+
+.empty-tips strong {
+  color: var(--accent);
+}
+
+.empty-tips ul {
+  margin: 0.5rem 0 0 1.5rem;
+  padding: 0;
+  color: var(--muted);
+}
+
+.empty-tips ul li {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+
 /* Modals */
 .modal-overlay {
   position: fixed;
