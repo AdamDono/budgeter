@@ -9,7 +9,12 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Calendar,
+  TrendingDown,
+  DollarSign,
+  Lightbulb,
+  Repeat
 } from 'lucide-react'
 
 export default function Layout() {
@@ -22,6 +27,11 @@ export default function Layout() {
     { name: 'Transactions', href: '/transactions', icon: CreditCard },
     { name: 'Goals', href: '/goals', icon: Target },
     { name: 'Analytics', href: '/analytics', icon: TrendingUp },
+    { name: 'Recurring', href: '/recurring', icon: Repeat },
+    { name: 'Trends', href: '/trends', icon: TrendingDown },
+    { name: 'Debt', href: '/debt', icon: DollarSign },
+    { name: 'Tax', href: '/tax', icon: Calendar },
+    { name: 'Tips', href: '/tips', icon: Lightbulb },
     { name: 'Settings', href: '/settings', icon: Settings },
   ]
 

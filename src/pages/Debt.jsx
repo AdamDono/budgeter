@@ -1,39 +1,49 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { debtsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 import { Plus, Trash2, TrendingDown, Calendar, DollarSign } from 'lucide-react'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
-// Mock API for debts (would be real API in production)
-const debtsAPI = {
-  getAll: () => Promise.resolve({ data: { debts: [] } }),
-  create: (data) => Promise.resolve({ data: { debt: data } }),
-  delete: (id) => Promise.resolve({ data: {} }),
-}
-
 export default function Debt() {
   const [showAddForm, setShowAddForm] = useState(false)
-  const [debts, setDebts] = useState([])
-  const [payoffStrategy, setPayoffStrategy] = useState('snowball') // snowball or avalanche
+  const [payoffStrategy, setPayoffStrategy] = useState('snowball')
+  const queryClient = useQueryClient()
+
+  const { data: debtsData, isLoading } = useQuery({
+    queryKey: ['debts'],
+    queryFn: async () => (await debtsAPI.getAll()).data,
+  })
+
+  const { data: payoffPlanData } = useQuery({
+    queryKey: ['payoff-plan', payoffStrategy],
+    queryFn: async () => (await debtsAPI.calculatePayoff(payoffStrategy)).data,
+  })
 
   const createMutation = useMutation({
     mutationFn: debtsAPI.create,
-    onSuccess: (res) => {
-      setDebts([...debts, res.data.debt])
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
       setShowAddForm(false)
       toast.success('Debt added successfully!')
     },
-    onError: () => toast.error('Failed to add debt'),
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to add debt')
+    }
   })
 
   const deleteMutation = useMutation({
     mutationFn: debtsAPI.delete,
-    onSuccess: (_, debtId) => {
-      setDebts(debts.filter(d => d.id !== debtId))
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
       toast.success('Debt removed!')
     },
-    onError: () => toast.error('Failed to remove debt'),
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to remove debt')
+    }
   })
 
   const handleAddDebt = (formData) => {
@@ -46,54 +56,14 @@ export default function Debt() {
     }
   }
 
-  // Calculate payoff plans
-  const calculatePayoffPlan = () => {
-    if (debts.length === 0) return null
-
-    // Sort by strategy
-    const sorted = [...debts].sort((a, b) => {
-      if (payoffStrategy === 'snowball') {
-        return a.balance - b.balance // Pay smallest first
-      } else {
-        return b.interestRate - a.interestRate // Pay highest interest first
-      }
-    })
-
-    let totalDebt = debts.reduce((sum, d) => sum + d.balance, 0)
-    let totalInterest = 0
-    let months = 0
-    const plan = []
-
-    sorted.forEach(debt => {
-      const monthlyPayment = debt.monthlyPayment
-      let balance = debt.balance
-      let debtMonths = 0
-      let debtInterest = 0
-
-      while (balance > 0) {
-        const interest = (balance * debt.interestRate) / 100 / 12
-        balance -= monthlyPayment - interest
-        debtInterest += interest
-        debtMonths++
-        if (debtMonths > 600) break // Safety limit
-      }
-
-      plan.push({
-        ...debt,
-        payoffMonths: debtMonths,
-        totalInterest: debtInterest,
-      })
-
-      months = Math.max(months, debtMonths)
-      totalInterest += debtInterest
-    })
-
-    return { plan, months, totalInterest, totalDebt }
+  if (isLoading) {
+    return <LoadingSpinner text="Loading debts..." />
   }
 
-  const payoffPlan = calculatePayoffPlan()
-  const totalDebt = debts.reduce((sum, d) => sum + d.balance, 0)
-  const totalMonthlyPayment = debts.reduce((sum, d) => sum + d.monthlyPayment, 0)
+  const debts = debtsData?.debts || []
+  const payoffPlan = payoffPlanData
+  const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.balance), 0)
+  const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment), 0)
 
   return (
     <div className="debt-page">
@@ -290,18 +260,21 @@ function DebtForm({ onSubmit, onClose, loading }) {
     balance: '',
     interestRate: '',
     monthlyPayment: '',
-    type: 'credit-card' // credit-card, personal-loan, student-loan, mortgage
+    type: 'credit-card'
   })
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit({
-      id: Date.now(),
-      ...formData,
+    
+    const submitData = {
+      name: formData.name,
       balance: parseFloat(formData.balance),
       interestRate: parseFloat(formData.interestRate),
       monthlyPayment: parseFloat(formData.monthlyPayment),
-    })
+      type: formData.type,
+    }
+    
+    onSubmit(submitData)
   }
 
   const handleChange = (e) => {

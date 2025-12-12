@@ -1,25 +1,23 @@
 import React, { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { tipsAPI } from '../lib/api'
 import { Heart, Share2, MessageCircle, TrendingUp, Lightbulb } from 'lucide-react'
+import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 export default function Tips() {
-  const [tips, setTips] = useState(defaultTips)
-  const [likedTips, setLikedTips] = useState([])
-  const [showAddForm, setShowAddForm] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [likedTips, setLikedTips] = useState([])
 
-  const categories = [
-    { id: 'all', name: 'All Tips', icon: '💡' },
-    { id: 'saving', name: 'Saving', icon: '💰' },
-    { id: 'budgeting', name: 'Budgeting', icon: '📊' },
-    { id: 'investing', name: 'Investing', icon: '📈' },
-    { id: 'debt', name: 'Debt', icon: '💳' },
-    { id: 'lifestyle', name: 'Lifestyle', icon: '🎯' },
-  ]
+  const { data: tipsData, isLoading } = useQuery({
+    queryKey: ['tips', selectedCategory],
+    queryFn: async () => (await tipsAPI.getAll(selectedCategory)).data,
+  })
 
   const handleLike = (tipId) => {
     if (likedTips.includes(tipId)) {
       setLikedTips(likedTips.filter(id => id !== tipId))
+      toast.success('Tip removed from saved')
     } else {
       setLikedTips([...likedTips, tipId])
       toast.success('Tip saved!')
@@ -39,18 +37,20 @@ export default function Tips() {
     }
   }
 
-  const handleAddTip = (formData) => {
-    const newTip = {
-      id: Date.now(),
-      ...formData,
-      author: 'You',
-      likes: 0,
-      date: new Date().toLocaleDateString(),
-    }
-    setTips([newTip, ...tips])
-    setShowAddForm(false)
-    toast.success('Tip shared!')
+  if (isLoading) {
+    return <LoadingSpinner text="Loading tips..." />
   }
+
+  const tips = tipsData?.tips || defaultTips
+
+  const categories = [
+    { id: 'all', name: 'All Tips', icon: '💡' },
+    { id: 'saving', name: 'Saving', icon: '💰' },
+    { id: 'budgeting', name: 'Budgeting', icon: '📊' },
+    { id: 'investing', name: 'Investing', icon: '📈' },
+    { id: 'debt', name: 'Debt', icon: '💳' },
+    { id: 'lifestyle', name: 'Lifestyle', icon: '🎯' },
+  ]
 
   const filteredTips = selectedCategory === 'all' 
     ? tips 
@@ -61,15 +61,8 @@ export default function Tips() {
       <div className="page-header">
         <div>
           <h1>Budget Tips & Tricks</h1>
-          <p>Learn from the community and share your financial wisdom</p>
+          <p>Learn from the community and improve your financial habits</p>
         </div>
-        <button
-          className="btn primary"
-          onClick={() => setShowAddForm(true)}
-        >
-          <Lightbulb size={16} />
-          Share a Tip
-        </button>
       </div>
 
       {/* Category Filter */}
@@ -148,168 +141,12 @@ export default function Tips() {
         ) : (
           <div className="empty-state">
             <Lightbulb size={48} />
-            <h3>No Tips Yet</h3>
-            <p>Be the first to share a budget tip!</p>
-            <button
-              className="btn primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              Share Your First Tip
-            </button>
+            <h3>No Tips Available</h3>
+            <p>Check back soon for budget tips from our community!</p>
           </div>
         )}
       </div>
 
-      {/* Add Tip Modal */}
-      {showAddForm && (
-        <AddTipForm
-          onSubmit={handleAddTip}
-          onClose={() => setShowAddForm(false)}
-        />
-      )}
-    </div>
-  )
-}
-
-function AddTipForm({ onSubmit, onClose }) {
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    category: 'saving',
-    details: [''],
-  })
-
-  const categories = [
-    'saving',
-    'budgeting',
-    'investing',
-    'debt',
-    'lifestyle',
-  ]
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit({
-      ...formData,
-      details: formData.details.filter(d => d.trim()),
-    })
-  }
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const handleDetailChange = (idx, value) => {
-    const newDetails = [...formData.details]
-    newDetails[idx] = value
-    setFormData(prev => ({
-      ...prev,
-      details: newDetails
-    }))
-  }
-
-  const addDetailField = () => {
-    setFormData(prev => ({
-      ...prev,
-      details: [...prev.details, '']
-    }))
-  }
-
-  const removeDetailField = (idx) => {
-    setFormData(prev => ({
-      ...prev,
-      details: prev.details.filter((_, i) => i !== idx)
-    }))
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Share a Budget Tip</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="tip-form">
-          <div className="form-group">
-            <label>Tip Title</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="e.g., 50/30/20 Budget Rule"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Category</label>
-            <select name="category" value={formData.category} onChange={handleChange}>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Explain your tip in detail..."
-              rows="4"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Key Points (Optional)</label>
-            {formData.details.map((detail, idx) => (
-              <div key={idx} className="detail-input">
-                <input
-                  type="text"
-                  value={detail}
-                  onChange={(e) => handleDetailChange(idx, e.target.value)}
-                  placeholder={`Point ${idx + 1}`}
-                />
-                {formData.details.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn ghost small"
-                    onClick={() => removeDetailField(idx)}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn ghost"
-              onClick={addDetailField}
-            >
-              + Add Point
-            </button>
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="btn ghost" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn primary">
-              Share Tip
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   )
 }

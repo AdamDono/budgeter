@@ -14,6 +14,9 @@ import budgetRoutes from './routes/budgets.js'
 import goalRoutes from './routes/goals.js'
 import analyticsRoutes from './routes/analytics.js'
 import recurringRoutes from './routes/recurring.js'
+import debtRoutes from './routes/debts.js'
+import taxRoutes from './routes/taxes.js'
+import tipsRoutes from './routes/tips.js'
 
 // Middleware
 import { authenticateToken } from './middleware/auth.js'
@@ -42,8 +45,8 @@ app.use(cors(corsOptions))
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP'
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 1000 for dev, 100 for production
+  message: 'Too many requests from this IP, please try again later'
 })
 app.use('/api/', limiter)
 
@@ -68,6 +71,9 @@ app.use('/api/budgets', authenticateToken, budgetRoutes)
 app.use('/api/goals', authenticateToken, goalRoutes)
 app.use('/api/analytics', authenticateToken, analyticsRoutes)
 app.use('/api/recurring', authenticateToken, recurringRoutes)
+app.use('/api/debts', authenticateToken, debtRoutes)
+app.use('/api/taxes', authenticateToken, taxRoutes)
+app.use('/api/tips', tipsRoutes) // Public tips, but can add auth for user tips
 
 // Error handling
 app.use(errorHandler)

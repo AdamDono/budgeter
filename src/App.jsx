@@ -12,6 +12,11 @@ import Transactions from './pages/Transactions'
 import Goals from './pages/Goals'
 import Analytics from './pages/Analytics'
 import Settings from './pages/Settings'
+import Recurring from './pages/Recurring'
+import Trends from './pages/Trends'
+import Debt from './pages/Debt'
+import Tax from './pages/Tax'
+import Tips from './pages/Tips'
 
 // Components
 import Layout from './components/Layout'
@@ -75,6 +80,11 @@ export default function App() {
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="goals" element={<Goals />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="recurring" element={<Recurring />} />
+                <Route path="trends" element={<Trends />} />
+                <Route path="debt" element={<Debt />} />
+                <Route path="tax" element={<Tax />} />
+                <Route path="tips" element={<Tips />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               

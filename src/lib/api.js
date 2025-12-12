@@ -97,4 +97,34 @@ export const analyticsAPI = {
   getInsights: () => api.get('/analytics/insights'),
 }
 
+// Debts API
+export const debtsAPI = {
+  getAll: () => api.get('/debts'),
+  create: (data) => api.post('/debts', data),
+  update: (id, data) => api.put(`/debts/${id}`, data),
+  delete: (id) => api.delete(`/debts/${id}`),
+  calculatePayoff: (strategy = 'snowball') => api.post('/debts/calculate/payoff', { strategy }),
+}
+
+// Tax API
+export const taxAPI = {
+  getDeductions: (year) => api.get(`/taxes?year=${year}`),
+  createDeduction: (data) => api.post('/taxes', data),
+  updateDeduction: (id, data) => api.put(`/taxes/${id}`, data),
+  deleteDeduction: (id) => api.delete(`/taxes/${id}`),
+  getSummary: (year, taxRate = 28) => api.get(`/taxes/summary/${year}?taxRate=${taxRate}`),
+}
+
+// Tips API
+export const tipsAPI = {
+  getAll: (category = 'all', limit = 50) => api.get(`/tips?category=${category}&limit=${limit}`),
+  getMyTips: () => api.get('/tips/user/my-tips'),
+  create: (data) => api.post('/tips', data),
+  update: (id, data) => api.put(`/tips/${id}`, data),
+  delete: (id) => api.delete(`/tips/${id}`),
+  like: (id) => api.post(`/tips/${id}/like`),
+  addComment: (id, comment) => api.post(`/tips/${id}/comment`, { comment }),
+  getComments: (id) => api.get(`/tips/${id}/comments`),
+}
+
 export default api

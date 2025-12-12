@@ -1,40 +1,50 @@
 import React, { useState } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { taxAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 import { Plus, Trash2, FileText, DollarSign, TrendingUp, Calculator } from 'lucide-react'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
-// Mock API for tax deductions
-const taxAPI = {
-  getAll: () => Promise.resolve({ data: { deductions: [] } }),
-  create: (data) => Promise.resolve({ data: { deduction: data } }),
-  delete: (id) => Promise.resolve({ data: {} }),
-}
-
 export default function Tax() {
   const [showAddForm, setShowAddForm] = useState(false)
-  const [deductions, setDeductions] = useState([])
   const [taxYear, setTaxYear] = useState(new Date().getFullYear())
-  const [estimatedTaxRate, setEstimatedTaxRate] = useState(28) // SA standard rate
+  const [estimatedTaxRate, setEstimatedTaxRate] = useState(28)
+  const queryClient = useQueryClient()
+
+  const { data: taxData, isLoading } = useQuery({
+    queryKey: ['tax-deductions', taxYear],
+    queryFn: async () => (await taxAPI.getDeductions(taxYear)).data,
+  })
+
+  const { data: taxSummary } = useQuery({
+    queryKey: ['tax-summary', taxYear, estimatedTaxRate],
+    queryFn: async () => (await taxAPI.getSummary(taxYear, estimatedTaxRate)).data,
+  })
 
   const createMutation = useMutation({
-    mutationFn: taxAPI.create,
-    onSuccess: (res) => {
-      setDeductions([...deductions, res.data.deduction])
+    mutationFn: (data) => taxAPI.createDeduction(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax-deductions'] })
+      queryClient.invalidateQueries({ queryKey: ['tax-summary'] })
       setShowAddForm(false)
       toast.success('Deduction added!')
     },
-    onError: () => toast.error('Failed to add deduction'),
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to add deduction')
+    }
   })
 
   const deleteMutation = useMutation({
-    mutationFn: taxAPI.delete,
-    onSuccess: (_, deductionId) => {
-      setDeductions(deductions.filter(d => d.id !== deductionId))
+    mutationFn: (id) => taxAPI.deleteDeduction(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tax-deductions'] })
+      queryClient.invalidateQueries({ queryKey: ['tax-summary'] })
       toast.success('Deduction removed!')
     },
-    onError: () => toast.error('Failed to remove deduction'),
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to remove deduction')
+    }
   })
 
   const handleAddDeduction = (formData) => {
@@ -47,19 +57,17 @@ export default function Tax() {
     }
   }
 
-  // Calculate tax metrics
-  const totalIncome = 0 // Would come from transactions
-  const totalDeductions = deductions.reduce((sum, d) => sum + parseFloat(d.amount), 0)
-  const taxableIncome = Math.max(0, totalIncome - totalDeductions)
-  const estimatedTax = (taxableIncome * estimatedTaxRate) / 100
-  const taxSavings = (totalDeductions * estimatedTaxRate) / 100
+  if (isLoading) {
+    return <LoadingSpinner text="Loading tax data..." />
+  }
 
-  // Group deductions by category
-  const deductionsByCategory = deductions.reduce((acc, d) => {
-    if (!acc[d.category]) acc[d.category] = []
-    acc[d.category].push(d)
-    return acc
-  }, {})
+  const deductions = taxData?.deductions || []
+  const deductionsByCategory = taxData?.byCategory || {}
+  const totalDeductions = taxSummary?.totalDeductions || 0
+  const totalIncome = taxSummary?.totalIncome || 0
+  const taxableIncome = taxSummary?.taxableIncome || 0
+  const estimatedTax = taxSummary?.estimatedTax || 0
+  const taxSavings = taxSummary?.taxSavings || 0
 
   const categories = [
     { name: 'Medical', icon: '🏥', limit: 'Unlimited' },
@@ -290,11 +298,16 @@ function DeductionForm({ onSubmit, onClose, loading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit({
-      id: Date.now(),
-      ...formData,
+    
+    const submitData = {
+      description: formData.description,
       amount: parseFloat(formData.amount),
-    })
+      category: formData.category,
+      date: formData.date,
+      receipt: formData.receipt || null,
+    }
+    
+    onSubmit(submitData)
   }
 
   const handleChange = (e) => {
