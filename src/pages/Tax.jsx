@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Calculator, DollarSign, FileText, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { taxAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
-import { Plus, Trash2, FileText, DollarSign, TrendingUp, Calculator } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
-import toast from 'react-hot-toast'
 
 export default function Tax() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -70,14 +70,10 @@ export default function Tax() {
   const taxSavings = taxSummary?.taxSavings || 0
 
   const categories = [
-    { name: 'Medical', icon: '🏥', limit: 'Unlimited' },
-    { name: 'Education', icon: '🎓', limit: 'Unlimited' },
-    { name: 'Home Office', icon: '🏠', limit: 'Reasonable' },
-    { name: 'Vehicle', icon: '🚗', limit: 'Business use' },
-    { name: 'Professional Fees', icon: '💼', limit: 'Unlimited' },
-    { name: 'Donations', icon: '❤️', limit: '10% of income' },
-    { name: 'Insurance', icon: '🛡️', limit: 'Unlimited' },
-    { name: 'Other', icon: '📋', limit: 'Varies' },
+    { name: 'Medical', icon: '🏥', limit: 'Medical expenses & insurance', description: 'Doctor visits, prescriptions, medical aid' },
+    { name: 'Home Office', icon: '🏠', limit: 'Reasonable portion', description: 'Rent, utilities, internet for work from home' },
+    { name: 'Charitable Donations', icon: '❤️', limit: 'Up to 10% of income', description: 'Donations to registered NPOs' },
+    { name: 'Business Expenses', icon: '💼', limit: 'Business-related only', description: 'Courses, equipment, professional fees, vehicle' },
   ]
 
   return (
@@ -238,28 +234,20 @@ export default function Tax() {
         <h2>SA Tax Deduction Tips</h2>
         <div className="tips-grid">
           <div className="tip-card">
-            <h4>📚 Education</h4>
-            <p>Tuition, books, and courses for professional development are deductible.</p>
+            <h4>🏥 Medical</h4>
+            <p>Medical expenses and health insurance premiums may be deductible. Keep all receipts and medical aid statements.</p>
           </div>
           <div className="tip-card">
             <h4>🏠 Home Office</h4>
-            <p>Portion of rent/mortgage, utilities, and internet if you work from home.</p>
+            <p>If you work from home, deduct a reasonable portion of rent, utilities, and internet costs.</p>
           </div>
           <div className="tip-card">
-            <h4>🚗 Vehicle</h4>
-            <p>Mileage for business use, maintenance, and fuel are deductible.</p>
+            <h4>❤️ Charitable Donations</h4>
+            <p>Donations to registered NPOs are deductible up to 10% of your taxable income.</p>
           </div>
           <div className="tip-card">
-            <h4>💼 Professional Fees</h4>
-            <p>Accounting, legal, and consulting fees for business purposes.</p>
-          </div>
-          <div className="tip-card">
-            <h4>🏥 Medical</h4>
-            <p>Medical expenses and health insurance premiums may be deductible.</p>
-          </div>
-          <div className="tip-card">
-            <h4>❤️ Donations</h4>
-            <p>Charitable donations to registered NPOs up to 10% of taxable income.</p>
+            <h4>💼 Business Expenses</h4>
+            <p>Professional courses, equipment, fees, and business vehicle use are deductible.</p>
           </div>
         </div>
       </div>
@@ -287,13 +275,9 @@ function DeductionForm({ onSubmit, onClose, loading }) {
 
   const categories = [
     'Medical',
-    'Education',
     'Home Office',
-    'Vehicle',
-    'Professional Fees',
-    'Donations',
-    'Insurance',
-    'Other'
+    'Charitable Donations',
+    'Business Expenses'
   ]
 
   const handleSubmit = (e) => {

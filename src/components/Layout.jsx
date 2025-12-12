@@ -1,21 +1,20 @@
-import React from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { 
-  LayoutDashboard, 
-  CreditCard, 
-  Target, 
-  TrendingUp, 
-  Settings, 
-  LogOut,
-  Menu,
-  X,
-  Calendar,
-  TrendingDown,
-  DollarSign,
-  Lightbulb,
-  Repeat
+import {
+    Calendar,
+    CreditCard,
+    DollarSign,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    Repeat,
+    Settings,
+    Target,
+    TrendingDown,
+    TrendingUp,
+    X
 } from 'lucide-react'
+import React from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout() {
   const { user, logout } = useAuth()
@@ -31,7 +30,6 @@ export default function Layout() {
     { name: 'Trends', href: '/trends', icon: TrendingDown },
     { name: 'Debt', href: '/debt', icon: DollarSign },
     { name: 'Tax', href: '/tax', icon: Calendar },
-    { name: 'Tips', href: '/tips', icon: Lightbulb },
     { name: 'Settings', href: '/settings', icon: Settings },
   ]
 

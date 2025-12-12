@@ -1,22 +1,20 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Pages
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import Transactions from './pages/Transactions'
-import Goals from './pages/Goals'
 import Analytics from './pages/Analytics'
-import Settings from './pages/Settings'
-import Recurring from './pages/Recurring'
-import Trends from './pages/Trends'
+import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
+import Goals from './pages/Goals'
+import Login from './pages/Login'
+import Recurring from './pages/Recurring'
+import Register from './pages/Register'
+import Settings from './pages/Settings'
 import Tax from './pages/Tax'
-import Tips from './pages/Tips'
+import Transactions from './pages/Transactions'
+import Trends from './pages/Trends'
 
 // Components
 import Layout from './components/Layout'
@@ -84,7 +82,6 @@ export default function App() {
                 <Route path="trends" element={<Trends />} />
                 <Route path="debt" element={<Debt />} />
                 <Route path="tax" element={<Tax />} />
-                <Route path="tips" element={<Tips />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               
