@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
 
 export default function Login() {
   const { login } = useAuth()
@@ -112,22 +112,12 @@ export default function Login() {
             Track expenses, set goals, and build better financial habits with 
             South Africa's most intuitive budgeting app.
           </p>
-          <div className="feature-list">
-            <div className="feature-item">
-              <span className="feature-icon">💰</span>
-              <span>Smart Budget Tracking</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">🎯</span>
-              <span>Goal-Based Savings</span>
-            </div>
-            <div className="feature-item">
-              <span className="feature-icon">📊</span>
-              <span>Detailed Analytics</span>
-            </div>
-          </div>
         </div>
       </div>
+
+      <Link to="/landing" className="about-link">
+        About Us
+      </Link>
     </div>
   )
 }

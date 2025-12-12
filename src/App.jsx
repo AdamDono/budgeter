@@ -8,6 +8,7 @@ import Analytics from './pages/Analytics'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
 import Goals from './pages/Goals'
+import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Recurring from './pages/Recurring'
 import Register from './pages/Register'
@@ -45,7 +46,7 @@ function PublicRoute({ children }) {
   
   if (loading) return <LoadingSpinner />
   
-  return !isAuthenticated ? children : <Navigate to="/dashboard" replace />
+  return !isAuthenticated ? children : <Navigate to="/app/dashboard" replace />
 }
 
 export default function App() {
@@ -56,6 +57,7 @@ export default function App() {
           <div className="app">
             <Routes>
               {/* Public Routes */}
+              <Route path="/landing" element={<LandingPage />} />
               <Route path="/login" element={
                 <PublicRoute>
                   <Login />
@@ -68,12 +70,12 @@ export default function App() {
               } />
               
               {/* Protected Routes */}
-              <Route path="/" element={
+              <Route path="/app" element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
               }>
-                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route index element={<Navigate to="/app/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="goals" element={<Goals />} />
@@ -86,7 +88,7 @@ export default function App() {
               </Route>
               
               {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
             </Routes>
             
             {/* Toast notifications */}

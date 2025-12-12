@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import { Eye, EyeOff, UserPlus } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Eye, EyeOff, UserPlus } from 'lucide-react'
 
 export default function Register() {
   const { register } = useAuth()
@@ -257,22 +257,12 @@ export default function Register() {
             Join thousands of South Africans who have taken control of their 
             finances with our comprehensive budgeting platform.
           </p>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <span className="stat-number">10K+</span>
-              <span className="stat-label">Active Users</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">R2M+</span>
-              <span className="stat-label">Money Tracked</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">95%</span>
-              <span className="stat-label">User Satisfaction</span>
-            </div>
-          </div>
         </div>
       </div>
+
+      <Link to="/landing" className="about-link">
+        About Us
+      </Link>
     </div>
   )
 }
