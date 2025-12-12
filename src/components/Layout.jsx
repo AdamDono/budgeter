@@ -22,15 +22,15 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Transactions', href: '/transactions', icon: CreditCard },
-    { name: 'Goals', href: '/goals', icon: Target },
-    { name: 'Analytics', href: '/analytics', icon: TrendingUp },
-    { name: 'Recurring', href: '/recurring', icon: Repeat },
-    { name: 'Trends', href: '/trends', icon: TrendingDown },
-    { name: 'Debt', href: '/debt', icon: DollarSign },
-    { name: 'Tax', href: '/tax', icon: Calendar },
-    { name: 'Settings', href: '/settings', icon: Settings },
+    { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
+    { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
+    { name: 'Goals', href: '/app/goals', icon: Target },
+    { name: 'Analytics', href: '/app/analytics', icon: TrendingUp },
+    { name: 'Recurring', href: '/app/recurring', icon: Repeat },
+    { name: 'Trends', href: '/app/trends', icon: TrendingDown },
+    { name: 'Debt', href: '/app/debt', icon: DollarSign },
+    { name: 'Tax', href: '/app/tax', icon: Calendar },
+    { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
   const handleLogout = () => {

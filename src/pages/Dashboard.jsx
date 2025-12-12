@@ -104,7 +104,7 @@ export default function Dashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Recent Transactions</h2>
-            <a href="/transactions" className="view-all">View All</a>
+            <a href="/app/transactions" className="view-all">View All</a>
           </div>
           <div className="transaction-list">
             {recentTransactions?.transactions?.slice(0, 5).map(transaction => (
