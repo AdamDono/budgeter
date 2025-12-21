@@ -3,3 +3,13 @@
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
 node_modules
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc
+
+# Ignore all Markdown documentation files
+*.md
+
+# Ignore Codacy configuration files
+.codacy*

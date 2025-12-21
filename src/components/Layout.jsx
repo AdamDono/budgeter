@@ -50,7 +50,9 @@ export default function Layout() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
-          <h1 className="sidebar-title">Budgeter</h1>
+          <div className="logo-container">
+            <h1 className="sidebar-title">PaceDebt</h1>
+          </div>
           <button 
             className="sidebar-close"
             onClick={() => setSidebarOpen(false)}
@@ -106,7 +108,9 @@ export default function Layout() {
           >
             <Menu size={20} />
           </button>
-          <h1 className="page-title">Budgeter</h1>
+          <div className="logo-container">
+            <h1 className="page-title">PaceDebt</h1>
+          </div>
         </header>
 
         {/* Page content */}

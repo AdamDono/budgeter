@@ -1,15 +1,15 @@
 import {
-    ArrowRight,
-    BarChart3,
-    Calculator,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    DollarSign,
-    Quote,
-    Shield,
-    Target,
-    TrendingUp
+  ArrowRight,
+  BarChart3,
+  Calculator,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  Quote,
+  Shield,
+  Target,
+  TrendingUp
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -23,7 +23,7 @@ export default function LandingPage() {
       name: "Thabo Mthembu",
       role: "Software Engineer, Johannesburg",
       image: "👨🏾‍💼",
-      quote: "Budgeter helped me pay off R45,000 in debt in just 8 months. The debt snowball feature is a game-changer!"
+      quote: "PaceDebt helped me pay off R45,000 in debt in just 8 months. The debt snowball feature is a game-changer!"
     },
     {
       name: "Sarah van der Merwe",
@@ -67,7 +67,9 @@ export default function LandingPage() {
       <nav className="landing-nav">
         <div className="container">
           <div className="nav-content">
-            <h1 className="logo">Budgeter</h1>
+            <div className="logo-container">
+              <h1 className="logo">PaceDebt</h1>
+            </div>
             <div className="nav-links">
               <Link to="/login" className="nav-link">Login</Link>
               <Link to="/register" className="btn primary">Get Started Free</Link>
@@ -376,8 +378,10 @@ export default function LandingPage() {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <h3>Budgeter</h3>
-              <p>Take control of your financial future</p>
+            <div className="footer-logo">
+              <h3>PaceDebt</h3>
+            </div>
+            <p>Take control of your debt and financial future</p>
             </div>
             <div className="footer-section">
               <h4>Product</h4>
@@ -399,7 +403,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2025 Budgeter. All rights reserved.</p>
+            <p>&copy; 2025 PaceDebt. All rights reserved.</p>
           </div>
         </div>
       </footer>

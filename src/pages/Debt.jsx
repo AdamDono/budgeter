@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Calendar, DollarSign, Plus, Trash2, TrendingDown } from 'lucide-react'
+import { useState } from 'react'
+import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { debtsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
-import { Plus, Trash2, TrendingDown, Calendar, DollarSign } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
-import toast from 'react-hot-toast'
 
 export default function Debt() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -63,7 +63,7 @@ export default function Debt() {
   const debts = debtsData?.debts || []
   const payoffPlan = payoffPlanData
   const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.balance), 0)
-  const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment), 0)
+  const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment || 0), 0)
 
   return (
     <div className="debt-page">
@@ -169,11 +169,11 @@ export default function Debt() {
                     </div>
                     <div className="detail-row">
                       <span>Interest Rate:</span>
-                      <strong>{debt.interestRate}%</strong>
+                      <strong>{debt.interest_rate}%</strong>
                     </div>
                     <div className="detail-row">
                       <span>Monthly Payment:</span>
-                      <strong>{formatCurrency(debt.monthlyPayment)}</strong>
+                      <strong>{formatCurrency(debt.monthly_payment)}</strong>
                     </div>
                   </div>
 
@@ -194,7 +194,7 @@ export default function Debt() {
                     <div
                       className="progress-fill"
                       style={{
-                        width: `${Math.min(100, (debt.monthlyPayment / debt.balance * 100))}%`
+                        width: `${Math.min(100, ((parseFloat(debt.monthly_payment) || 0) / (parseFloat(debt.balance) || 1) * 100))}%`
                       }}
                     ></div>
                   </div>

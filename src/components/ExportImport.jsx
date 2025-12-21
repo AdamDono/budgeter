@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 
 export default function ExportImport({ data, onImport }) {
   const fileRef = useRef(null)
@@ -8,7 +8,7 @@ export default function ExportImport({ data, onImport }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'budgeter-data.json'
+    a.download = 'pacedebt-data.json'
     a.click()
     URL.revokeObjectURL(url)
   }

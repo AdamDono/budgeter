@@ -1,4 +1,4 @@
--- Budgeter Database Schema for South African Finance App
+-- PaceDebt Database Schema for South African Finance App
 
 -- Users table
 CREATE TABLE users (

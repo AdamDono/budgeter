@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { authAPI, setGlobalToken } from '../lib/api'
+import { createContext, useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { authAPI, setGlobalToken } from '../lib/api'
 
 const AuthContext = createContext({})
 
@@ -41,12 +41,12 @@ const safeLocalStorage = {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(() => safeLocalStorage.getItem('budgeter_token'))
+  const [token, setToken] = useState(() => safeLocalStorage.getItem('pacedebt_token'))
 
   useEffect(() => {
     const initAuth = async () => {
-      const savedToken = safeLocalStorage.getItem('budgeter_token')
-      const savedUser = safeLocalStorage.getItem('budgeter_user')
+      const savedToken = safeLocalStorage.getItem('pacedebt_token')
+      const savedUser = safeLocalStorage.getItem('pacedebt_user')
       
       if (savedToken && savedUser) {
         try {
@@ -84,8 +84,8 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken)
       setGlobalToken(userToken)
       
-      safeLocalStorage.setItem('budgeter_token', userToken)
-      safeLocalStorage.setItem('budgeter_user', JSON.stringify(userData))
+      safeLocalStorage.setItem('pacedebt_token', userToken)
+      safeLocalStorage.setItem('pacedebt_user', JSON.stringify(userData))
       
       toast.success(`Welcome back, ${userData.firstName}!`)
       return { success: true }
@@ -105,10 +105,10 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken)
       setGlobalToken(userToken)
       
-      safeLocalStorage.setItem('budgeter_token', userToken)
-      safeLocalStorage.setItem('budgeter_user', JSON.stringify(newUser))
+      safeLocalStorage.setItem('pacedebt_token', userToken)
+      safeLocalStorage.setItem('pacedebt_user', JSON.stringify(newUser))
       
-      toast.success(`Welcome to Budgeter, ${newUser.firstName}!`)
+      toast.success(`Welcome to PaceDebt, ${newUser.firstName}!`)
       return { success: true }
     } catch (error) {
       const message = error.response?.data?.error || 'Registration failed'
@@ -120,8 +120,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null)
     setToken(null)
-    safeLocalStorage.removeItem('budgeter_token')
-    safeLocalStorage.removeItem('budgeter_user')
+    safeLocalStorage.removeItem('pacedebt_token')
+    safeLocalStorage.removeItem('pacedebt_user')
     toast.success('Logged out successfully')
   }
 
