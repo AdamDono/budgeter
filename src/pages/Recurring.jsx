@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { recurringAPI, budgetsAPI } from '../lib/api'
-import { formatCurrency } from '../utils/format'
-import { Plus, Trash2, Calendar, DollarSign } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Calendar, DollarSign, Play, Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { budgetsAPI, recurringAPI } from '../lib/api'
+import { formatCurrency } from '../utils/format'
 
 export default function Recurring() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -43,6 +43,19 @@ export default function Recurring() {
     }
   })
 
+  const executeMutation = useMutation({
+    mutationFn: recurringAPI.execute,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recurring'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      toast.success('Transaction processed!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to process')
+    }
+  })
+
   const handleDelete = (id) => {
     if (confirm('Delete this recurring transaction?')) {
       deleteMutation.mutate(id)
@@ -51,6 +64,10 @@ export default function Recurring() {
 
   const handleCreate = (formData) => {
     createMutation.mutate(formData)
+  }
+
+  const handleExecute = (id) => {
+    executeMutation.mutate(id)
   }
 
   const recurring = recurringData?.recurringTransactions || []
@@ -92,12 +109,22 @@ export default function Recurring() {
                   <h3>{item.description}</h3>
                   <p className="recurring-category">{item.category_name || 'Uncategorized'}</p>
                 </div>
-                <button 
-                  className="btn ghost small"
-                  onClick={() => handleDelete(item.id)}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="recurring-actions">
+                  <button 
+                    className="btn ghost small"
+                    onClick={() => handleExecute(item.id)}
+                    title="Process Today"
+                  >
+                    <Play size={14} />
+                  </button>
+                  <button 
+                    className="btn ghost small"
+                    onClick={() => handleDelete(item.id)}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               <div className="recurring-details">

@@ -63,9 +63,34 @@ router.post('/', async (req, res, next) => {
     `, [req.user.id, accountId, categoryId, type, amount, description,
         frequency, startDate, endDate, nextDueDate, autoCreate])
 
+    const recurring = result.rows[0]
+
+    // If start date is today (or past), create the first transaction immediately
+    const start = new Date(startDate)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    start.setHours(0, 0, 0, 0)
+
+    if (start <= today) {
+      // Create the actual transaction
+      await pool.query(`
+        INSERT INTO transactions 
+        (user_id, account_id, category_id, type, amount, description, 
+         transaction_date, is_recurring, recurring_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8)
+      `, [req.user.id, accountId, categoryId, type, amount, description, startDate, recurring.id])
+
+      // Update account balance
+      const balanceChange = type === 'income' ? amount : -amount
+      await pool.query(
+        'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
+        [balanceChange, accountId]
+      )
+    }
+
     res.status(201).json({
       message: 'Recurring transaction created successfully',
-      recurringTransaction: result.rows[0]
+      recurringTransaction: recurring
     })
   } catch (error) {
     next(error)
