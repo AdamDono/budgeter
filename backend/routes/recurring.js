@@ -160,19 +160,30 @@ router.post('/:id/execute', async (req, res, next) => {
   try {
     const { id } = req.params
 
-    // Get recurring transaction
+    // 1. Get recurring transaction and check if active
     const recurringResult = await pool.query(
       'SELECT * FROM recurring_transactions WHERE id = $1 AND user_id = $2 AND is_active = TRUE',
       [id, req.user.id]
     )
 
     if (recurringResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Recurring transaction not found' })
+      return res.status(404).json({ error: 'Recurring transaction not found or inactive' })
     }
 
     const recurring = recurringResult.rows[0]
 
-    // Create the actual transaction
+    // 2. Prevent accidental duplicate execution (check for recent transactions with same ID)
+    const recentCheck = await pool.query(`
+      SELECT id FROM transactions 
+      WHERE recurring_id = $1 
+        AND created_at > NOW() - INTERVAL '1 minute'
+    `, [id])
+
+    if (recentCheck.rows.length > 0) {
+      return res.status(400).json({ error: 'This transaction was already processed a moment ago. Please wait a minute.' })
+    }
+
+    // 3. Create the actual transaction
     const transactionResult = await pool.query(`
       INSERT INTO transactions 
       (user_id, account_id, category_id, type, amount, description, 
@@ -182,21 +193,21 @@ router.post('/:id/execute', async (req, res, next) => {
     `, [req.user.id, recurring.account_id, recurring.category_id, 
         recurring.type, recurring.amount, recurring.description, recurring.id])
 
-    // Update account balance
+    // 4. Update account balance
     const balanceChange = recurring.type === 'income' ? recurring.amount : -recurring.amount
     await pool.query(
       'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
       [balanceChange, recurring.account_id]
     )
 
-    // Update next due date
+    // 5. Update next due date (based on current next_due_date, not just today)
     const nextDueDate = calculateNextDueDate(recurring.next_due_date, recurring.frequency)
     await pool.query(
       'UPDATE recurring_transactions SET next_due_date = $1 WHERE id = $2',
       [nextDueDate, recurring.id]
     )
 
-    // Check if recurring transaction should be deactivated (past end date)
+    // 6. Check if recurring transaction should be deactivated (past end date)
     if (recurring.end_date && new Date(nextDueDate) > new Date(recurring.end_date)) {
       await pool.query(
         'UPDATE recurring_transactions SET is_active = FALSE WHERE id = $1',
