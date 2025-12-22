@@ -36,7 +36,6 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <div className="logo" style={{ marginBottom: '1.5rem', justifyContent: 'center', display: 'flex' }}>PaceDebt</div>
           <h1>Welcome Back</h1>
           <p>Sign in to your PaceDebt account</p>
         </div>

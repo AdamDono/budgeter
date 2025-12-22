@@ -92,7 +92,6 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <div className="logo" style={{ marginBottom: '1.5rem', justifyContent: 'center', display: 'flex' }}>PaceDebt</div>
           <h1>Create Account</h1>
           <p>Join thousands managing their finances with PaceDebt</p>
         </div>
