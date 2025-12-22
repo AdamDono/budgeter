@@ -254,7 +254,7 @@
   height: 40px;
   padding: 0.5rem;
   border-radius: 0.5rem;
-  background: rgba(102, 126, 234, 0.2);
+  background: rgba(59, 130, 246, 0.2);
 }
 
 .stat-icon.positive {
@@ -452,8 +452,8 @@
 }
 
 .pricing-card.featured {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
   transform: scale(1.05);
 }
 
@@ -525,40 +525,48 @@
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 3rem;
-  max-width: 1000px;
+  gap: 2rem;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 .stat {
   text-align: center;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  transition: all 0.3s ease;
+  padding: 2.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .stat:hover {
-  transform: translateY(-5px);
-  border-color: rgba(102, 126, 234, 0.5);
-  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-10px);
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
 .stat-number {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 800;
   color: #3b82f6;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   display: block;
-  line-height: 1.2;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .stat-label {
   color: #9ca3af;
-  font-size: 1rem;
+  font-size: 1.125rem;
+  font-weight: 500;
   display: block;
-  margin-top: 0.5rem;
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* Testimonials Carousel */
@@ -590,7 +598,7 @@
 }
 
 .quote-icon {
-  color: rgba(102, 126, 234, 0.3);
+  color: rgba(59, 130, 246, 0.3);
   margin: 0 auto 1.5rem;
 }
 
