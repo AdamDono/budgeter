@@ -117,8 +117,8 @@ router.post('/:id/contribute', async (req, res, next) => {
     // Create transaction for the contribution
     await pool.query(`
       INSERT INTO transactions 
-      (user_id, account_id, goal_id, type, amount, description, transaction_date)
-      VALUES ($1, $2, $3, 'expense', $4, $5, CURRENT_DATE)
+      (user_id, account_id, goal_id, category_id, type, amount, description, transaction_date)
+      VALUES ($1, $2, $3, 15, 'expense', $4, $5, CURRENT_DATE)
     `, [req.user.id, accountId, id, amount, description || `Contribution to ${goal.name}`])
 
     // Update goal progress
