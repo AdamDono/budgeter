@@ -10,6 +10,7 @@ node_modules
 
 # Ignore all Markdown documentation files
 *.md
+!white_paper.md
 
 # Ignore Codacy configuration files
 .codacy*
