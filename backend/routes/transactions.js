@@ -177,28 +177,42 @@ router.put('/:id', async (req, res, next) => {
     }
 
     const original = originalResult.rows[0]
-    const { accountId, categoryId, type, amount, description, transactionDate, location, tags } = value
+    const { categoryId, goalId, debtId, savingsId, type, amount, description, transactionDate, tags } = value
 
     // Update transaction
     const result = await pool.query(
       `UPDATE transactions 
-       SET account_id = $1, category_id = $2, type = $3, amount = $4, 
-           description = $5, transaction_date = $6, location = $7, tags = $8,
+       SET category_id = $1, goal_id = $2, debt_id = $3, savings_id = $4,
+           type = $5, amount = $6, description = $7, transaction_date = $8, tags = $9,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $9 AND user_id = $10
+       WHERE id = $10 AND user_id = $11
        RETURNING *`,
-      [accountId, categoryId, type, amount, description, transactionDate, location, tags, id, req.user.id]
+      [categoryId, goalId, debtId, savingsId, type, amount, description, transactionDate, tags, id, req.user.id]
     )
 
-    // Adjust account balances
-    const originalChange = original.type === 'income' ? original.amount : -original.amount
-    const newChange = type === 'income' ? amount : -amount
-    const netChange = newChange - originalChange
+    // 1. REVERSE ORIGINAL IMPACT
+    if (original.debt_id && original.type === 'expense') {
+      await pool.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [original.amount, original.debt_id])
+    }
+    if (original.savings_id) {
+      const originalChange = original.type === 'expense' ? original.amount : -original.amount
+      await pool.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [originalChange, original.savings_id])
+    }
+    if (original.goal_id && original.type === 'expense') {
+      await pool.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [original.amount, original.goal_id])
+    }
 
-    await pool.query(
-      'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
-      [netChange, accountId]
-    )
+    // 2. APPLY NEW IMPACT
+    if (debtId && type === 'expense') {
+      await pool.query('UPDATE debts SET balance = balance - $1 WHERE id = $2', [amount, debtId])
+    }
+    if (savingsId) {
+      const newChange = type === 'expense' ? amount : -amount
+      await pool.query('UPDATE savings SET balance = balance + $1 WHERE id = $2', [newChange, savingsId])
+    }
+    if (goalId && type === 'expense') {
+      await pool.query('UPDATE goals SET current_amount = current_amount + $1 WHERE id = $2', [amount, goalId])
+    }
 
     res.json({
       message: 'Transaction updated successfully',
@@ -232,12 +246,21 @@ router.delete('/:id', async (req, res, next) => {
       [id, req.user.id]
     )
 
-    // Adjust account balance (reverse the original transaction)
-    const balanceChange = transaction.type === 'income' ? -transaction.amount : transaction.amount
-    await pool.query(
-      'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
-      [balanceChange, transaction.account_id]
-    )
+    // Reverse Debt impact
+    if (transaction.debt_id && transaction.type === 'expense') {
+      await pool.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [transaction.amount, transaction.debt_id])
+    }
+
+    // Reverse Savings impact
+    if (transaction.savings_id) {
+      const balanceChange = transaction.type === 'expense' ? transaction.amount : -transaction.amount
+      await pool.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [balanceChange, transaction.savings_id])
+    }
+
+    // Reverse Goal impact
+    if (transaction.goal_id && transaction.type === 'expense') {
+      await pool.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [transaction.amount, transaction.goal_id])
+    }
 
     res.json({ message: 'Transaction deleted successfully' })
   } catch (error) {

@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Calendar, DollarSign, Play, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { budgetsAPI, recurringAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Recurring() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   const queryClient = useQueryClient()
 
   const { data: recurringData, isLoading } = useQuery({
@@ -57,8 +59,12 @@ export default function Recurring() {
   })
 
   const handleDelete = (id) => {
-    if (confirm('Delete this recurring transaction?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirm({ show: true, id })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm.id) {
+      deleteMutation.mutate(deleteConfirm.id)
     }
   }
 
@@ -174,6 +180,16 @@ export default function Recurring() {
           categories={categories}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Stop Recurring?"
+        message="Are you sure you want to stop this recurring transaction? New transactions will no longer be created automatically."
+        confirmText="Stop"
+        type="danger"
+      />
     </div>
   )
 }

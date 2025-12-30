@@ -18,7 +18,7 @@ CREATE TABLE users (
 -- Account types (Checking, Savings, Credit Card, Investment)
 CREATE TABLE account_types (
   id SERIAL PRIMARY KEY,
-  name VARCHAR(50) NOT NULL,
+  name VARCHAR(50) UNIQUE NOT NULL,
   description TEXT,
   icon VARCHAR(50)
 );
@@ -47,7 +47,8 @@ CREATE TABLE budget_categories (
   color VARCHAR(7), -- hex color
   monthly_limit DECIMAL(10,2),
   is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(name, user_id)
 );
 
 -- Financial goals
@@ -158,7 +159,8 @@ INSERT INTO account_types (name, description, icon) VALUES
 ('Savings', 'Savings and emergency fund', 'piggy-bank'),
 ('Credit Card', 'Credit card account', 'credit-card'),
 ('Investment', 'Investment and retirement', 'trending-up'),
-('Cash', 'Physical cash', 'banknote');
+('Cash', 'Physical cash', 'banknote')
+ON CONFLICT (name) DO NOTHING;
 
 -- DEBTS TABLE
 CREATE TABLE debts (
@@ -247,4 +249,5 @@ INSERT INTO budget_categories (user_id, name, icon, color) VALUES
 (NULL, 'Clothing', 'shirt', '#A855F7'),
 (NULL, 'Salary', 'briefcase', '#22C55E'),
 (NULL, 'Freelance', 'laptop', '#06B6D4'),
-(NULL, 'Investment', 'trending-up', '#8B5CF6');
+(NULL, 'Investment', 'trending-up', '#8B5CF6')
+ON CONFLICT (name, user_id) DO NOTHING;

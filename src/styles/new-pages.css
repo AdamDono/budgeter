@@ -61,8 +61,8 @@
 }
 
 .metric-value {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 500;
   margin-bottom: 0.25rem;
 }
 
@@ -245,7 +245,7 @@
   gap: 1rem;
 }
 
-.summary-card > svg {
+.summary-card>svg {
   color: #3b82f6;
   flex-shrink: 0;
 }
@@ -257,8 +257,8 @@
 }
 
 .summary-card .amount {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 500;
 }
 
 .strategy-selector {
@@ -774,6 +774,7 @@
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
+
   .metrics-grid,
   .debt-summary,
   .tax-summary {

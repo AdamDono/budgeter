@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Plus, Trash2, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { goalsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
@@ -9,6 +10,7 @@ import { formatCurrency } from '../utils/format'
 export default function Goals() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [showContributeModal, setShowContributeModal] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   
   const queryClient = useQueryClient()
 
@@ -70,8 +72,12 @@ export default function Goals() {
   }
 
   const handleDeleteGoal = (id) => {
-    if (confirm('Are you sure you want to delete this goal?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirm({ show: true, id })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm.id) {
+      deleteMutation.mutate(deleteConfirm.id)
     }
   }
 
@@ -167,6 +173,17 @@ export default function Goals() {
           loading={contributeMutation.isPending}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmModal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Goal"
+        message="Are you sure you want to delete this goal? All transaction history linked to this goal will be preserved but unlinked."
+        confirmText="Delete"
+        type="danger"
+      />
     </div>
   )
 }

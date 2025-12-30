@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Calendar, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { budgetsAPI, debtsAPI, goalsAPI, savingsAPI, transactionsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
@@ -17,6 +18,7 @@ export default function Transactions() {
     endDate: ''
   })
   const [page, setPage] = useState(1)
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   
   const queryClient = useQueryClient()
 
@@ -89,8 +91,12 @@ export default function Transactions() {
   }
 
   const handleDeleteTransaction = (id) => {
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirm({ show: true, id })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm.id) {
+      deleteMutation.mutate(deleteConfirm.id)
     }
   }
 
@@ -273,6 +279,17 @@ export default function Transactions() {
           loading={createMutation.isPending}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Transaction"
+        message="Are you sure you want to delete this transaction? This will revert any balance updates associated with it."
+        confirmText="Delete"
+        type="danger"
+      />
     </div>
   )
 }
@@ -291,6 +308,18 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
     tags: []
   })
 
+  // Auto-select category for special types
+  useEffect(() => {
+    if (formData.categoryId) {
+      const selectedCat = categories.find(c => c.id === parseInt(formData.categoryId))
+      if (selectedCat) {
+        if (selectedCat.name === 'Debt Repayment') {
+          // Keep as is or trigger something
+        }
+      }
+    }
+  }, [formData.categoryId, categories])
+
   const handleSubmit = (e) => {
     e.preventDefault()
     
@@ -308,53 +337,75 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
   }
 
   const handleChange = (e) => {
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: value
     }))
   }
+
+  const selectedCategoryName = categories.find(c => c.id === parseInt(formData.categoryId))?.name
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Add Transaction</h2>
+          <div>
+            <h2>Add Transaction</h2>
+            <p className="section-subtitle">Record your financial movement</p>
+          </div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="transaction-form">
           <div className="form-row">
             <div className="form-group">
-              <label>Type</label>
-              <select name="type" value={formData.type} onChange={handleChange} required>
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-              </select>
+              <label>Transaction Type</label>
+              <div className="type-toggle">
+                <button 
+                  type="button" 
+                  className={`toggle-btn ${formData.type === 'expense' ? 'active expense' : ''}`}
+                  onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+                >
+                  Expense
+                </button>
+                <button 
+                  type="button" 
+                  className={`toggle-btn ${formData.type === 'income' ? 'active income' : ''}`}
+                  onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+                >
+                  Income
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
               <label>Amount (ZAR)</label>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                required
-              />
+              <div className="amount-input-wrapper">
+                <span className="currency-prefix">R</span>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  required
+                  className="amount-input"
+                />
+              </div>
             </div>
           </div>
 
           <div className="form-group">
-            <label>Description</label>
+            <label>What was this for?</label>
             <input
               type="text"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="What was this transaction for?"
+              placeholder="e.g. Woolworths Groceries, Rent, Salary"
               required
             />
           </div>
@@ -362,7 +413,7 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
           <div className="form-row">
             <div className="form-group">
               <label>Category</label>
-              <select name="categoryId" value={formData.categoryId} onChange={handleChange}>
+              <select name="categoryId" value={formData.categoryId} onChange={handleChange} required>
                 <option value="">Select category</option>
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -371,47 +422,56 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
             </div>
 
             <div className="form-group">
-              <label>Goal (Optional)</label>
-              <select name="goalId" value={formData.goalId} onChange={handleChange}>
-                <option value="">No goal</option>
-                {goals.map(goal => (
-                  <option key={goal.id} value={goal.id}>{goal.name}</option>
-                ))}
-              </select>
+              <label>Date</label>
+              <input
+                type="date"
+                name="transactionDate"
+                value={formData.transactionDate}
+                onChange={handleChange}
+                required
+              />
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Link to Debt (Optional)</label>
-              <select name="debtId" value={formData.debtId} onChange={handleChange}>
-                <option value="">No debt</option>
-                {debts.map(debt => (
-                  <option key={debt.id} value={debt.id}>{debt.name} (R{debt.balance})</option>
-                ))}
-              </select>
-            </div>
+          {/* Dynamic Sections Based on Selection */}
+          <div className="dynamic-sections">
+            {selectedCategoryName === 'Debt Repayment' && (
+              <div className="special-link-section debt animated fadeIn">
+                <label>Select Debt to Pay Off</label>
+                <select name="debtId" value={formData.debtId} onChange={handleChange} required>
+                  <option value="">Choose debt...</option>
+                  {debts.filter(d => parseFloat(d.balance) > 0).map(debt => (
+                    <option key={debt.id} value={debt.id}>{debt.name} (Bal: R{debt.balance})</option>
+                  ))}
+                </select>
+                <p className="help-text">Linking to a debt will automatically reduce its balance.</p>
+              </div>
+            )}
 
-            <div className="form-group">
-              <label>Link to Savings (Optional)</label>
-              <select name="savingsId" value={formData.savingsId} onChange={handleChange}>
-                <option value="">No savings pot</option>
-                {savings.map(pot => (
-                  <option key={pot.id} value={pot.id}>{pot.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+            {selectedCategoryName === 'Savings Contribution' && (
+              <div className="special-link-section savings animated fadeIn">
+                <label>Select Savings Pot</label>
+                <select name="savingsId" value={formData.savingsId} onChange={handleChange} required>
+                  <option value="">Choose pot...</option>
+                  {savings.map(pot => (
+                    <option key={pot.id} value={pot.id}>{pot.name} (Goal: R{pot.target_amount})</option>
+                  ))}
+                </select>
+                <p className="help-text">This will add funds to your savings goal.</p>
+              </div>
+            )}
 
-          <div className="form-group">
-            <label>Date</label>
-            <input
-              type="date"
-              name="transactionDate"
-              value={formData.transactionDate}
-              onChange={handleChange}
-              required
-            />
+            {formData.type === 'income' && selectedCategoryName !== 'Savings Contribution' && (
+              <div className="special-link-section goal animated fadeIn">
+                <label>Add to Goal? (Optional)</label>
+                <select name="goalId" value={formData.goalId} onChange={handleChange}>
+                  <option value="">No goal</option>
+                  {goals.map(goal => (
+                    <option key={goal.id} value={goal.id}>{goal.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="form-actions">
@@ -419,7 +479,7 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
               Cancel
             </button>
             <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Transaction'}
+              {loading ? 'Processing...' : 'Save Transaction'}
             </button>
           </div>
         </form>

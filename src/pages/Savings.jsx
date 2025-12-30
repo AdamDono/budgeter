@@ -3,12 +3,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, PiggyBank, Plus, Target, Trash2, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { savingsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Savings() {
   const [showAddModal, setShowAddModal] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   const queryClient = useQueryClient()
 
   const { data: savingsData, isLoading } = useQuery({
@@ -23,6 +25,11 @@ export default function Savings() {
       toast.success('Savings pot deleted')
     }
   })
+
+  const handleDelete = (id) => setDeleteConfirm({ show: true, id })
+  const confirmDelete = () => {
+    if (deleteConfirm.id) deleteMutation.mutate(deleteConfirm.id)
+  }
 
   const savings = savingsData?.savings || []
   const totalSavings = savings.reduce((sum, s) => sum + parseFloat(s.balance), 0)
@@ -74,7 +81,7 @@ export default function Savings() {
                 <div className="pot-icon" style={{ backgroundColor: pot.color + '20', color: pot.color }}>
                    <PiggyBank size={20} />
                 </div>
-                <button className="delete-pot" onClick={() => deleteMutation.mutate(pot.id)}>
+                <button className="delete-pot" onClick={() => handleDelete(pot.id)}>
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -127,6 +134,16 @@ export default function Savings() {
       </div>
 
       {showAddModal && <AddPotModal onClose={() => setShowAddModal(false)} />}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Delete Pot?"
+        message="Are you sure you want to delete this savings pot? The funds will be returned to your main balance."
+        confirmText="Delete"
+        type="danger"
+      />
     </div>
   )
 }

@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, DollarSign, Plus, Trash2, TrendingDown } from 'lucide-react'
+import { Calendar, CheckCircle, DollarSign, Plus, Trash2, TrendingDown } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { debtsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Debt() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   const [payoffStrategy, setPayoffStrategy] = useState('snowball')
   const queryClient = useQueryClient()
 
@@ -51,8 +53,12 @@ export default function Debt() {
   }
 
   const handleDeleteDebt = (id) => {
-    if (confirm('Remove this debt?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirm({ show: true, id })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm.id) {
+      deleteMutation.mutate(deleteConfirm.id)
     }
   }
 
@@ -150,16 +156,20 @@ export default function Debt() {
           <div className="debts-grid">
             {debts.map((debt, idx) => {
               const payoffInfo = payoffPlan?.plan[idx]
+              const isPaidOff = parseFloat(debt.balance) <= 0
               return (
-                <div key={debt.id} className="debt-card">
+                <div key={debt.id} className={`debt-card ${isPaidOff ? 'paid-off' : ''}`}>
                   <div className="debt-header">
                     <h3>{debt.name}</h3>
-                    <button
-                      className="btn ghost small"
-                      onClick={() => handleDeleteDebt(debt.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="debt-actions-header">
+                      {isPaidOff && <CheckCircle size={18} className="text-pos mr-2" />}
+                      <button
+                        className="btn ghost small"
+                        onClick={() => handleDeleteDebt(debt.id)}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="debt-details">
@@ -250,6 +260,17 @@ export default function Debt() {
           loading={createMutation.isPending}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteConfirm.show}
+        onClose={() => setDeleteConfirm({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title="Remove Debt"
+        message="Are you sure you want to remove this debt? This action cannot be undone."
+        confirmText="Remove"
+        type="danger"
+      />
     </div>
   )
 }

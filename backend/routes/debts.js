@@ -123,12 +123,22 @@ router.post('/calculate/payoff', async (req, res, next) => {
       let debtMonths = 0
       let debtInterest = 0
 
-      while (balance > 0) {
-        const interest = (balance * parseFloat(debt.interest_rate)) / 100 / 12
-        balance -= monthlyPayment - interest
-        debtInterest += interest
-        debtMonths++
-        if (debtMonths > 600) break
+      if (balance > 0) {
+        while (balance > 0) {
+          const interest = (balance * parseFloat(debt.interest_rate)) / 100 / 12
+          
+          // If interest is more than payment, it will never be paid off
+          if (interest >= monthlyPayment && balance > 0) {
+            debtMonths = 999 // Represent "Never" or very long
+            break
+          }
+          
+          balance -= (monthlyPayment - interest)
+          debtInterest += interest
+          debtMonths++
+          
+          if (debtMonths > 1200) break // 100 years limit
+        }
       }
 
       plan.push({
