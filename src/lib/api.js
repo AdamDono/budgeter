@@ -106,6 +106,14 @@ export const debtsAPI = {
   calculatePayoff: (strategy = 'snowball') => api.post('/debts/calculate/payoff', { strategy }),
 }
 
+// Savings API
+export const savingsAPI = {
+    getAll: () => api.get('/savings'),
+    create: (data) => api.post('/savings', data),
+    update: (id, data) => api.put(`/savings/${id}`, data),
+    delete: (id) => api.delete(`/savings/${id}`),
+}
+
 // Tax API
 export const taxAPI = {
   getDeductions: (year) => api.get(`/taxes?year=${year}`),

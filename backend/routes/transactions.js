@@ -8,6 +8,8 @@ const router = express.Router()
 const transactionSchema = Joi.object({
   categoryId: Joi.number().integer().allow(null).optional(),
   goalId: Joi.number().integer().allow(null).optional(),
+  debtId: Joi.number().integer().allow(null).optional(),
+  savingsId: Joi.number().integer().allow(null).optional(),
   type: Joi.string().valid('income', 'expense').required(),
   amount: Joi.number().positive().required(),
   description: Joi.string().max(500).required(),
@@ -113,11 +115,11 @@ router.post('/', async (req, res, next) => {
     // Create transaction
     const result = await pool.query(
       `INSERT INTO transactions 
-       (user_id, account_id, category_id, goal_id, type, amount, description, 
+       (user_id, account_id, category_id, goal_id, debt_id, savings_id, type, amount, description, 
         transaction_date, tags)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [req.user.id, accountId, categoryId, goalId, type, amount, description,
+      [req.user.id, accountId, categoryId, goalId, value.debtId, value.savingsId, type, amount, description,
        transactionDate, tags]
     )
 
@@ -126,6 +128,25 @@ router.post('/', async (req, res, next) => {
       await pool.query(
         'UPDATE goals SET current_amount = current_amount + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [amount, goalId]
+      )
+    }
+
+    // Update Debt balance if linked
+    if (value.debtId && type === 'expense') {
+      await pool.query(
+        'UPDATE debts SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [amount, value.debtId]
+      )
+    }
+
+    // Update Savings balance if linked
+    if (value.savingsId) {
+      // If expense, assume it's a contribution (increase balance)
+      // If income, assume it's a withdrawal (decrease balance)
+      const balanceChange = type === 'expense' ? amount : -amount
+      await pool.query(
+        'UPDATE savings SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [balanceChange, value.savingsId]
       )
     }
 

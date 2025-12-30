@@ -1,22 +1,23 @@
-import express from 'express'
-import cors from 'cors'
-import helmet from 'helmet'
 import compression from 'compression'
-import rateLimit from 'express-rate-limit'
+import cors from 'cors'
 import dotenv from 'dotenv'
-import { fileURLToPath } from 'url'
+import express from 'express'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 
 // Routes
-import authRoutes from './routes/auth.js'
-import transactionRoutes from './routes/transactions.js'
-import budgetRoutes from './routes/budgets.js'
-import goalRoutes from './routes/goals.js'
 import analyticsRoutes from './routes/analytics.js'
-import recurringRoutes from './routes/recurring.js'
+import authRoutes from './routes/auth.js'
+import budgetRoutes from './routes/budgets.js'
 import debtRoutes from './routes/debts.js'
+import goalRoutes from './routes/goals.js'
+import recurringRoutes from './routes/recurring.js'
+import savingsRoutes from './routes/savings.js'
 import taxRoutes from './routes/taxes.js'
 import tipsRoutes from './routes/tips.js'
+import transactionRoutes from './routes/transactions.js'
 
 // Middleware
 import { authenticateToken } from './middleware/auth.js'
@@ -73,6 +74,7 @@ app.use('/api/analytics', authenticateToken, analyticsRoutes)
 app.use('/api/recurring', authenticateToken, recurringRoutes)
 app.use('/api/debts', authenticateToken, debtRoutes)
 app.use('/api/taxes', authenticateToken, taxRoutes)
+app.use('/api/savings', authenticateToken, savingsRoutes)
 app.use('/api/tips', tipsRoutes) // Public tips, but can add auth for user tips
 
 // Error handling

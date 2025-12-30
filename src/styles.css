@@ -1822,3 +1822,172 @@ body {
     grid-template-columns: 1fr
   }
 }
+/* Savings Page Custom Styles */
+.savings-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.savings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.pot-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: transform 0.2s, border-color 0.2s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pot-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+
+.pot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.pot-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.delete-pot {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-pot:hover {
+  color: var(--danger);
+  background: rgba(255, 93, 93, 0.1);
+}
+
+.pot-info h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.pot-balance {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pot-balance .current {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pot-balance .target {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.pot-progress {
+  margin-top: 8px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pot-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.interest-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--pos);
+  background: rgba(54, 211, 153, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.add-funds {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.add-funds:hover {
+  text-decoration: underline;
+}
+
+.empty-state-pot {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-state-pot:hover {
+  border-color: var(--accent);
+  background: rgba(79, 140, 255, 0.05);
+}
+
+.plus-icon {
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.pot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

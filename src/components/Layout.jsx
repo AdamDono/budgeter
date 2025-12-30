@@ -25,6 +25,7 @@ export default function Layout() {
     { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
     { name: 'Goals', href: '/app/goals', icon: Target },
+    { name: 'Savings', href: '/app/savings', icon: DollarSign },
     { name: 'Analytics', href: '/app/analytics', icon: TrendingUp },
     { name: 'Recurring', href: '/app/recurring', icon: Repeat },
     { name: 'Trends', href: '/app/trends', icon: TrendingDown },

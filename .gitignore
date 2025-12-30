@@ -1,16 +1,45 @@
 
-
-#Ignore vscode AI rules
-.github/instructions/codacy.instructions.md
+# Dependencies
 node_modules
+.pnp
+.pnp.js
 
+# Testing
+coverage
 
-#Ignore cursor AI rules
-.cursor/rules/codacy.mdc
+# Production
+dist
+build
 
-# Ignore all Markdown documentation files
+# Misc
+.DS_Store
+*.pem
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+backend/.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignore Markdown except white_paper
 *.md
 !white_paper.md
 
-# Ignore Codacy configuration files
+# Codacy
 .codacy*

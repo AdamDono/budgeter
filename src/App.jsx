@@ -12,6 +12,7 @@ import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import Recurring from './pages/Recurring'
 import Register from './pages/Register'
+import Savings from './pages/Savings'
 import Settings from './pages/Settings'
 import Tax from './pages/Tax'
 import Transactions from './pages/Transactions'
@@ -79,6 +80,7 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="goals" element={<Goals />} />
+                <Route path="savings" element={<Savings />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="recurring" element={<Recurring />} />
                 <Route path="trends" element={<Trends />} />

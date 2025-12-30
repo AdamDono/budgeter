@@ -252,7 +252,7 @@ export default function LandingPage() {
               <h3>Pro</h3>
               <div className="price">
                 <span className="currency">R</span>
-                <span className="amount">99</span>
+                <span className="amount">20</span>
                 <span className="period">/month</span>
               </div>
               <ul className="features-list">
@@ -273,7 +273,7 @@ export default function LandingPage() {
               <h3>Family</h3>
               <div className="price">
                 <span className="currency">R</span>
-                <span className="amount">199</span>
+                <span className="amount">70</span>
                 <span className="period">/month</span>
               </div>
               <ul className="features-list">
@@ -297,11 +297,11 @@ export default function LandingPage() {
         <div className="container">
           <div className="stats-grid">
             <div className="stat">
-              <div className="stat-number">10K+</div>
+              <div className="stat-number">1k+</div>
               <div className="stat-label">Active Users</div>
             </div>
             <div className="stat">
-              <div className="stat-number">R50M+</div>
+              <div className="stat-number">R200k+</div>
               <div className="stat-label">Debt Paid Off</div>
             </div>
             <div className="stat">

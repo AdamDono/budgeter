@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { transactionsAPI, budgetsAPI, goalsAPI } from '../lib/api'
-import { formatCurrency } from '../utils/format'
-import { Plus, Filter, Search, Trash2, Edit, Calendar } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Calendar, Plus, Search, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { budgetsAPI, debtsAPI, goalsAPI, savingsAPI, transactionsAPI } from '../lib/api'
+import { formatCurrency } from '../utils/format'
 
 export default function Transactions() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -46,6 +46,16 @@ export default function Transactions() {
   const { data: goals } = useQuery({
     queryKey: ['goals'],
     queryFn: async () => (await goalsAPI.getAll()).data,
+  })
+
+  const { data: debts } = useQuery({
+    queryKey: ['debts'],
+    queryFn: async () => (await debtsAPI.getAll()).data,
+  })
+
+  const { data: savings } = useQuery({
+    queryKey: ['savings'],
+    queryFn: async () => (await savingsAPI.getAll()).data,
   })
 
   // Mutations
@@ -256,6 +266,8 @@ export default function Transactions() {
         <TransactionForm
           categories={categories?.categories || []}
           goals={goals?.goals || []}
+          debts={debts?.debts || []}
+          savings={savings?.savings || []}
           onSubmit={handleAddTransaction}
           onClose={() => setShowAddForm(false)}
           loading={createMutation.isPending}
@@ -266,13 +278,15 @@ export default function Transactions() {
 }
 
 // Transaction Form Component
-function TransactionForm({ categories, goals, onSubmit, onClose, loading }) {
+function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose, loading }) {
   const [formData, setFormData] = useState({
     type: 'expense',
     amount: '',
     description: '',
     categoryId: '',
     goalId: '',
+    debtId: '',
+    savingsId: '',
     transactionDate: new Date().toISOString().split('T')[0],
     tags: []
   })
@@ -285,6 +299,8 @@ function TransactionForm({ categories, goals, onSubmit, onClose, loading }) {
       amount: parseFloat(formData.amount),
       categoryId: formData.categoryId || null,
       goalId: formData.goalId || null,
+      debtId: formData.debtId || null,
+      savingsId: formData.savingsId || null,
       tags: formData.tags.filter(tag => tag.trim())
     }
     
@@ -360,6 +376,28 @@ function TransactionForm({ categories, goals, onSubmit, onClose, loading }) {
                 <option value="">No goal</option>
                 {goals.map(goal => (
                   <option key={goal.id} value={goal.id}>{goal.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Link to Debt (Optional)</label>
+              <select name="debtId" value={formData.debtId} onChange={handleChange}>
+                <option value="">No debt</option>
+                {debts.map(debt => (
+                  <option key={debt.id} value={debt.id}>{debt.name} (R{debt.balance})</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>Link to Savings (Optional)</label>
+              <select name="savingsId" value={formData.savingsId} onChange={handleChange}>
+                <option value="">No savings pot</option>
+                {savings.map(pot => (
+                  <option key={pot.id} value={pot.id}>{pot.name}</option>
                 ))}
               </select>
             </div>

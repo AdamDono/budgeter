@@ -8,7 +8,10 @@ const { Pool } = pg
 export const pool = process.env.DATABASE_URL 
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
     })
   : new Pool({
       user: process.env.DB_USER || 'postgres',
@@ -16,7 +19,9 @@ export const pool = process.env.DATABASE_URL
       database: process.env.DB_NAME || 'pacedebt',
       password: process.env.DB_PASSWORD || 'Fliph106',
       port: process.env.DB_PORT || 5433,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+      ssl: process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('aivencloud.com') 
+        ? { rejectUnauthorized: false } 
+        : false
     })
 
 // Test connection
