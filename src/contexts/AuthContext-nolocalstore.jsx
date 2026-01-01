@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState } from 'react'
-import { authAPI, setGlobalToken, clearGlobalToken } from '../lib/api'
+import { createContext, useContext, useState } from 'react'
 import toast from 'react-hot-toast'
+import { authAPI, clearGlobalToken, setGlobalToken } from '../lib/api'
 
 const AuthContext = createContext({})
 
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       setToken(userToken)
       setGlobalToken(userToken)
       
-      toast.success(`Welcome to Budgeter, ${newUser.firstName}!`)
+      toast.success(`Welcome to PaceDebt, ${newUser.firstName}!`)
       return { success: true }
     } catch (error) {
       const message = error.response?.data?.error || 'Registration failed'

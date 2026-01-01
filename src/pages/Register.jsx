@@ -1,10 +1,11 @@
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Register() {
   const { register } = useAuth()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -68,8 +69,8 @@ export default function Register() {
     
     setLoading(false)
     
-    if (!result.success) {
-      // Error is already shown via toast in AuthContext
+    if (result.success) {
+      navigate('/app/dashboard')
     }
   }
 

@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tipsAPI } from '../lib/api'
-import { Heart, Share2, MessageCircle, TrendingUp, Lightbulb } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { useQuery } from '@tanstack/react-query'
+import { Heart, Lightbulb, MessageCircle, Share2 } from 'lucide-react'
+import { useState } from 'react'
 import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
+import { tipsAPI } from '../lib/api'
 
 export default function Tips() {
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -159,7 +159,7 @@ const defaultTips = [
     description: 'Allocate 50% of income to needs, 30% to wants, and 20% to savings. This simple framework helps you maintain balance.',
     category: 'budgeting',
     author: 'Finance Expert',
-    date: '2024-11-15',
+    date: '2025-01-15',
     likes: 245,
     comments: 32,
     details: [
@@ -174,7 +174,7 @@ const defaultTips = [
     description: 'Set up automatic transfers to a savings account right after payday. Out of sight, out of mind!',
     category: 'saving',
     author: 'Money Coach',
-    date: '2024-11-14',
+    date: '2025-01-14',
     likes: 189,
     comments: 24,
     details: [
@@ -189,7 +189,7 @@ const defaultTips = [
     description: 'Use apps to log all spending. Awareness is the first step to better financial habits.',
     category: 'budgeting',
     author: 'Budget Master',
-    date: '2024-11-13',
+    date: '2025-01-13',
     likes: 156,
     comments: 18,
     details: [
@@ -204,7 +204,7 @@ const defaultTips = [
     description: 'Pay off smallest debts first for psychological wins, then roll payments into larger debts.',
     category: 'debt',
     author: 'Debt Free',
-    date: '2024-11-12',
+    date: '2025-01-12',
     likes: 312,
     comments: 45,
     details: [
@@ -219,7 +219,7 @@ const defaultTips = [
     description: 'Save 3-6 months of expenses for unexpected situations. This prevents debt when emergencies hit.',
     category: 'saving',
     author: 'Financial Advisor',
-    date: '2024-11-11',
+    date: '2025-01-11',
     likes: 278,
     comments: 38,
     details: [
@@ -234,7 +234,7 @@ const defaultTips = [
     description: 'Wait 30 days before making non-essential purchases. Most impulse urges fade away.',
     category: 'lifestyle',
     author: 'Minimalist',
-    date: '2024-11-10',
+    date: '2025-01-10',
     likes: 201,
     comments: 29,
     details: [

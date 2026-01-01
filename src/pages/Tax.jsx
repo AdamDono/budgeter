@@ -97,7 +97,7 @@ export default function Tax() {
         <div className="control-group">
           <label>Tax Year</label>
           <select value={taxYear} onChange={(e) => setTaxYear(parseInt(e.target.value))}>
-            {[2024, 2023, 2022, 2021].map(year => (
+            {[2026, 2025, 2024, 2023].map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
           </select>
