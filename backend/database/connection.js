@@ -5,14 +5,20 @@ dotenv.config()
 
 const { Pool } = pg
 
-export const pool = process.env.DATABASE_URL 
-  ? new Pool({
+const config = {
       connectionString: process.env.DATABASE_URL,
       ssl: {
         require: true,
         rejectUnauthorized: false
-      }
-    })
+      },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+      keepAlive: true
+    }
+
+export const pool = process.env.DATABASE_URL 
+  ? new Pool(config)
   : new Pool({
       user: process.env.DB_USER || 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -21,7 +27,11 @@ export const pool = process.env.DATABASE_URL
       port: process.env.DB_PORT || 5433,
       ssl: process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('aivencloud.com') 
         ? { rejectUnauthorized: false } 
-        : false
+        : false,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
+      keepAlive: true
     })
 
 // Test connection
