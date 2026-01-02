@@ -2,18 +2,19 @@ import dotenv from 'dotenv'
 import pg from 'pg'
 
 dotenv.config()
+// Fix for Aiven/hosted PG SSL issues
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 const { Pool } = pg
 
 const config = {
       connectionString: process.env.DATABASE_URL,
       ssl: {
-        require: true,
         rejectUnauthorized: false
       },
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
       keepAlive: true
     }
 
@@ -30,7 +31,7 @@ export const pool = process.env.DATABASE_URL
         : false,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 10000,
       keepAlive: true
     })
 
