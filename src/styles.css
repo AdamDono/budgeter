@@ -2215,12 +2215,23 @@ body {
     left: 0;
     top: 0;
     bottom: 0;
-    z-index: 1000;
+    z-index: 2005;
     transform: translateX(-100%);
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
-    transition: transform 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 280px;
     display: flex;
+    background: var(--card);
+    /* Ensure solid background */
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
   }
 
   .sidebar-open {
