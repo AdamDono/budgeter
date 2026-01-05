@@ -777,26 +777,52 @@
 
   .metrics-grid,
   .debt-summary,
-  .tax-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .strategy-buttons {
-    grid-template-columns: 1fr;
-  }
-
+  .tax-summary,
+  .strategy-buttons,
   .debts-grid,
   .categories-grid,
-  .tips-grid {
-    grid-template-columns: 1fr;
+  .tips-grid,
+  .trends-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 
-  .table-header,
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-value {
+    font-size: 1.25rem !important;
+  }
+
+  .table-header {
+    display: none;
+    /* Hide headers on mobile for better stacking */
+  }
+
   .table-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    padding: 16px !important;
   }
 
   .spending-chart {
-    height: 150px;
+    height: 180px;
+  }
+
+  .action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .metric-card .amount {
+    font-size: 1.1rem !important;
+  }
+
+  .tax-form,
+  .debt-form {
+    padding: 16px !important;
   }
 }
