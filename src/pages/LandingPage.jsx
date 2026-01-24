@@ -1,15 +1,15 @@
 import {
-  ArrowRight,
-  BarChart3,
-  Calculator,
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  DollarSign,
-  Quote,
-  Shield,
-  Target,
-  TrendingUp
+    ArrowRight,
+    BarChart3,
+    Calculator,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    DollarSign,
+    Quote,
+    Shield,
+    Target,
+    TrendingUp
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -68,11 +68,12 @@ export default function LandingPage() {
         <div className="container">
           <div className="nav-content">
             <div className="logo-container">
-              <h1 className="logo">PaceDebt</h1>
+              <Link to="/" className="logo-link">
+                <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-metallic" />
+              </Link>
             </div>
             <div className="nav-links">
-              <Link to="/login" className="nav-link">Login</Link>
-              <Link to="/register" className="btn primary">Get Started Free</Link>
+              <Link to="/register" className="btn primary nav-cta">Get Started Free</Link>
             </div>
           </div>
         </div>
@@ -99,7 +100,7 @@ export default function LandingPage() {
                   Sign In
                 </Link>
               </div>
-              <p className="hero-note">✨ No credit card required • Free forever plan available</p>
+              <p className="hero-note"> No credit card required • Free forever plan available</p>
             </div>
             <div className="hero-image">
               <div className="dashboard-preview">
@@ -379,7 +380,7 @@ export default function LandingPage() {
           <div className="footer-content">
             <div className="footer-section">
             <div className="footer-logo">
-              <h3>PaceDebt</h3>
+              <img src="/logo_blue_transparent.png" alt="PaceDebt" className="footer-logo-image" />
             </div>
             <p>Take control of your debt and financial future</p>
             </div>

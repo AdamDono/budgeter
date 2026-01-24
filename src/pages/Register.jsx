@@ -93,6 +93,9 @@ export default function Register() {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
+          <div className="auth-logo">
+            <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-auth" />
+          </div>
           <h1>Create Account</h1>
           <p>Join thousands managing their finances with PaceDebt</p>
         </div>

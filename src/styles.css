@@ -66,10 +66,40 @@ body {
   color: var(--accent);
 }
 
-.sidebar-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--accent)
+/* Logo Styles */
+.logo-image-sidebar {
+  height: 105px;
+  /* Increased by another 20px */
+  width: auto;
+  margin: -15px 0;
+  /* Adding negative margin to keep header compact */
+  display: block;
+}
+
+.logo-image-mobile {
+  height: 95px;
+  /* Increased by another 20px */
+  width: auto;
+  margin: -10px 0;
+  display: block;
+}
+
+.api-status {
+  /* existing styles if any, or just ignore this line if not present, but better to insert fresh */
+}
+
+/* Auth Logo */
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo-image-auth {
+  height: 115px;
+  /* Big and bold for login/register */
+  width: auto;
+  display: block;
 }
 
 .sidebar-close {

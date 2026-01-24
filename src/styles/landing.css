@@ -83,7 +83,7 @@
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 1000;
-  padding: 1rem 0;
+  padding: 0;
 }
 
 .landing-nav .container {
@@ -108,10 +108,24 @@
   color: #3b82f6;
 }
 
-.landing-page .logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #3b82f6;
+.logo-image-metallic {
+  height: 130px;
+  width: auto;
+  margin: -25px 0;
+  /* Pulls the header line up by cropping internal logo whitespace */
+  display: block;
+}
+
+.footer-logo-image {
+  height: 130px;
+  width: auto;
+  display: block;
+}
+
+.logo-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
 .landing-page .nav-links {
@@ -530,11 +544,13 @@
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(200px, 1fr)) !important;
   gap: 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  /* Ensure items don't stretch weirdly */
+  align-items: stretch;
 }
 
 .landing-page .stat {
@@ -791,6 +807,8 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Removed stats-grid rule to keep 4 columns on tablet/small laptop */
+
   .pricing-grid {
     grid-template-columns: 1fr;
   }
@@ -799,9 +817,7 @@
     transform: scale(1);
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  /* duplicate rule removed */
 
   .footer-content {
     grid-template-columns: repeat(2, 1fr);
@@ -834,7 +850,8 @@
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    /* Keep 2x2 on mobile/tablet */
   }
 
   .footer-content {
@@ -852,5 +869,29 @@
   .btn.large {
     padding: 0.875rem 1.5rem;
     font-size: 1rem;
+  }
+
+  /* Make nav CTA button normal size on mobile */
+  .nav-cta {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  /* Center the hero CTA buttons */
+  .hero-cta {
+    width: 100%;
+  }
+
+  .hero-cta .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    /* Only stack vertically on very small phones */
   }
 }
