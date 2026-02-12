@@ -1256,7 +1256,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px;
+  padding: 24px 32px;
   border-bottom: 1px solid var(--border)
 }
 
@@ -1280,8 +1280,11 @@ body {
 .transaction-form,
 .goal-form,
 .category-form,
-.contribute-form {
-  padding: 20px
+.contribute-form,
+.pot-form,
+.deduction-form,
+.debt-form {
+  padding: 32px;
 }
 
 .type-toggle {
@@ -1384,10 +1387,10 @@ body {
 
 .form-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding-top: 20px;
+  margin-top: 32px;
+  padding-top: 24px;
   border-top: 1px solid var(--border)
 }
 
@@ -1738,8 +1741,8 @@ body {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 20px
+  padding: 24px 32px;
+  margin-bottom: 24px
 }
 
 .goal-summary h3 {
