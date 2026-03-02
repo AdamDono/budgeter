@@ -382,7 +382,7 @@ export default function LandingPage() {
             <div className="footer-logo">
               <img src="/logo_pace_finance.svg" alt="Pace Finance" className="footer-logo-image" />
             </div>
-            <p>Take control of your debt and financial future</p>
+            <p>Smart budgeting and financial management for South Africans.</p>
             </div>
             <div className="footer-section">
               <h4>Product</h4>

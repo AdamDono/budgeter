@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <!-- Background circle gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#1e3a6e"/>
+      <stop offset="100%" stop-color="#0a1a40"/>
+    </linearGradient>
+    <!-- Main metallic blue text gradient -->
+    <linearGradient id="metalBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#7dd3fc"/>
+      <stop offset="30%"  stop-color="#38bdf8"/>
+      <stop offset="60%"  stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <!-- Silver sheen -->
+    <linearGradient id="sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#e0f2fe" stop-opacity="0.8"/>
+      <stop offset="50%"  stop-color="#7dd3fc" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#0369a1" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Drop shadow -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#001133" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="14" ry="14" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner border -->
+  <rect x="1" y="1" width="62" height="62" rx="13" ry="13"
+        fill="none" stroke="rgba(125,211,252,0.25)" stroke-width="1"/>
+
+  <!-- Decorative swirl arc (top-left) -->
+  <path d="M 10,42 C 4,34 4,22 12,16 C 18,11 26,12 28,18 C 22,14 14,17 13,25 C 12,31 18,36 24,34"
+        fill="none" stroke="url(#metalBlue)" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- "PF" letters -->
+  <!-- P -->
+  <text
+    x="9" y="46"
+    font-family="'Arial Black', 'Impact', sans-serif"
+    font-size="36"
+    font-style="italic"
+    font-weight="900"
+    fill="#001a3a"
+    stroke="#001a3a"
+    stroke-width="4"
+    stroke-linejoin="round"
+    filter="url(#shadow)"
+  >PF</text>
+
+  <text
+    x="9" y="46"
+    font-family="'Arial Black', 'Impact', sans-serif"
+    font-size="36"
+    font-style="italic"
+    font-weight="900"
+    fill="url(#metalBlue)"
+  >PF</text>
+
+  <!-- Sheen layer -->
+  <text
+    x="9" y="46"
+    font-family="'Arial Black', 'Impact', sans-serif"
+    font-size="36"
+    font-style="italic"
+    font-weight="900"
+    fill="url(#sheen)"
+    opacity="0.7"
+  >PF</text>
+</svg>

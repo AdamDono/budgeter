@@ -10,6 +10,7 @@ import Debt from './pages/Debt'
 import Goals from './pages/Goals'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
+import NotFound from './pages/NotFound'
 import Recurring from './pages/Recurring'
 import Register from './pages/Register'
 import Savings from './pages/Savings'
@@ -89,8 +90,11 @@ export default function App() {
                 <Route path="settings" element={<Settings />} />
               </Route>
               
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
+              {/* Root path → landing */}
+              <Route path="/" element={<Navigate to="/landing" replace />} />
+
+              {/* Catch all → 404 */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
             
             {/* Toast notifications */}

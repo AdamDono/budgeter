@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Calendar, CreditCard, Target, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { SkeletonDashboard } from '../components/Skeleton'
 import { analyticsAPI, goalsAPI, transactionsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
@@ -29,7 +29,7 @@ export default function Dashboard() {
   })
 
   if (isLoading) {
-    return <LoadingSpinner text="Loading dashboard..." />
+    return <SkeletonDashboard />
   }
 
   const summary = dashboardData?.summary || {}
