@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { authAPI, setGlobalToken } from '../lib/api'
+import { authAPI } from '../lib/api'
 
 const AuthContext = createContext({})
 
@@ -12,7 +12,7 @@ export const useAuth = () => {
   return context
 }
 
-// Safe localStorage access
+// Safe localStorage access for persistent user data
 const safeLocalStorage = {
   getItem: (key) => {
     try {
@@ -39,37 +39,29 @@ const safeLocalStorage = {
 }
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(() => {
+    const savedUser = safeLocalStorage.getItem('pacedebt_user')
+    return savedUser ? JSON.parse(savedUser) : null
+  })
   const [loading, setLoading] = useState(true)
-  const [token, setToken] = useState(() => safeLocalStorage.getItem('pacedebt_token'))
 
   useEffect(() => {
     const initAuth = async () => {
-      const savedToken = safeLocalStorage.getItem('pacedebt_token')
-      const savedUser = safeLocalStorage.getItem('pacedebt_user')
-      
-      if (savedToken && savedUser) {
-        try {
-          setToken(savedToken)
-          setGlobalToken(savedToken)
-          setUser(JSON.parse(savedUser))
-          
-          // Try to verify token is still valid (skip if backend is down)
-          try {
-            await authAPI.getProfile()
-          } catch (error) {
-            console.warn('Could not verify token (backend may be offline):', error.message)
-            // Don't logout if it's just a network error
-            if (error.response?.status === 401) {
-              logout()
-            }
-          }
-        } catch (error) {
-          console.error('Token validation failed:', error)
-          logout()
+      try {
+        const response = await authAPI.getProfile()
+        const userData = response.data.user
+        setUser(userData)
+        safeLocalStorage.setItem('pacedebt_user', JSON.stringify(userData))
+      } catch (error) {
+        // If 401, clear the local user state
+        if (error.response?.status === 401) {
+          setUser(null)
+          safeLocalStorage.removeItem('pacedebt_user')
         }
+        console.warn('Auth check failed:', error.message)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     initAuth()
@@ -78,13 +70,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password })
-      const { user: userData, token: userToken } = response.data
+      const { user: userData } = response.data
       
       setUser(userData)
-      setToken(userToken)
-      setGlobalToken(userToken)
-      
-      safeLocalStorage.setItem('pacedebt_token', userToken)
       safeLocalStorage.setItem('pacedebt_user', JSON.stringify(userData))
       
       toast.success(`Welcome back, ${userData.firstName}!`)
@@ -99,16 +87,12 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await authAPI.register(userData)
-      const { user: newUser, token: userToken } = response.data
+      const { user: newUser } = response.data
       
       setUser(newUser)
-      setToken(userToken)
-      setGlobalToken(userToken)
-      
-      safeLocalStorage.setItem('pacedebt_token', userToken)
       safeLocalStorage.setItem('pacedebt_user', JSON.stringify(newUser))
       
-      toast.success(`Welcome to PaceDebt, ${newUser.firstName}!`)
+      toast.success(`Welcome to Pace Finance, ${newUser.firstName}!`)
       return { success: true }
     } catch (error) {
       const message = error.response?.data?.error || 'Registration failed'
@@ -117,22 +101,26 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await authAPI.logout()
+    } catch (error) {
+      console.warn('Backend logout failed:', error)
+    }
     setUser(null)
-    setToken(null)
-    safeLocalStorage.removeItem('pacedebt_token')
     safeLocalStorage.removeItem('pacedebt_user')
+    // Clear legacy tokens if they still exist
+    safeLocalStorage.removeItem('pacedebt_token')
     toast.success('Logged out successfully')
   }
 
   const value = {
     user,
-    token,
     loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
   }
 
   return (

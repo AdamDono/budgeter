@@ -70,6 +70,15 @@ router.post('/register', async (req, res, next) => {
     // Generate token
     const token = generateToken(user.id)
 
+    // Set cookie
+    const isProduction = process.env.NODE_ENV === 'production'
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction, // only over https in production
+      sameSite: isProduction ? 'strict' : 'lax', // prevent CSRF
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (matches JWT)
+    })
+
     res.status(201).json({
       message: 'User created successfully',
       user: {
@@ -114,6 +123,15 @@ router.post('/login', async (req, res, next) => {
     // Generate token
     const token = generateToken(user.id)
 
+    // Set cookie
+    const isProduction = process.env.NODE_ENV === 'production'
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    })
+
     res.json({
       message: 'Login successful',
       user: {
@@ -153,6 +171,12 @@ router.get('/me', async (req, res, next) => {
   } catch (error) {
     next(error)
   }
+})
+
+// Logout
+router.post('/logout', (req, res) => {
+  res.clearCookie('token')
+  res.json({ message: 'Logged out successfully' })
 })
 
 export default router

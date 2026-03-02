@@ -3,7 +3,10 @@ import { pool } from '../database/connection.js'
 
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
+  const headerToken = authHeader && authHeader.split(' ')[1]
+  const cookieToken = req.cookies.token
+  
+  const token = cookieToken || headerToken
 
   if (!token) {
     return res.status(401).json({ error: 'Access token required' })

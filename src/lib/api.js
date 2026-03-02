@@ -5,49 +5,17 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Global token storage (temporary solution)
-let globalToken = null
-
-export const setGlobalToken = (token) => {
-  globalToken = token
-}
-
-export const clearGlobalToken = () => {
-  globalToken = null
-}
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    if (globalToken) {
-      config.headers.Authorization = `Bearer ${globalToken}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      clearGlobalToken()
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
-  }
-)
-
 // Auth API
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/me'),
 }
 

@@ -23,7 +23,7 @@ export default function LandingPage() {
       name: "Thabo Mthembu",
       role: "Software Engineer, Johannesburg",
       image: "👨🏾‍💼",
-      quote: "PaceDebt helped me pay off R45,000 in debt in just 8 months. The debt snowball feature is a game-changer!"
+      quote: "Pace Finance helped me pay off R45,000 in debt in just 8 months. The debt snowball feature is a game-changer!"
     },
     {
       name: "Sarah van der Merwe",
@@ -69,7 +69,7 @@ export default function LandingPage() {
           <div className="nav-content">
             <div className="logo-container">
               <Link to="/" className="logo-link">
-                <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-metallic" />
+                <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-metallic" />
               </Link>
             </div>
             <div className="nav-links">
@@ -380,7 +380,7 @@ export default function LandingPage() {
           <div className="footer-content">
             <div className="footer-section">
             <div className="footer-logo">
-              <img src="/logo_blue_transparent.png" alt="PaceDebt" className="footer-logo-image" />
+              <img src="/logo_pace_finance.svg" alt="Pace Finance" className="footer-logo-image" />
             </div>
             <p>Take control of your debt and financial future</p>
             </div>
@@ -404,7 +404,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2025 PaceDebt. All rights reserved.</p>
+            <p>&copy; 2025 Pace Finance. All rights reserved.</p>
           </div>
         </div>
       </footer>

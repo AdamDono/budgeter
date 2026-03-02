@@ -8,7 +8,7 @@ export default function ExportImport({ data, onImport }) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'pacedebt-data.json'
+    a.download = 'pace-finance-data.json'
     a.click()
     URL.revokeObjectURL(url)
   }

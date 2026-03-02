@@ -37,10 +37,10 @@ export default function Login() {
       <div className="auth-container">
         <div className="auth-header">
           <div className="auth-logo">
-            <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-auth" />
+            <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-auth" />
           </div>
           <h1>Welcome Back</h1>
-          <p>Sign in to your PaceDebt account</p>
+          <p>Sign in to your Pace Finance account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

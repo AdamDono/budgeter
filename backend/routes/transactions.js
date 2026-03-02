@@ -78,6 +78,7 @@ router.get('/', async (req, res, next) => {
 
 // Create new transaction
 router.post('/', async (req, res, next) => {
+  const client = await pool.connect()
   try {
     const { error, value } = transactionSchema.validate(req.body)
     if (error) throw error
@@ -89,7 +90,7 @@ router.post('/', async (req, res, next) => {
 
     // Get or create default account for user
     let accountId = null
-    const accountResult = await pool.query(
+    const accountResult = await client.query(
       'SELECT id FROM accounts WHERE user_id = $1 LIMIT 1',
       [req.user.id]
     )
@@ -98,12 +99,12 @@ router.post('/', async (req, res, next) => {
       accountId = accountResult.rows[0].id
     } else {
       // Create default account if none exists
-      const accountTypeResult = await pool.query(
+      const accountTypeResult = await client.query(
         "SELECT id FROM account_types WHERE name = 'Checking' LIMIT 1"
       )
       const accountTypeId = accountTypeResult.rows[0]?.id || 1
       
-      const newAccountResult = await pool.query(
+      const newAccountResult = await client.query(
         `INSERT INTO accounts (user_id, account_type_id, name, bank_name, balance, currency)
          VALUES ($1, $2, 'My Account', 'Default Bank', 0.00, 'ZAR')
          RETURNING id`,
@@ -112,8 +113,10 @@ router.post('/', async (req, res, next) => {
       accountId = newAccountResult.rows[0].id
     }
 
+    await client.query('BEGIN')
+
     // Create transaction
-    const result = await pool.query(
+    const result = await client.query(
       `INSERT INTO transactions 
        (user_id, account_id, category_id, goal_id, debt_id, savings_id, type, amount, description, 
         transaction_date, tags)
@@ -125,7 +128,7 @@ router.post('/', async (req, res, next) => {
 
     // Update goal progress if applicable
     if (goalId && type === 'expense') {
-      await pool.query(
+      await client.query(
         'UPDATE goals SET current_amount = current_amount + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [amount, goalId]
       )
@@ -133,7 +136,7 @@ router.post('/', async (req, res, next) => {
 
     // Update Debt balance if linked
     if (value.debtId && type === 'expense') {
-      await pool.query(
+      await client.query(
         'UPDATE debts SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [amount, value.debtId]
       )
@@ -141,33 +144,37 @@ router.post('/', async (req, res, next) => {
 
     // Update Savings balance if linked
     if (value.savingsId) {
-      // If expense, assume it's a contribution (increase balance)
-      // If income, assume it's a withdrawal (decrease balance)
       const balanceChange = type === 'expense' ? amount : -amount
-      await pool.query(
+      await client.query(
         'UPDATE savings SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
         [balanceChange, value.savingsId]
       )
     }
+
+    await client.query('COMMIT')
 
     res.status(201).json({
       message: 'Transaction created successfully',
       transaction: result.rows[0]
     })
   } catch (error) {
+    await client.query('ROLLBACK')
     next(error)
+  } finally {
+    client.release()
   }
 })
 
 // Update transaction
 router.put('/:id', async (req, res, next) => {
+  const client = await pool.connect()
   try {
     const { id } = req.params
     const { error, value } = transactionSchema.validate(req.body)
     if (error) throw error
 
     // Get original transaction for balance adjustment
-    const originalResult = await pool.query(
+    const originalResult = await client.query(
       'SELECT * FROM transactions WHERE id = $1 AND user_id = $2',
       [id, req.user.id]
     )
@@ -179,8 +186,10 @@ router.put('/:id', async (req, res, next) => {
     const original = originalResult.rows[0]
     const { categoryId, goalId, debtId, savingsId, type, amount, description, transactionDate, tags } = value
 
+    await client.query('BEGIN')
+
     // Update transaction
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE transactions 
        SET category_id = $1, goal_id = $2, debt_id = $3, savings_id = $4,
            type = $5, amount = $6, description = $7, transaction_date = $8, tags = $9,
@@ -192,44 +201,50 @@ router.put('/:id', async (req, res, next) => {
 
     // 1. REVERSE ORIGINAL IMPACT
     if (original.debt_id && original.type === 'expense') {
-      await pool.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [original.amount, original.debt_id])
+      await client.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [original.amount, original.debt_id])
     }
     if (original.savings_id) {
       const originalChange = original.type === 'expense' ? original.amount : -original.amount
-      await pool.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [originalChange, original.savings_id])
+      await client.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [originalChange, original.savings_id])
     }
     if (original.goal_id && original.type === 'expense') {
-      await pool.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [original.amount, original.goal_id])
+      await client.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [original.amount, original.goal_id])
     }
 
     // 2. APPLY NEW IMPACT
     if (debtId && type === 'expense') {
-      await pool.query('UPDATE debts SET balance = balance - $1 WHERE id = $2', [amount, debtId])
+      await client.query('UPDATE debts SET balance = balance - $1 WHERE id = $2', [amount, debtId])
     }
     if (savingsId) {
       const newChange = type === 'expense' ? amount : -amount
-      await pool.query('UPDATE savings SET balance = balance + $1 WHERE id = $2', [newChange, savingsId])
+      await client.query('UPDATE savings SET balance = balance + $1 WHERE id = $2', [newChange, savingsId])
     }
     if (goalId && type === 'expense') {
-      await pool.query('UPDATE goals SET current_amount = current_amount + $1 WHERE id = $2', [amount, goalId])
+      await client.query('UPDATE goals SET current_amount = current_amount + $1 WHERE id = $2', [amount, goalId])
     }
+
+    await client.query('COMMIT')
 
     res.json({
       message: 'Transaction updated successfully',
       transaction: result.rows[0]
     })
   } catch (error) {
+    await client.query('ROLLBACK')
     next(error)
+  } finally {
+    client.release()
   }
 })
 
 // Delete transaction
 router.delete('/:id', async (req, res, next) => {
+  const client = await pool.connect()
   try {
     const { id } = req.params
 
     // Get transaction for balance adjustment
-    const result = await pool.query(
+    const result = await client.query(
       'SELECT * FROM transactions WHERE id = $1 AND user_id = $2',
       [id, req.user.id]
     )
@@ -240,31 +255,38 @@ router.delete('/:id', async (req, res, next) => {
 
     const transaction = result.rows[0]
 
+    await client.query('BEGIN')
+
     // Delete transaction
-    await pool.query(
+    await client.query(
       'DELETE FROM transactions WHERE id = $1 AND user_id = $2',
       [id, req.user.id]
     )
 
     // Reverse Debt impact
     if (transaction.debt_id && transaction.type === 'expense') {
-      await pool.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [transaction.amount, transaction.debt_id])
+      await client.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [transaction.amount, transaction.debt_id])
     }
 
     // Reverse Savings impact
     if (transaction.savings_id) {
       const balanceChange = transaction.type === 'expense' ? transaction.amount : -transaction.amount
-      await pool.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [balanceChange, transaction.savings_id])
+      await client.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [balanceChange, transaction.savings_id])
     }
 
     // Reverse Goal impact
     if (transaction.goal_id && transaction.type === 'expense') {
-      await pool.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [transaction.amount, transaction.goal_id])
+      await client.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [transaction.amount, transaction.goal_id])
     }
+
+    await client.query('COMMIT')
 
     res.json({ message: 'Transaction deleted successfully' })
   } catch (error) {
+    await client.query('ROLLBACK')
     next(error)
+  } finally {
+    client.release()
   }
 })
 

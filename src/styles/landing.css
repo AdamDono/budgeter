@@ -109,15 +109,13 @@
 }
 
 .logo-image-metallic {
-  height: 130px;
+  height: 40px;
   width: auto;
-  margin: -25px 0;
-  /* Pulls the header line up by cropping internal logo whitespace */
   display: block;
 }
 
 .footer-logo-image {
-  height: 130px;
+  height: 44px;
   width: auto;
   display: block;
 }

@@ -1,5 +1,9 @@
 export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err)
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (!isProduction) {
+    console.error('Error Details:', err)
+  }
 
   // Joi validation errors
   if (err.isJoi) {
@@ -20,12 +24,12 @@ export const errorHandler = (err, req, res, next) => {
         return res.status(400).json({ error: 'Required field missing' })
       default:
         console.error('Database error:', err)
-        return res.status(500).json({ error: 'Database error' })
+        return res.status(500).json({ error: isProduction ? 'Database error' : err.message })
     }
   }
 
   // Default error
   res.status(err.status || 500).json({
-    error: err.message || 'Internal server error'
+    error: isProduction ? 'Internal server error' : (err.message || 'Internal server error')
   })
 }

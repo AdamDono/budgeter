@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 160" width="780" height="160" overflow="visible">
+  <defs>
+    <!-- Main metallic blue gradient -->
+    <linearGradient id="metalBlue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#6ec6ff"/>
+      <stop offset="18%"  stop-color="#1e7fd4"/>
+      <stop offset="45%"  stop-color="#0a4fa8"/>
+      <stop offset="72%"  stop-color="#1e7fd4"/>
+      <stop offset="88%"  stop-color="#5ab4f5"/>
+      <stop offset="100%" stop-color="#0a3a8a"/>
+    </linearGradient>
+    <!-- Silver bevel highlight gradient -->
+    <linearGradient id="silverTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#d0eeff" stop-opacity="0.9"/>
+      <stop offset="40%"  stop-color="#94cfff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0a3a8a" stop-opacity="0"/>
+    </linearGradient>
+    <!-- Swirl gradient -->
+    <linearGradient id="swirlGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#b0d8ff"/>
+      <stop offset="40%"  stop-color="#1a6ec4"/>
+      <stop offset="100%" stop-color="#0a3a8a"/>
+    </linearGradient>
+    <!-- Drop shadow filter -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#001133" flood-opacity="0.7"/>
+    </filter>
+    <!-- Inner glow -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Decorative swirl (left of P) -->
+  <g filter="url(#shadow)">
+    <path d="M 52,140 C 20,130 8,105 18,80 C 28,55 58,50 72,65 C 50,58 34,72 36,90 C 38,108 58,115 72,108 C 58,118 52,132 58,145 Z"
+          fill="url(#swirlGrad)" stroke="#7ac8ff" stroke-width="1.5" opacity="0.95"/>
+    <path d="M 52,140 C 20,130 8,105 18,80 C 28,55 58,50 72,65 C 50,58 34,72 36,90 C 38,108 58,115 72,108 C 58,118 52,132 58,145 Z"
+          fill="url(#silverTop)" opacity="0.6"/>
+  </g>
+
+  <!-- Main text: PaceFinance — dark outline for depth -->
+  <text
+    x="76" y="120"
+    font-family="'Arial Black', 'Impact', 'Franklin Gothic Heavy', sans-serif"
+    font-size="78"
+    font-style="italic"
+    font-weight="900"
+    letter-spacing="-1"
+    fill="#001133"
+    stroke="#001133"
+    stroke-width="6"
+    stroke-linejoin="round"
+    filter="url(#shadow)"
+  >PaceFinance</text>
+
+  <!-- Main text: PaceFinance — metallic blue fill -->
+  <text
+    x="76" y="120"
+    font-family="'Arial Black', 'Impact', 'Franklin Gothic Heavy', sans-serif"
+    font-size="78"
+    font-style="italic"
+    font-weight="900"
+    letter-spacing="-1"
+    fill="url(#metalBlue)"
+  >PaceFinance</text>
+
+  <!-- Silver highlight overlay (top sheen) -->
+  <text
+    x="76" y="120"
+    font-family="'Arial Black', 'Impact', 'Franklin Gothic Heavy', sans-serif"
+    font-size="78"
+    font-style="italic"
+    font-weight="900"
+    letter-spacing="-1"
+    fill="url(#silverTop)"
+    opacity="0.75"
+  >PaceFinance</text>
+</svg>

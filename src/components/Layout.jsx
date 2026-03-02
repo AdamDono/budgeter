@@ -52,7 +52,7 @@ export default function Layout() {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-sidebar" />
+            <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-sidebar" />
           </div>
           <button 
             className="sidebar-close"
@@ -110,7 +110,7 @@ export default function Layout() {
             <Menu size={20} />
           </button>
           <div className="logo-container">
-            <img src="/logo_blue_transparent.png" alt="PaceDebt" className="logo-image-mobile" />
+            <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-mobile" />
           </div>
         </header>
 
