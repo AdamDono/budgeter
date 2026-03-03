@@ -358,4 +358,73 @@ router.get('/analytics', async (req, res, next) => {
   }
 })
 
+// Bulk import transactions from CSV
+router.post('/import', async (req, res, next) => {
+  const client = await pool.connect()
+  try {
+    const { transactions } = req.body
+
+    if (!Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ error: 'No transactions provided' })
+    }
+
+    if (transactions.length > 500) {
+      return res.status(400).json({ error: 'Maximum 500 transactions per import' })
+    }
+
+    // Get user's default account
+    const accountResult = await client.query(
+      'SELECT id FROM accounts WHERE user_id = $1 AND is_active = TRUE ORDER BY id ASC LIMIT 1',
+      [req.user.id]
+    )
+    const accountId = accountResult.rows[0]?.id || null
+
+    await client.query('BEGIN')
+
+    let imported = 0
+    let failed = 0
+
+    for (const tx of transactions) {
+      try {
+        const { type, amount, description, transactionDate, categoryId } = tx
+
+        if (!type || !amount || !description || !transactionDate) {
+          failed++
+          continue
+        }
+
+        await client.query(`
+          INSERT INTO transactions (user_id, account_id, type, amount, description, transaction_date, category_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `, [
+          req.user.id,
+          accountId,
+          type,
+          parseFloat(amount),
+          description.substring(0, 500),
+          transactionDate,
+          categoryId || null
+        ])
+
+        imported++
+      } catch (rowErr) {
+        failed++
+      }
+    }
+
+    await client.query('COMMIT')
+
+    res.json({
+      message: `Import complete: ${imported} imported, ${failed} failed`,
+      imported,
+      failed
+    })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    next(error)
+  } finally {
+    client.release()
+  }
+})
+
 export default router

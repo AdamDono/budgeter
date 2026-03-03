@@ -1,14 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Plus, Search, Trash2 } from 'lucide-react'
+import { Calendar, FileText, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
+import CSVImport from '../components/CSVImport'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { budgetsAPI, debtsAPI, goalsAPI, savingsAPI, transactionsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Transactions() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
   const [filters, setFilters] = useState({
     type: 'all',
@@ -135,6 +137,13 @@ export default function Transactions() {
               className="month-input"
             />
           </div>
+          <button 
+            className="btn ghost"
+            onClick={() => setShowImport(true)}
+          >
+            <FileText size={16} />
+            Import Statement
+          </button>
           <button 
             className="btn primary"
             onClick={() => setShowAddForm(true)}
@@ -268,6 +277,17 @@ export default function Transactions() {
       </div>
 
       {/* Add Transaction Modal */}
+      {showImport && (
+        <CSVImport 
+          onClose={() => setShowImport(false)} 
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] })
+            queryClient.invalidateQueries({ queryKey: ['analytics'] })
+            setShowImport(false)
+          }}
+        />
+      )}
+
       {showAddForm && (
         <TransactionForm
           categories={categories?.categories || []}

@@ -2855,3 +2855,387 @@ body {
   font-size: 0.85rem;
   line-height: 1.8;
 }
+
+/* ===========================
+   BILLS PAGE
+   =========================== */
+.bills-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.bill-stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.bill-stat-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.bill-stat-card.overdue {
+  border-left: 4px solid var(--danger);
+  color: var(--danger);
+}
+
+.bill-stat-card.due-soon {
+  border-left: 4px solid var(--warning);
+  color: var(--warning);
+}
+
+.bill-stat-card.upcoming {
+  border-left: 4px solid var(--accent);
+  color: var(--accent);
+}
+
+.stat-num {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.bills-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.bills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bill-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.bill-card:hover {
+  border-color: rgba(79, 140, 255, 0.4);
+}
+
+.bill-card.overdue {
+  border-left: 4px solid var(--danger);
+}
+
+.bill-card.paid {
+  opacity: 0.8;
+}
+
+.bill-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bill-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bill-info h3 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+
+.bill-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.bill-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bill-right {
+  text-align: right;
+}
+
+.bill-amount {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.bill-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ===========================
+   CSV IMPORT
+   =========================== */
+.modal-large {
+  max-width: 900px;
+  width: 95%;
+}
+
+.import-steps {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.import-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  position: relative;
+}
+
+.import-step.active {
+  color: var(--accent);
+}
+
+.step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.import-upload-zone {
+  text-align: center;
+}
+
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  padding: 48px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 32px;
+}
+
+.upload-area:hover {
+  border-color: var(--accent);
+  background: rgba(79, 140, 255, 0.05);
+}
+
+.upload-icon {
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.supported-banks {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.preview-table-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.preview-table th {
+  background: var(--bg);
+  padding: 12px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--border);
+  z-index: 1;
+}
+
+.preview-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.row-excluded {
+  opacity: 0.5;
+}
+
+.inline-edit {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.inline-edit:hover,
+.inline-edit:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.inline-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* ===========================
+   FOREX WIDGET
+   =========================== */
+.forex-widget {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.forex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.forex-subtitle {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.forex-base-badge {
+  background: rgba(79, 140, 255, 0.1);
+  color: var(--accent);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.forex-rates {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.forex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.forex-row:last-child {
+  border-bottom: none;
+}
+
+.forex-currency {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.forex-flag {
+  font-size: 1.4rem;
+}
+
+.forex-code {
+  display: block;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.forex-name {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.forex-value {
+  text-align: right;
+}
+
+.forex-rate {
+  display: block;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.forex-tiny {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.forex-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.forex-change.up {
+  color: var(--danger);
+}
+
+/* ZAR weakened */
+.forex-change.down {
+  color: var(--pos);
+}
+
+/* ZAR strengthened */
+
+.forex-note {
+  margin-top: 16px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+  font-style: italic;
+}

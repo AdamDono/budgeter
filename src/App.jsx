@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Pages
 import Analytics from './pages/Analytics'
+import Bills from './pages/Bills'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
 import Goals from './pages/Goals'
@@ -87,6 +88,7 @@ export default function App() {
                 <Route path="trends" element={<Trends />} />
                 <Route path="debt" element={<Debt />} />
                 <Route path="tax" element={<Tax />} />
+                <Route path="bills" element={<Bills />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               

@@ -103,4 +103,33 @@ export const tipsAPI = {
   getComments: (id) => api.get(`/tips/${id}/comments`),
 }
 
+// Bills API
+export const billsAPI = {
+  getAll: () => api.get('/bills'),
+  getUpcoming: (days = 7) => api.get(`/bills/upcoming?days=${days}`),
+  create: (data) => api.post('/bills', data),
+  update: (id, data) => api.put(`/bills/${id}`, data),
+  markPaid: (id) => api.post(`/bills/${id}/pay`),
+  delete: (id) => api.delete(`/bills/${id}`),
+}
+
+// CSV Import API (batch create transactions)
+export const importAPI = {
+  importTransactions: (transactions) => api.post('/transactions/import', { transactions }),
+}
+
+// Forex — uses free frankfurter.app (no API key needed)
+export const forexAPI = {
+  getRates: async (base = 'ZAR') => {
+    const res = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=USD,EUR,GBP,AED,CNY`)
+    return res.json()
+  },
+  getHistorical: async (base = 'ZAR', days = 30) => {
+    const end = new Date().toISOString().split('T')[0]
+    const start = new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+    const res = await fetch(`https://api.frankfurter.app/${start}..${end}?from=${base}&to=USD,EUR,GBP`)
+    return res.json()
+  }
+}
+
 export default api

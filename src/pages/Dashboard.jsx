@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { Calendar, CreditCard, Target, TrendingDown, TrendingUp } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import ForexWidget from '../components/ForexWidget'
 import { SkeletonDashboard } from '../components/Skeleton'
-import { analyticsAPI, goalsAPI, transactionsAPI } from '../lib/api'
+import { analyticsAPI, billsAPI, goalsAPI, transactionsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Dashboard() {
@@ -11,9 +13,6 @@ export default function Dashboard() {
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['dashboard', selectedMonth],
     queryFn: async () => {
-      const [year, month] = selectedMonth.split('-')
-      const startDate = `${year}-${month}-01`
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
       return (await analyticsAPI.getDashboard('30d')).data
     },
   })
@@ -26,6 +25,11 @@ export default function Dashboard() {
   const { data: goals } = useQuery({
     queryKey: ['goals'],
     queryFn: async () => (await goalsAPI.getAll()).data,
+  })
+
+  const { data: billsData } = useQuery({
+    queryKey: ['upcoming-bills'],
+    queryFn: async () => (await billsAPI.getUpcoming(7)).data,
   })
 
   if (isLoading) {
@@ -104,7 +108,7 @@ export default function Dashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Recent Transactions</h2>
-            <a href="/app/transactions" className="view-all">View All</a>
+            <Link to="/app/transactions" className="view-all">View All</Link>
           </div>
           <div className="transaction-list">
             {recentTransactions?.transactions?.slice(0, 5).map(transaction => (
@@ -191,7 +195,7 @@ export default function Dashboard() {
               </div>
             ))}
             {!budgetPerformance.length && (
-              <p className="empty-state">Set up budget categories to track performance.</p>
+              <p className="empty-state">No budget data.</p>
             )}
           </div>
         </div>
@@ -200,7 +204,7 @@ export default function Dashboard() {
         <div className="dashboard-card">
           <div className="card-header">
             <h2>Goals Progress</h2>
-            <a href="/goals" className="view-all">View All</a>
+            <Link to="/app/goals" className="view-all">View All</Link>
           </div>
           <div className="goals-list">
             {goals?.goals?.slice(0, 3).map(goal => (
@@ -223,9 +227,37 @@ export default function Dashboard() {
               </div>
             ))}
             {(!goals?.goals?.length) && (
-              <p className="empty-state">Create your first financial goal!</p>
+              <p className="empty-state">No goals yet.</p>
             )}
           </div>
+        </div>
+
+        {/* Upcoming Bills */}
+        <div className="dashboard-card">
+          <div className="card-header">
+            <h2>Upcoming Bills</h2>
+            <Link to="/app/bills" className="view-all">View All</Link>
+          </div>
+          <div className="bills-sidebar-list">
+            {billsData?.bills?.length > 0 ? (
+              billsData.bills.map(bill => (
+                <div key={bill.id} className="bill-sidebar-item">
+                  <div className="bill-sidebar-info">
+                    <span className="bill-name">{bill.name}</span>
+                    <span className="bill-due">Due in {bill.days_until_due} days</span>
+                  </div>
+                  <div className="bill-amount">{formatCurrency(bill.amount)}</div>
+                </div>
+              ))
+            ) : (
+              <p className="empty-state">No bills due this week.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Forex Widget */}
+        <div className="dashboard-card">
+          <ForexWidget />
         </div>
       </div>
     </div>

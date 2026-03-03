@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { BarChart3, Calendar, PieChart, TrendingDown, TrendingUp } from 'lucide-react'
+import { useState } from 'react'
+import ForexWidget from '../components/ForexWidget'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { analyticsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
-import { TrendingUp, TrendingDown, PieChart, BarChart3, Calendar } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Analytics() {
   const [period, setPeriod] = useState('30d')
@@ -338,6 +339,11 @@ export default function Analytics() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Forex Widget */}
+        <div className="analytics-card-span-2">
+          <ForexWidget />
         </div>
       </div>
     </div>

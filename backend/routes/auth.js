@@ -1,9 +1,8 @@
 import bcrypt from 'bcryptjs'
 import express from 'express'
 import Joi from 'joi'
-import jwt from 'jsonwebtoken'
 import { pool } from '../database/connection.js'
-import { generateToken } from '../middleware/auth.js'
+import { authenticateToken, generateToken } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -148,26 +147,10 @@ router.post('/login', async (req, res, next) => {
 })
 
 // Get current user profile
-router.get('/me', async (req, res, next) => {
+router.get('/me', authenticateToken, async (req, res, next) => {
   try {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
-
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' })
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    const result = await pool.query(
-      'SELECT id, email, first_name, last_name, phone, profile_picture FROM users WHERE id = $1',
-      [decoded.userId]
-    )
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' })
-    }
-
-    res.json({ user: result.rows[0] })
+    // req.user is already populated by authenticateToken middleware
+    res.json({ user: req.user })
   } catch (error) {
     next(error)
   }

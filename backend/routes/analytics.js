@@ -256,10 +256,23 @@ router.get('/insights', async (req, res, next) => {
       LIMIT 5
     `, [req.user.id])
 
+    // Month-over-month comparison
+    const momResult = await pool.query(`
+      SELECT 
+        DATE_TRUNC('month', transaction_date) as month,
+        SUM(amount) as total
+      FROM transactions
+      WHERE user_id = $1 AND type = 'expense'
+        AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      GROUP BY DATE_TRUNC('month', transaction_date)
+      ORDER BY month DESC
+    `, [req.user.id])
+
     res.json({
       topCategories: topCategoriesResult.rows,
       spendingByDay: dayPatternResult.rows,
-      unusualSpending: unusualSpendingResult.rows
+      unusualSpending: unusualSpendingResult.rows,
+      monthlyComparison: momResult.rows
     })
   } catch (error) {
     next(error)

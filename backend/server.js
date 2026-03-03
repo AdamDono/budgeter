@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url'
 // Routes
 import analyticsRoutes from './routes/analytics.js'
 import authRoutes from './routes/auth.js'
+import billsRoutes from './routes/bills.js'
 import budgetRoutes from './routes/budgets.js'
 import debtRoutes from './routes/debts.js'
 import goalRoutes from './routes/goals.js'
@@ -78,6 +79,7 @@ app.use('/api/debts', authenticateToken, debtRoutes)
 app.use('/api/taxes', authenticateToken, taxRoutes)
 app.use('/api/savings', authenticateToken, savingsRoutes)
 app.use('/api/tips', tipsRoutes) // Public tips, but can add auth for user tips
+app.use('/api/bills', authenticateToken, billsRoutes)
 
 // Error handling
 app.use(errorHandler)

@@ -1,4 +1,5 @@
 import {
+    Bell,
     Calendar,
     CreditCard,
     DollarSign,
@@ -12,25 +13,26 @@ import {
     TrendingUp,
     X
 } from 'lucide-react'
-import React from 'react'
+import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Layout() {
   const { user, logout } = useAuth()
   const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const navigation = [
     { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
-    { name: 'Goals', href: '/app/goals', icon: Target },
-    { name: 'Savings', href: '/app/savings', icon: DollarSign },
+    { name: 'Fixed Goals', href: '/app/goals', icon: Target },
+    { name: 'Savings Pots', href: '/app/savings', icon: DollarSign },
+    { name: 'Bills & Reminders', href: '/app/bills', icon: Bell },
     { name: 'Analytics', href: '/app/analytics', icon: TrendingUp },
     { name: 'Recurring', href: '/app/recurring', icon: Repeat },
-    { name: 'Trends', href: '/app/trends', icon: TrendingDown },
-    { name: 'Debt', href: '/app/debt', icon: DollarSign },
-    { name: 'Tax', href: '/app/tax', icon: Calendar },
+    { name: 'Spending Trends', href: '/app/trends', icon: TrendingDown },
+    { name: 'Debt Tracker', href: '/app/debt', icon: DollarSign },
+    { name: 'Tax Deductions', href: '/app/tax', icon: Calendar },
     { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
@@ -69,9 +71,9 @@ export default function Layout() {
             
             return (
               <NavLink
-                key={item.name}
+                key={item.href}
                 to={item.href}
-                className={`nav-link ${isActive ? 'nav-link-active' : ''}`}
+                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon size={20} />
@@ -103,15 +105,11 @@ export default function Layout() {
       <main className="main-content">
         {/* Mobile header */}
         <header className="mobile-header">
-          <button 
-            className="menu-btn"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu size={20} />
+          <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
+            <Menu size={24} />
           </button>
-          <div className="logo-container">
-            <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-mobile" />
-          </div>
+          <h1 className="page-title">Pace Finance</h1>
+          <div style={{ width: 24 }}></div> {/* Spacer */}
         </header>
 
         {/* Page content */}
