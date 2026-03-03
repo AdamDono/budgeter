@@ -118,7 +118,9 @@ async function extractTransactionsFromPDF(file) {
 
   // Bank-specific heuristic settings
   const dateRegex = /(\d{1,2} [A-Z][a-z]{2}|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{4})/gi
-  const moneyRegex = /(-?R?\s?[\d\s,']+\.\d{2})/g
+  // Money regex that supports: R 1,234.56, 1234.56, 1 234.56Cr, etc.
+  // It avoids matching long strings of digits like phone numbers or references by requiring standard grouping.
+  const moneyRegex = /(?:R\s?)?(-?\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})(?:[CcDd][Rr])?)/g
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
@@ -153,36 +155,46 @@ async function extractTransactionsFromPDF(file) {
           return { original: m, value: parseFloat(clean) }
         }).filter(m => !isNaN(m.value) && Math.abs(m.value) > 0)
 
-        if (parsedAmounts.length > 0) {
-          // HEURISTIC: In most SA bank statements:
-          // If 1 amount: It's the transaction amount
-          // If 2+ amounts: One is likely the Amount, another is the Balance.
-          // In FNB/Standard/Nedbank, usually Amount comes before Balance left-to-right.
-          const txAmount = parsedAmounts[0]
-          
-          let description = line
-            .replace(date, "")
-            .replace(txAmount.original, "")
-          
-          // Remove balance if detected
-          if (parsedAmounts.length > 1) {
-            description = description.replace(parsedAmounts[1].original, "")
-          }
+          if (parsedAmounts.length > 0) {
+            // HEURISTIC: In most SA bank statements:
+            // Amount is usually the first column, Balance is the second.
+            const txAmount = parsedAmounts[0]
+            
+            let description = line
+              .replace(date, "")
+              .replace(txAmount.original, "")
+            
+            // Remove balance if detected (usually the second money match in the row)
+            if (parsedAmounts.length > 1) {
+              description = description.replace(parsedAmounts[1].original, "")
+            }
 
-          // Determine type
-          let type = 'expense'
-          if (txAmount.value > 0) type = 'income' // If positive, assume income
-          if (line.includes("-") || line.toLowerCase().includes(" dr") || line.includes("(")) {
-            type = 'expense'
-          }
+            // Determine type
+            let type = 'expense'
+            const rawValue = txAmount.original.toUpperCase()
+            const lowerLine = line.toLowerCase()
 
-          allRows.push({
-            date,
-            description: description.replace(/\s+/g, ' ').trim() || 'Imported Transaction',
-            amount: Math.abs(txAmount.value),
-            type: type
-          })
-        }
+            // FNB Special Case: 'Cr' means Income/Credit. 'Dr' or no suffix usually means Expense.
+            if (rawValue.includes('CR')) {
+              type = 'income'
+            } else if (rawValue.includes('DR')) {
+              type = 'expense'
+            } else {
+              // Heuristic for other formats: minus signs or 'dr' in text
+              if (txAmount.value < 0 || lowerLine.includes(' dr') || txAmount.original.includes('-')) {
+                type = 'expense'
+              } else if (lowerLine.includes(' cr')) {
+                type = 'income'
+              }
+            }
+
+            allRows.push({
+              date,
+              description: description.replace(/\s+/g, ' ').trim() || 'Imported Transaction',
+              amount: Math.abs(txAmount.value),
+              type: type
+            })
+          }
       }
     })
   }
