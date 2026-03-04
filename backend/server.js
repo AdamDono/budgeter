@@ -8,7 +8,7 @@ import helmet from 'helmet'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
-// Routes
+import aiRoutes from './routes/ai.js'
 import analyticsRoutes from './routes/analytics.js'
 import authRoutes from './routes/auth.js'
 import billsRoutes from './routes/bills.js'
@@ -59,6 +59,12 @@ app.use('/api/', limiter)
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
+// Request Logging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`)
+  next()
+})
+
 // Static files (for receipt uploads)
 app.use('/uploads', express.static(join(__dirname, 'uploads')))
 
@@ -71,6 +77,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 
 // Protected routes
+app.use('/api/ai', authenticateToken, aiRoutes)
 app.use('/api/transactions', authenticateToken, transactionRoutes)
 app.use('/api/budgets', authenticateToken, budgetRoutes)
 app.use('/api/goals', authenticateToken, goalRoutes)

@@ -119,6 +119,11 @@ export const creditAPI = {
   update: (data) => api.post('/credit', data),
 }
 
+// AI API
+export const aiAPI = {
+  chat: (data) => api.post('/ai/chat', data),
+}
+
 // CSV Import API (batch create transactions)
 export const importAPI = {
   importTransactions: (transactions) => api.post('/transactions/import', { transactions }),

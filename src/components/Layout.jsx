@@ -17,6 +17,7 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import AICoach from './AICoach'
 
 // Triggers a rebuild to resolve ShieldCheck undefined issues.
 export default function Layout() {
@@ -120,6 +121,7 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+      <AICoach />
     </div>
   )
 }
