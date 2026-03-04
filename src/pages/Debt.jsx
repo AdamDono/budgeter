@@ -185,6 +185,12 @@ export default function Debt() {
                       <span>Monthly Payment:</span>
                       <strong>{formatCurrency(debt.monthly_payment)}</strong>
                     </div>
+                    {parseFloat(debt.credit_limit) > 0 && (
+                      <div className="detail-row">
+                        <span>Credit Limit:</span>
+                        <strong>{formatCurrency(debt.credit_limit)}</strong>
+                      </div>
+                    )}
                   </div>
 
                   {payoffInfo && (
@@ -281,7 +287,8 @@ function DebtForm({ onSubmit, onClose, loading }) {
     balance: '',
     interestRate: '',
     monthlyPayment: '',
-    type: 'credit-card'
+    type: 'credit-card',
+    creditLimit: ''
   })
 
   const handleSubmit = (e) => {
@@ -293,6 +300,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
       interestRate: parseFloat(formData.interestRate),
       monthlyPayment: parseFloat(formData.monthlyPayment),
       type: formData.type,
+      creditLimit: parseFloat(formData.creditLimit) || 0,
     }
     
     onSubmit(submitData)
@@ -368,6 +376,20 @@ function DebtForm({ onSubmit, onClose, loading }) {
               placeholder="0.00"
               required
             />
+          </div>
+
+          <div className="form-group">
+            <label>Credit Limit (ZAR) - Optional</label>
+            <input
+              type="number"
+              name="creditLimit"
+              value={formData.creditLimit}
+              onChange={handleChange}
+              step="0.01"
+              min="0"
+              placeholder="e.g. 50000.00"
+            />
+            <p className="form-help">Essential for accurate credit utilization boost.</p>
           </div>
 
           <div className="form-group">

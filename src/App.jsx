@@ -3,9 +3,10 @@ import { Toaster } from 'react-hot-toast'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
-// Pages
+// Pages (Vite rebuild trigger: 2026-03-03)
 import Analytics from './pages/Analytics'
 import Bills from './pages/Bills'
+import CreditHub from './pages/CreditHub'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
 import Goals from './pages/Goals'
@@ -89,6 +90,7 @@ export default function App() {
                 <Route path="debt" element={<Debt />} />
                 <Route path="tax" element={<Tax />} />
                 <Route path="bills" element={<Bills />} />
+                <Route path="credit-hub" element={<CreditHub />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               

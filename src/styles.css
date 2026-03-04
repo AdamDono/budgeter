@@ -3239,3 +3239,206 @@ body {
   text-align: center;
   font-style: italic;
 }
+/* Credit Excellence Hub Styles */
+.credit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.credit-card {
+  background: rgba(23, 25, 35, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.credit-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.score-main-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  grid-row: span 1;
+}
+
+.score-gauge-container {
+  position: relative;
+  width: 240px;
+  height: 140px;
+}
+
+.score-gauge {
+  width: 100%;
+  height: 100%;
+}
+
+.score-value-overlay {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+}
+
+.score-number {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.score-info {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.score-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.range-bar {
+  flex: 1;
+  height: 4px;
+  background: linear-gradient(to right, #EF4444, #FBBF24, #10B981);
+  border-radius: 2px;
+}
+
+.simulator-card {
+  grid-column: span 1;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.simulator-content {
+  flex: 1;
+}
+
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.insight-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 1rem;
+  border-left: 4px solid #4a5568;
+}
+
+.insight-item.success { border-left-color: #10B981; }
+.insight-item.danger { border-left-color: #EF4444; }
+.insight-item.boost { border-left-color: #3B82F6; }
+
+.insight-item h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.insight-impact {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #718096;
+}
+
+.insight-text p {
+  font-size: 0.75rem;
+  color: #A0AEC0;
+  margin-top: 0.25rem;
+}
+
+.insight-arrow {
+  margin-left: auto;
+  color: #4a5568;
+}
+
+.simulator-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.history-chart-placeholder {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  height: 80px;
+  width: 100%;
+  padding: 0 1rem;
+}
+
+.chart-bar-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.chart-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+
+.bar-label {
+  font-size: 0.625rem;
+  color: #718096;
+  margin-top: 0.5rem;
+}
+
+.edu-list {
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.edu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: #CBD5E0;
+}
+
+@media (max-width: 1024px) {
+  .credit-grid {
+    grid-template-columns: 1fr;
+  }
+}

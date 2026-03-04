@@ -113,6 +113,12 @@ export const billsAPI = {
   delete: (id) => api.delete(`/bills/${id}`),
 }
 
+// Credit Score API
+export const creditAPI = {
+  getLatest: () => api.get('/credit'),
+  update: (data) => api.post('/credit', data),
+}
+
 // CSV Import API (batch create transactions)
 export const importAPI = {
   importTransactions: (transactions) => api.post('/transactions/import', { transactions }),

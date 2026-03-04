@@ -8,6 +8,7 @@ import {
     Menu,
     Repeat,
     Settings,
+    ShieldCheck,
     Target,
     TrendingDown,
     TrendingUp,
@@ -17,6 +18,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
+// Triggers a rebuild to resolve ShieldCheck undefined issues.
 export default function Layout() {
   const { user, logout } = useAuth()
   const location = useLocation()
@@ -32,6 +34,7 @@ export default function Layout() {
     { name: 'Recurring', href: '/app/recurring', icon: Repeat },
     { name: 'Spending Trends', href: '/app/trends', icon: TrendingDown },
     { name: 'Debt Tracker', href: '/app/debt', icon: DollarSign },
+    { name: 'Credit Hub', href: '/app/credit-hub', icon: ShieldCheck },
     { name: 'Tax Deductions', href: '/app/tax', icon: Calendar },
     { name: 'Settings', href: '/app/settings', icon: Settings },
   ]

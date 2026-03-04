@@ -7,10 +7,11 @@ const router = express.Router()
 // Validation schema
 const debtSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
-  balance: Joi.number().positive().required(),
+  balance: Joi.number().min(0).required(),
   interestRate: Joi.number().min(0).max(100).required(),
-  monthlyPayment: Joi.number().positive().required(),
+  monthlyPayment: Joi.number().min(0).required(),
   type: Joi.string().valid('credit-card', 'personal-loan', 'student-loan', 'mortgage', 'other').required(),
+  creditLimit: Joi.number().min(0).optional().allow(null, 0),
 })
 
 // Get all debts for user
@@ -34,13 +35,13 @@ router.post('/', async (req, res, next) => {
     const { error, value } = debtSchema.validate(req.body)
     if (error) throw error
 
-    const { name, balance, interestRate, monthlyPayment, type } = value
+    const { name, balance, interestRate, monthlyPayment, type, creditLimit } = value
 
     const result = await pool.query(`
-      INSERT INTO debts (user_id, name, balance, interest_rate, monthly_payment, type)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO debts (user_id, name, balance, interest_rate, monthly_payment, type, credit_limit)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
-    `, [req.user.id, name, balance, interestRate, monthlyPayment, type])
+    `, [req.user.id, name, balance, interestRate, monthlyPayment, type, creditLimit || 0])
 
     res.status(201).json({
       message: 'Debt created successfully',
@@ -58,14 +59,14 @@ router.put('/:id', async (req, res, next) => {
     const { error, value } = debtSchema.validate(req.body)
     if (error) throw error
 
-    const { name, balance, interestRate, monthlyPayment, type } = value
+    const { name, balance, interestRate, monthlyPayment, type, creditLimit } = value
 
     const result = await pool.query(`
       UPDATE debts
-      SET name = $1, balance = $2, interest_rate = $3, monthly_payment = $4, type = $5
-      WHERE id = $6 AND user_id = $7
+      SET name = $1, balance = $2, interest_rate = $3, monthly_payment = $4, type = $5, credit_limit = $6
+      WHERE id = $7 AND user_id = $8
       RETURNING *
-    `, [name, balance, interestRate, monthlyPayment, type, id, req.user.id])
+    `, [name, balance, interestRate, monthlyPayment, type, creditLimit || 0, id, req.user.id])
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Debt not found' })

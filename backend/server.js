@@ -13,6 +13,7 @@ import analyticsRoutes from './routes/analytics.js'
 import authRoutes from './routes/auth.js'
 import billsRoutes from './routes/bills.js'
 import budgetRoutes from './routes/budgets.js'
+import creditRoutes from './routes/credit.js'
 import debtRoutes from './routes/debts.js'
 import goalRoutes from './routes/goals.js'
 import recurringRoutes from './routes/recurring.js'
@@ -77,6 +78,7 @@ app.use('/api/analytics', authenticateToken, analyticsRoutes)
 app.use('/api/recurring', authenticateToken, recurringRoutes)
 app.use('/api/debts', authenticateToken, debtRoutes)
 app.use('/api/taxes', authenticateToken, taxRoutes)
+app.use('/api/credit', authenticateToken, creditRoutes)
 app.use('/api/savings', authenticateToken, savingsRoutes)
 app.use('/api/tips', tipsRoutes) // Public tips, but can add auth for user tips
 app.use('/api/bills', authenticateToken, billsRoutes)
