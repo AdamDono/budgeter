@@ -73,9 +73,11 @@ router.post('/register', async (req, res, next) => {
     const isProduction = process.env.NODE_ENV === 'production'
     res.cookie('token', token, {
       httpOnly: true,
-      secure: isProduction, // only over https in production
-      sameSite: isProduction ? 'strict' : 'lax', // prevent CSRF
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days (matches JWT)
+      secure: isProduction,
+      // 'none' required for cross-origin (frontend/backend on different subdomains)
+      // 'lax' for local dev
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     })
 
     res.status(201).json({
@@ -127,7 +129,7 @@ router.post('/login', async (req, res, next) => {
     res.cookie('token', token, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     })
 
