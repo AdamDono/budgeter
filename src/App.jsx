@@ -97,6 +97,9 @@ export default function App() {
               {/* Root path → landing */}
               <Route path="/" element={<Navigate to="/landing" replace />} />
 
+              {/* Fix for Render refresh redirecting to index.html */}
+              <Route path="/index.html" element={<Navigate to="/app/dashboard" replace />} />
+
               {/* Catch all → 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
