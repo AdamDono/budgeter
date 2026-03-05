@@ -34,6 +34,9 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Trust Render's reverse proxy (required for rate limiting + secure cookies)
+app.set('trust proxy', 1)
+
 // Security & Performance
 app.use(helmet())
 app.use(compression())
