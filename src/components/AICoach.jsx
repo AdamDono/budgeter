@@ -1,6 +1,7 @@
-import { Bot, MinusCircle, Send, Sparkles, X } from 'lucide-react'
+import { AlertCircle, Bot, MinusCircle, Send, Sparkles, TrendingDown, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
 import { aiAPI } from '../lib/api'
 
 export default function AICoach() {
@@ -11,8 +12,16 @@ export default function AICoach() {
     { role: 'assistant', content: "Hi! I'm your Pace AI Coach. Ask me anything about your spending, debts, or if you can afford that R1,000 treat today! 🇿🇦" }
   ])
   const [loading, setLoading] = useState(false)
+  const [healthStatus, setHealthStatus] = useState('good') // good, warning, danger
   
   const chatEndRef = useRef(null)
+
+  const suggestions = [
+    { label: "Check my accounts 🏦", prompt: "Give me a summary of all my account balances." },
+    { label: "Can I afford R500? 🍦", prompt: "Based on my budget and current balance, can I afford a R500 treat today?" },
+    { label: "Highest interest debt? 📉", prompt: "Which of my debts has the highest interest rate and how much is the balance?" },
+    { label: "Savings progress 💰", prompt: "How am I doing on my savings goals this month?" }
+  ]
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -24,22 +33,33 @@ export default function AICoach() {
     }
   }, [chatHistory, isOpen, isMinimized])
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!userInput.trim()) return
+  const handleSendMessage = async (text) => {
+    const messageToSend = typeof text === 'string' ? text : userInput
+    if (!messageToSend.trim()) return
 
-    const userMessage = { role: 'user', content: userInput }
+    const userMessage = { role: 'user', content: messageToSend }
     setChatHistory(prev => [...prev, userMessage])
     setUserInput('')
     setLoading(true)
 
     try {
       const response = await aiAPI.chat({ 
-        message: userInput,
+        message: messageToSend,
         history: chatHistory 
       })
 
-      const botMessage = { role: 'assistant', content: response.data.response }
+      const botContent = response.data.response
+      const botMessage = { role: 'assistant', content: botContent }
+      
+      // Dynamic Vibe logic: Update status based on keywords (simple heuristic)
+      if (botContent.toLowerCase().includes('danger') || botContent.toLowerCase().includes('over budget')) {
+        setHealthStatus('danger')
+      } else if (botContent.toLowerCase().includes('caution') || botContent.toLowerCase().includes('warning')) {
+        setHealthStatus('warning')
+      } else {
+        setHealthStatus('good')
+      }
+
       setChatHistory(prev => [...prev, botMessage])
     } catch (error) {
       console.error('AI Error:', error)
@@ -58,7 +78,7 @@ export default function AICoach() {
   if (!isOpen) {
     return (
       <button 
-        className="ai-coach-trigger" 
+        className={`ai-coach-trigger health-${healthStatus}`} 
         onClick={() => setIsOpen(true)}
         aria-label="Ask Pace AI Coach"
       >
@@ -69,15 +89,21 @@ export default function AICoach() {
   }
 
   return (
-    <div className={`ai-coach-panel ${isMinimized ? 'minimized' : ''}`}>
+    <div className={`ai-coach-panel ${isMinimized ? 'minimized' : ''} health-${healthStatus}`}>
       <div className="ai-coach-header">
         <div className="header-info">
-          <div className="bot-avatar">
-            <Bot size={20} />
+          <div className={`bot-avatar status-${healthStatus}`}>
+            {healthStatus === 'danger' ? <AlertCircle size={20} /> : 
+             healthStatus === 'warning' ? <TrendingDown size={20} /> : 
+             <Bot size={20} />}
           </div>
           <div>
             <h3>Pace AI Coach</h3>
-            <span className="status-online">Online</span>
+            <span className={`status-text status-${healthStatus}`}>
+              {healthStatus === 'danger' ? 'Financial Alert' : 
+               healthStatus === 'warning' ? 'Monitoring' : 
+               'Active'}
+            </span>
           </div>
         </div>
         <div className="header-actions">
@@ -94,14 +120,14 @@ export default function AICoach() {
         <>
           <div className="ai-coach-messages">
             {chatHistory.map((msg, idx) => (
-              <div key={idx} className={`message-bubble ${msg.role}`}>
+              <div key={idx} className={`message-bubble ${msg.role} fade-in`}>
                 <div className="bubble-content">
-                  {msg.content}
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
             ))}
             {loading && (
-              <div className="message-bubble assistant">
+              <div className="message-bubble assistant fade-in">
                 <div className="bubble-content typing">
                   <span className="dot"></span>
                   <span className="dot"></span>
@@ -112,7 +138,15 @@ export default function AICoach() {
             <div ref={chatEndRef} />
           </div>
 
-          <form className="ai-coach-input" onSubmit={handleSendMessage}>
+          <div className="suggestions-container">
+            {suggestions.map((s, i) => (
+              <button key={i} className="suggestion-chip" onClick={() => handleSendMessage(s.prompt)}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          <form className="ai-coach-input" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
             <input 
               type="text" 
               placeholder="Ask about your finances..." 
