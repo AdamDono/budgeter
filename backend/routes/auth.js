@@ -160,7 +160,12 @@ router.get('/me', authenticateToken, async (req, res, next) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('token')
+  const isProduction = process.env.NODE_ENV === 'production'
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
+  })
   res.json({ message: 'Logged out successfully' })
 })
 
