@@ -155,21 +155,21 @@ export default function LandingPage() {
                <ul className="ai-features">
                  <li>
                    <div className="ai-feat-icon">🎯</div>
-                   <div>
+                   <div className="ai-feat-text">
                      <h4>Proactive Directives</h4>
                      <p>Our AI doesn't just show charts; it gives instructions. "Pay this," "Save that," "Wait on this purchase."</p>
                    </div>
                  </li>
                  <li>
                    <div className="ai-feat-icon">🇿🇦</div>
-                   <div>
+                   <div className="ai-feat-text">
                      <h4>Local Market Intelligence</h4>
                      <p>Deep understanding of SA interest rates, tax laws (S11F!), and local banking behavior.</p>
                    </div>
                  </li>
                  <li>
                    <div className="ai-feat-icon">⚡</div>
-                   <div>
+                   <div className="ai-feat-text">
                      <h4>Real-Time Simulation</h4>
                      <p>Instantly see how a single R500 purchase affects your retirement at age 65.</p>
                    </div>
