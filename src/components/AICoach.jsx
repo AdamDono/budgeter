@@ -2,10 +2,11 @@ import { AlertCircle, Bot, MinusCircle, Send, Sparkles, TrendingDown, X } from '
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
+import { useAI } from '../contexts/AIContext'
 import { aiAPI } from '../lib/api'
 
 export default function AICoach() {
-  const [isOpen, setIsOpen] = useState(false)
+  const { isOpen, setIsOpen, initialPrompt, setInitialPrompt } = useAI()
   const [isMinimized, setIsMinimized] = useState(false)
   const [userInput, setUserInput] = useState('')
   const [chatHistory, setChatHistory] = useState([
@@ -32,6 +33,13 @@ export default function AICoach() {
       scrollToBottom()
     }
   }, [chatHistory, isOpen, isMinimized])
+
+  useEffect(() => {
+    if (isOpen && initialPrompt) {
+      handleSendMessage(initialPrompt)
+      setInitialPrompt(null)
+    }
+  }, [isOpen, initialPrompt])
 
   const handleSendMessage = async (text) => {
     const messageToSend = typeof text === 'string' ? text : userInput

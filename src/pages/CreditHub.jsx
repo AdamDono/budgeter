@@ -12,10 +12,12 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { useAI } from '../contexts/AIContext'
 import { creditAPI, debtsAPI } from '../lib/api'
 
 export default function CreditHub() {
   const queryClient = useQueryClient()
+  const { openCoach } = useAI()
   const [showUpdateModal, setShowUpdateModal] = useState(false)
   const [newScore, setNewScore] = useState('')
 
@@ -176,21 +178,34 @@ export default function CreditHub() {
               </div>
             ) : (
               <div className="insights-list">
-                {simulateInsights?.map((insight, i) => (
-                  <div key={i} className={`insight-item ${insight.type}`}>
-                    <div className="insight-icon">
-                      {insight.type === 'danger' ? <TrendingDown /> : <ShieldCheck />}
-                    </div>
-                    <div className="insight-text">
-                      <div className="insight-header">
-                        <h4>{insight.title}</h4>
-                        <span className="insight-impact">{insight.impact}</span>
+                {simulateInsights?.map((insight, i) => {
+                  const getColor = (type) => {
+                    if (type === 'danger') return '#EF4444'
+                    if (type === 'boost') return '#3B82F6'
+                    if (type === 'success') return '#10B981'
+                    return '#94A3B8'
+                  }
+                  
+                  return (
+                    <div 
+                      key={i} 
+                      className={`insight-item ${insight.type}`}
+                      onClick={() => openCoach(`I'm looking at my credit score insight: "${insight.title}". ${insight.desc} Can you give me more specific steps on how to execute this?`)}
+                    >
+                      <div className="insight-icon" style={{ backgroundColor: `${getColor(insight.type)}20`, color: getColor(insight.type) }}>
+                        {insight.type === 'danger' ? <TrendingDown size={18} /> : <ShieldCheck size={18} />}
                       </div>
-                      <p>{insight.desc}</p>
+                      <div className="insight-text">
+                        <div className="insight-header">
+                          <h4>{insight.title}</h4>
+                          <span className="insight-impact" style={{ color: getColor(insight.type) }}>{insight.impact}</span>
+                        </div>
+                        <p>{insight.desc}</p>
+                      </div>
+                      <ChevronRight className="insight-arrow" />
                     </div>
-                    <ChevronRight className="insight-arrow" />
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
@@ -247,7 +262,10 @@ export default function CreditHub() {
                 <span>Don't open too many new accounts at once</span>
              </div>
            </div>
-           <button className="btn ghost full-width">
+           <button 
+             className="btn ghost full-width" 
+             onClick={() => openCoach("I want some deep advice on mastering my credit score based on my current financial profile (debts, score, etc.). What are some long-term habits I should start 🇿🇦?")}
+           >
              View Deep Advice <ArrowRight size={16} />
            </button>
         </div>

@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
+import { AIProvider } from './contexts/AIContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Pages (Vite rebuild trigger: 2026-03-03)
@@ -57,7 +58,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
+        <AIProvider>
+          <Router>
           <div className="app">
             <Routes>
               {/* Public Routes */}
@@ -118,6 +120,7 @@ export default function App() {
             />
           </div>
         </Router>
+        </AIProvider>
       </AuthProvider>
     </QueryClientProvider>
   )
