@@ -1052,6 +1052,11 @@
     padding: 6rem 0 3rem;
   }
 
+  .hero-content {
+    margin-top: 5rem;
+    /* Increased top margin for mobile */
+  }
+
   .hero-title {
     font-size: 2rem;
   }
@@ -1094,10 +1099,18 @@
     font-size: 1rem;
   }
 
-  /* Make nav CTA button normal size on mobile */
+  /* Hide nav CTA button on mobile */
   .nav-cta {
-    padding: 0.5rem 1rem !important;
-    font-size: 0.875rem !important;
+    display: none !important;
+  }
+
+  /* Reposition and polish toggle for mobile */
+  .nav-links {
+    margin-left: auto;
+  }
+
+  .theme-toggle-btn {
+    margin-left: auto;
   }
 
   /* Center the hero CTA buttons */

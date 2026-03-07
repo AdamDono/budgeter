@@ -1,15 +1,15 @@
 import {
-    ArrowRight,
-    BarChart3,
-    CheckCircle,
-    ChevronLeft,
-    ChevronRight,
-    DollarSign,
-    Moon,
-    Quote,
-    Shield,
-    Sun,
-    Target
+  ArrowRight,
+  BarChart3,
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  DollarSign,
+  Moon,
+  Quote,
+  Shield,
+  Sun,
+  Target
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -151,7 +151,7 @@ export default function LandingPage() {
             <div className="ai-text">
                <div className="section-label">THE SECRET SAUCE</div>
                <h2>Meet the Coach that Never Sleeps</h2>
-               <p>Apps like 22seven show you where your money *went*. Pace shows you where it’s *going*.</p>
+               <p>Traditional finance apps show you where your money <em>went</em>. Pace shows you where it's <em>going</em>.</p>
                <ul className="ai-features">
                  <li>
                    <div className="ai-feat-icon">🎯</div>
