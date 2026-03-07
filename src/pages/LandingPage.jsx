@@ -189,7 +189,7 @@ export default function LandingPage() {
              </div>
              <div className="security-content">
                 <h2>Built Like a Fortress. Shared with No One.</h2>
-                <p>We believe your financial data is sacred. We built Pace with a "Privacy First" architecture specifically for the South African landscape.</p>
+                <p>We believe your financial data is sacred. We built Pace with a "Privacy First" architecture specifically for the financial landscape.</p>
                 <div className="security-grid">
                    <div className="sec-item">
                       <h4>Bank-Level SSL</h4>
