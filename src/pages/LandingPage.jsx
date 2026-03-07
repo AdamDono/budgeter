@@ -5,8 +5,10 @@ import {
     ChevronLeft,
     ChevronRight,
     DollarSign,
+    Moon,
     Quote,
     Shield,
+    Sun,
     Target
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -15,6 +17,11 @@ import '../styles/landing.css'
 
 export default function LandingPage() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+  const [theme, setTheme] = useState('dark')
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   const testimonials = [
     {
@@ -60,7 +67,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="landing-page">
+    <div className={`landing-page ${theme === 'light' ? 'light-mode' : ''}`}>
       {/* Navigation */}
       <nav className="landing-nav">
         <div className="container">
@@ -71,6 +78,13 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="nav-links">
+              <button 
+                onClick={toggleTheme} 
+                className="theme-toggle-btn"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
               <Link to="/register" className="btn primary nav-cta">Get Started Free</Link>
             </div>
           </div>
