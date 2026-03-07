@@ -1,15 +1,13 @@
 import {
     ArrowRight,
     BarChart3,
-    Calculator,
     CheckCircle,
     ChevronLeft,
     ChevronRight,
     DollarSign,
     Quote,
     Shield,
-    Target,
-    TrendingUp
+    Target
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -85,57 +83,114 @@ export default function LandingPage() {
           <div className="hero-content">
             <div className="hero-text">
               <h1 className="hero-title">
-                Take Control of Your <span className="gradient-text">Financial Future</span>
+                Master your <span>Rand.</span><br />
+                Retire your Debt.<br />
+                <span><span className="hero-accent">Experience</span> Financial <span className="hero-accent">Peace.</span></span>
               </h1>
               <p className="hero-subtitle">
-                The all-in-one platform to track spending, crush debt, and achieve your financial goals. 
-                Built for South Africans who want to build wealth.
+                Pace Finance is the AI-driven wealth-builder that turns every Rand into a mission. 
+                Beyond simple tracking, we provide the strategic intelligence you need to retire your debt and master your financial journey.
               </p>
               <div className="hero-cta">
-                <Link to="/register" className="btn primary large">
-                  Start Free Trial
+                <Link to="/register" className="btn primary large pulse-btn">
+                  Start Your Journey
                   <ArrowRight size={20} />
                 </Link>
-                <Link to="/login" className="btn secondary large">
+                <Link to="/login" className="btn glass large">
                   Sign In
                 </Link>
               </div>
-              <p className="hero-note"> No credit card required • Free forever plan available</p>
-            </div>
-            <div className="hero-image">
-              <div className="dashboard-preview">
-                <div className="preview-card">
-                  <div className="preview-header">
-                    <div className="preview-dot"></div>
-                    <div className="preview-dot"></div>
-                    <div className="preview-dot"></div>
-                  </div>
-                  <div className="preview-content">
-                    <div className="preview-stat">
-                      <TrendingUp className="stat-icon positive" />
-                      <div>
-                        <p className="stat-label">Net Income</p>
-                        <p className="stat-value positive">+R8,000</p>
-                      </div>
-                    </div>
-                    <div className="preview-stat">
-                      <Target className="stat-icon" />
-                      <div>
-                        <p className="stat-label">Savings Goal</p>
-                        <p className="stat-value">72% Complete</p>
-                      </div>
-                    </div>
-                    <div className="preview-stat">
-                      <DollarSign className="stat-icon negative" />
-                      <div>
-                        <p className="stat-label">Debt Payoff</p>
-                        <p className="stat-value">R15,000 left</p>
-                      </div>
-                    </div>
-                  </div>
+              <div className="trust-badges">
+                <div className="badge-item">
+                  <Shield size={16} className="text-emerald-400" />
+                  <span>No Bank Passwords Required</span>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Secret Sauce AI Section */}
+      <section className="ai-reveal-section">
+        <div className="container">
+          <div className="ai-grid">
+            <div className="ai-visual">
+               <div className="coach-mockup">
+                  <div className="chat-header">
+                    <div className="bot-status"></div>
+                    <span>Pace AI Coach</span>
+                  </div>
+                  <div className="chat-body">
+                    <div className="chat-msg assistant">
+                      <p>I analyzed your spending at Woolworths. You're R800 over your grocery budget. Want me to move R800 from your 'Fun Money' pot to cover it? 🇿🇦</p>
+                    </div>
+                    <div className="chat-msg user">
+                      <p>Yes, do it. Also, how is my debt snowball looking?</p>
+                    </div>
+                    <div className="chat-msg assistant">
+                      <p>Excellent. Snowball updated! You're now on track to be 100% debt-free by **December 2026**. That's 4 months faster than last week! 🚀</p>
+                    </div>
+                  </div>
+               </div>
+            </div>
+            <div className="ai-text">
+               <div className="section-label">THE SECRET SAUCE</div>
+               <h2>Meet the Coach that Never Sleeps</h2>
+               <p>Apps like 22seven show you where your money *went*. Pace shows you where it’s *going*.</p>
+               <ul className="ai-features">
+                 <li>
+                   <div className="ai-feat-icon">🎯</div>
+                   <div>
+                     <h4>Proactive Directives</h4>
+                     <p>Our AI doesn't just show charts; it gives instructions. "Pay this," "Save that," "Wait on this purchase."</p>
+                   </div>
+                 </li>
+                 <li>
+                   <div className="ai-feat-icon">🇿🇦</div>
+                   <div>
+                     <h4>Local Market Intelligence</h4>
+                     <p>Deep understanding of SA interest rates, tax laws (S11F!), and local banking behavior.</p>
+                   </div>
+                 </li>
+                 <li>
+                   <div className="ai-feat-icon">⚡</div>
+                   <div>
+                     <h4>Real-Time Simulation</h4>
+                     <p>Instantly see how a single R500 purchase affects your retirement at age 65.</p>
+                   </div>
+                 </li>
+               </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Security Section */}
+      <section className="security-section">
+        <div className="container">
+          <div className="security-container glass">
+             <div className="security-icon-main">
+                <Shield size={64} className="text-emerald-400" />
+             </div>
+             <div className="security-content">
+                <h2>Built Like a Fortress. Shared with No One.</h2>
+                <p>We believe your financial data is sacred. We built Pace with a "Privacy First" architecture specifically for the South African landscape.</p>
+                <div className="security-grid">
+                   <div className="sec-item">
+                      <h4>Bank-Level SSL</h4>
+                      <p>Military-grade 256-bit encryption protecting every single byte of your data.</p>
+                   </div>
+                   <div className="sec-item">
+                      <h4>Zero Password Storage</h4>
+                      <p>We use secure API tokens. We never see or store your bank login credentials.</p>
+                   </div>
+                   <div className="sec-item">
+                      <h4>No Data Selling</h4>
+                      <p>Your data is not a product. We never sell your info to insurance companies or lenders.</p>
+                   </div>
+                </div>
+             </div>
           </div>
         </div>
       </section>
@@ -148,47 +203,26 @@ export default function LandingPage() {
             <p>Powerful features designed for real financial transformation</p>
           </div>
           <div className="features-grid">
-            <div className="feature-card">
+            <div className="feature-card glass">
               <div className="feature-icon">
                 <BarChart3 size={32} />
               </div>
               <h3>Smart Budget Tracking</h3>
               <p>Set budgets, track spending in real-time, and get alerts before you overspend. See exactly where your money goes.</p>
             </div>
-            <div className="feature-card">
+            <div className="feature-card glass">
               <div className="feature-icon">
                 <DollarSign size={32} />
               </div>
               <h3>Debt Payoff Strategies</h3>
               <p>Use proven Snowball or Avalanche methods to crush debt faster. Calculate payoff timelines and save on interest.</p>
             </div>
-            <div className="feature-card">
+            <div className="feature-card glass">
               <div className="feature-icon">
                 <Target size={32} />
               </div>
               <h3>Goal Achievement</h3>
               <p>Set financial goals and track progress automatically. From emergency funds to dream vacations, achieve them all.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Calculator size={32} />
-              </div>
-              <h3>Tax Optimization</h3>
-              <p>Track deductible expenses and maximize tax savings. Built for South African tax laws and regulations.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <TrendingUp size={32} />
-              </div>
-              <h3>Spending Insights</h3>
-              <p>AI-powered analytics reveal spending patterns and forecast future expenses. Make smarter financial decisions.</p>
-            </div>
-            <div className="feature-card">
-              <div className="feature-icon">
-                <Shield size={32} />
-              </div>
-              <h3>Bank-Level Security</h3>
-              <p>Your data is encrypted and secure. We never sell your information. Your financial privacy is guaranteed.</p>
             </div>
           </div>
         </div>
