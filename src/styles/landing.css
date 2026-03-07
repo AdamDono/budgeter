@@ -122,13 +122,13 @@
 }
 
 .logo-image-metallic {
-  height: 40px;
+  height: 46px;
   width: auto;
   display: block;
 }
 
 .footer-logo-image {
-  height: 44px;
+  height: 52px;
   width: auto;
   display: block;
 }
@@ -1118,6 +1118,7 @@
     /* Only stack vertically on very small phones */
   }
 }
+
 /* ============================================
    LIGHT MODE OVERRIDES
    ============================================ */
