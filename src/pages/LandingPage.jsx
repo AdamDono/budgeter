@@ -5,10 +5,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Crosshair,
+  Facebook,
+  Linkedin,
   Moon,
   Quote,
   Shield,
   Sun,
+  Twitter,
+  Video,
   Wallet
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -409,7 +413,6 @@ export default function LandingPage() {
         <div className="container">
           <div className="cta-content">
             <h2>Ready to Transform Your Finances?</h2>
-            <p>Join thousands of people taking control of their money with Pace</p>
             <Link to="/register" className="btn primary large">
               Start Your Free Trial
               <ArrowRight size={20} />
@@ -423,33 +426,42 @@ export default function LandingPage() {
       <footer className="footer">
         <div className="container">
           <div className="footer-content">
-            <div className="footer-section">
-            <div className="footer-logo">
-              <img src="/logo_pace_finance.svg" alt="Pace Finance" className="footer-logo-image" />
+            <div className="footer-brand">
+              <div className="footer-logo">
+                <img src="/logo_pace_finance.svg" alt="Pace Finance" className="footer-logo-image" />
+              </div>
+              <p className="footer-tagline">Your AI-powered financial strategist.<br/>Built for the ambitious.</p>
+              <div className="footer-social">
+                <a href="#" className="social-link" aria-label="X (Twitter)"><Twitter size={18} /></a>
+                <a href="#" className="social-link" aria-label="LinkedIn"><Linkedin size={18} /></a>
+                <a href="#" className="social-link" aria-label="Facebook"><Facebook size={18} /></a>
+                <a href="#" className="social-link" aria-label="TikTok"><Video size={18} /></a>
+              </div>
             </div>
-            <p>Smart budgeting and financial management for South Africans.</p>
-            </div>
             <div className="footer-section">
-              <h4>Product</h4>
+              <h4>Platform</h4>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
-              <Link to="/register">Sign Up</Link>
+              <Link to="/register">Get Started</Link>
+              <Link to="/login">Sign In</Link>
             </div>
             <div className="footer-section">
               <h4>Company</h4>
-              <a href="#about">About</a>
-              <a href="#contact">Contact</a>
-              <a href="#privacy">Privacy</a>
+              <a href="#about">About Pace</a>
+              <a href="#contact">Contact Us</a>
+              <a href="#privacy">Privacy Policy</a>
+              <a href="#terms">Terms of Use</a>
             </div>
             <div className="footer-section">
-              <h4>Support</h4>
-              <a href="#help">Help Center</a>
+              <h4>Tools</h4>
+              <a href="#debt">Debt Calculator</a>
+              <a href="#credit">Credit Simulator</a>
               <a href="#faq">FAQ</a>
-              <Link to="/login">Login</Link>
+              <Link to="/login">Help Center</Link>
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; 2025 Pace Finance. All rights reserved.</p>
+            <p>© 2026 Pace Finance. All rights reserved.</p>
           </div>
         </div>
       </footer>
