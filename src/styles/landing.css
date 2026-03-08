@@ -840,6 +840,7 @@
 
 .testimonial-card {
   max-width: 700px;
+  width: 100%;
   padding: 3rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -850,6 +851,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  flex: 1;
 }
 
 .quote-icon {
@@ -1158,6 +1160,42 @@
     width: 100%;
     justify-content: center;
     text-align: center;
+  }
+
+  /* Testimonials mobile fix */
+  .testimonial-carousel {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .testimonial-card {
+    padding: 1.75rem 1.25rem;
+    min-height: auto;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .testimonial-quote {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  .quote-icon {
+    display: none;
+    /* hide decorative quote icon on mobile to save space */
+  }
+
+  .carousel-btn {
+    display: none;
+    /* hide side arrows on mobile, use dots instead */
+  }
+
+  .author-image {
+    font-size: 2rem;
+    width: 44px;
+    height: 44px;
   }
 }
 

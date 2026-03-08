@@ -366,8 +366,8 @@ export default function LandingPage() {
       <section className="testimonials">
         <div className="container">
           <div className="section-header">
-            <h2>Loved by Thousands of South Africans</h2>
-            <p>See what our users have to say about their financial transformation</p>
+            <h2>Loved by People Who Take Money Seriously</h2>
+            <p>Real users. Real results. Real financial freedom.</p>
           </div>
           
           <div className="testimonial-carousel">
@@ -409,7 +409,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="cta-content">
             <h2>Ready to Transform Your Finances?</h2>
-            <p>Join thousands of South Africans taking control of their money</p>
+            <p>Join thousands of people taking control of their money with Pace</p>
             <Link to="/register" className="btn primary large">
               Start Your Free Trial
               <ArrowRight size={20} />
