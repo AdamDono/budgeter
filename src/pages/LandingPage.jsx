@@ -1,15 +1,15 @@
 import {
+  Activity,
   ArrowRight,
-  BarChart3,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
-  DollarSign,
+  Crosshair,
   Moon,
   Quote,
   Shield,
   Sun,
-  Target
+  Wallet
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -219,24 +219,24 @@ export default function LandingPage() {
           <div className="features-grid">
             <div className="feature-card glass">
               <div className="feature-icon">
-                <BarChart3 size={32} />
+                <Crosshair size={32} />
               </div>
-              <h3>Smart Budget Tracking</h3>
-              <p>Set budgets, track spending in real-time, and get alerts before you overspend. See exactly where your money goes.</p>
+              <h3>Tactical Debt Eradication</h3>
+              <p>Deploy Snowball or Avalanche methods to algorithmically crush your loans. We calculate your exact timeline and the interest you'll save.</p>
             </div>
             <div className="feature-card glass">
               <div className="feature-icon">
-                <DollarSign size={32} />
+                <Activity size={32} />
               </div>
-              <h3>Debt Payoff Strategies</h3>
-              <p>Use proven Snowball or Avalanche methods to crush debt faster. Calculate payoff timelines and save on interest.</p>
+              <h3>Actionable Credit Hub</h3>
+              <p>Don't just watch your score—manipulate it. Our advanced simulator shows you exactly how paying down an account impacts your credit profile.</p>
             </div>
             <div className="feature-card glass">
               <div className="feature-icon">
-                <Target size={32} />
+                <Wallet size={32} />
               </div>
-              <h3>Goal Achievement</h3>
-              <p>Set financial goals and track progress automatically. From emergency funds to dream vacations, achieve them all.</p>
+              <h3>Autonomous Cashflow</h3>
+              <p>Allocate every Rand with precision. Set up dynamic "pots" that intelligently fund your long-term goals and protect your emergency reserves.</p>
             </div>
           </div>
         </div>
@@ -252,18 +252,18 @@ export default function LandingPage() {
           <div className="steps-grid">
             <div className="step">
               <div className="step-number">1</div>
-              <h3>Create Your Account</h3>
-              <p>Sign up free in 30 seconds. No credit card required.</p>
+              <h3>Establish Your Baseline</h3>
+              <p>Input your income, fixed expenses, and debt. Our engine calculates your true disposable Rand instantly.</p>
             </div>
             <div className="step">
               <div className="step-number">2</div>
-              <h3>Add Your Finances</h3>
-              <p>Input your income, expenses, and financial goals.</p>
+              <h3>Deploy the Strategy</h3>
+              <p>Activate your debt snowball or avalanche. Let Pace blueprint your fastest, mathematically proven path to freedom.</p>
             </div>
             <div className="step">
               <div className="step-number">3</div>
-              <h3>Watch Your Wealth Grow</h3>
-              <p>Get insights, track progress, and achieve your goals.</p>
+              <h3>Engage the AI</h3>
+              <p>Consult your personal 24/7 financial strategist for insights, course corrections, and growth tactics.</p>
             </div>
           </div>
         </div>
@@ -278,18 +278,17 @@ export default function LandingPage() {
           </div>
           <div className="pricing-grid">
             <div className="pricing-card">
-              <h3>Free</h3>
+              <h3>Starter</h3>
               <div className="price">
                 <span className="currency">R</span>
                 <span className="amount">0</span>
                 <span className="period">/month</span>
               </div>
               <ul className="features-list">
-                <li><CheckCircle size={16} /> Basic budget tracking</li>
-                <li><CheckCircle size={16} /> Up to 3 categories</li>
-                <li><CheckCircle size={16} /> 1 financial goal</li>
-                <li><CheckCircle size={16} /> Manual transaction entry</li>
-                <li><CheckCircle size={16} /> Basic reports</li>
+                <li><CheckCircle size={16} /> Standard Dashboard</li>
+                <li><CheckCircle size={16} /> 1 Active Debt Plan</li>
+                <li><CheckCircle size={16} /> Limited AI Queries (10/mo)</li>
+                <li><CheckCircle size={16} /> Basic Credit Monitoring</li>
               </ul>
               <Link to="/register" className="btn secondary full-width">
                 Get Started
@@ -298,20 +297,19 @@ export default function LandingPage() {
 
             <div className="pricing-card featured">
               <div className="badge">Most Popular</div>
-              <h3>Pro</h3>
+              <h3>Pace Pro</h3>
               <div className="price">
                 <span className="currency">R</span>
-                <span className="amount">20</span>
+                <span className="amount">49</span>
                 <span className="period">/month</span>
               </div>
               <ul className="features-list">
-                <li><CheckCircle size={16} /> Everything in Free</li>
-                <li><CheckCircle size={16} /> Unlimited categories</li>
-                <li><CheckCircle size={16} /> Unlimited goals</li>
-                <li><CheckCircle size={16} /> Debt payoff calculator</li>
-                <li><CheckCircle size={16} /> Tax deduction tracking</li>
-                <li><CheckCircle size={16} /> Advanced analytics</li>
-                <li><CheckCircle size={16} /> Priority support</li>
+                <li><CheckCircle size={16} /> Everything in Starter</li>
+                <li><CheckCircle size={16} /> Unlimited AI Consultations</li>
+                <li><CheckCircle size={16} /> Advanced Credit Simulator</li>
+                <li><CheckCircle size={16} /> Auto-Pilot Debt Eradication</li>
+                <li><CheckCircle size={16} /> Tax Deduction Discovery (S11F)</li>
+                <li><CheckCircle size={16} /> Priority Support</li>
               </ul>
               <Link to="/register" className="btn primary full-width">
                 Start Free Trial
@@ -319,19 +317,18 @@ export default function LandingPage() {
             </div>
 
             <div className="pricing-card">
-              <h3>Family</h3>
+              <h3>Wealth</h3>
               <div className="price">
                 <span className="currency">R</span>
-                <span className="amount">70</span>
+                <span className="amount">149</span>
                 <span className="period">/month</span>
               </div>
               <ul className="features-list">
                 <li><CheckCircle size={16} /> Everything in Pro</li>
-                <li><CheckCircle size={16} /> Up to 5 family members</li>
-                <li><CheckCircle size={16} /> Shared budgets & goals</li>
-                <li><CheckCircle size={16} /> Parental controls</li>
-                <li><CheckCircle size={16} /> Investment tracking</li>
-                <li><CheckCircle size={16} /> Financial advisor consultation</li>
+                <li><CheckCircle size={16} /> Live Human Advisor Access</li>
+                <li><CheckCircle size={16} /> Joint/Family Accounts</li>
+                <li><CheckCircle size={16} /> Investment & Market Tracking</li>
+                <li><CheckCircle size={16} /> Custom Legal & Tax Prep</li>
               </ul>
               <Link to="/register" className="btn secondary full-width">
                 Get Started

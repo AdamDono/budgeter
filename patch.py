@@ -1,14 +1,10 @@
-with open('src/styles/landing.css', 'r') as f:
-    lines = f.readlines()
+import re
 
-new_lines = []
-for i, line in enumerate(lines):
-    if line.startswith('  ') and not line.startswith('    ') and line.endswith('{\n') and i > 1086 and i < 1160:
-        new_lines.append(line)
-    elif line.startswith('      ') and i > 1086 and i < 1160:
-         new_lines.append('    ' + line.strip() + '\n')
-    else:
-        new_lines.append(line)
+with open('src/pages/LandingPage.jsx', 'r') as f:
+    text = f.read()
 
-with open('src/styles/landing.css', 'w') as f:
-    f.writelines(new_lines)
+# Fix the duplicate 'for the' if it happened
+text = text.replace("specifically for the the financial landscape.", "specifically for the financial landscape.")
+
+with open('src/pages/LandingPage.jsx', 'w') as f:
+    f.write(text)
