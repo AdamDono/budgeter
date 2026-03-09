@@ -684,13 +684,14 @@ body {
   flex-direction: column;
   justify-content: center;
   padding: 40px;
-  max-width: 400px;
-  margin: 0 auto
+  max-width: 440px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .auth-header {
   text-align: center;
-  margin-bottom: 32px
+  margin-bottom: 24px;
 }
 
 .auth-header h1 {
@@ -735,7 +736,79 @@ body {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: var(--accent)
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.forgot-password-link {
+  font-size: 13px;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgot-password-link:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border);
+}
+
+.auth-divider span {
+  padding: 0 16px;
+}
+
+.social-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-social:hover {
+  background: var(--bg);
+  border-color: #3b82f6;
+}
+
+.btn-social svg {
+  width: 20px;
+  height: 20px;
 }
 
 .form-group input.error {
@@ -829,13 +902,24 @@ body {
 .auth-bg-content {
   text-align: center;
   color: #1a1a1a;
-  max-width: 400px
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-bg-logo {
+  margin-bottom: 40px;
+}
+
+.logo-image-bg {
+  height: 64px;
 }
 
 .auth-bg-content h2 {
   margin: 0 0 16px;
-  font-size: 36px;
-  animation: bounce 2s ease-in-out infinite
+  font-size: 32px;
+  line-height: 1.2;
 }
 
 .auth-bg-content p {
