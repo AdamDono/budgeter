@@ -1,4 +1,4 @@
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { Eye, EyeOff, LogIn, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,6 +11,11 @@ export default function Login() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [theme, setTheme] = useState('dark')
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -33,7 +38,11 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
+    <div className={`auth-page ${theme}-mode`}>
+      <button className="theme-toggle-btn auth-theme-toggle" onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+
       <div className="auth-container">
         <div className="auth-header">
           <h1>Welcome Back</h1>

@@ -1,4 +1,4 @@
-import { Eye, EyeOff, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, Moon, Sun, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -19,6 +19,11 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
+  const [theme, setTheme] = useState('dark')
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
+  }
 
   const validateForm = () => {
     const newErrors = {}
@@ -90,7 +95,11 @@ export default function Register() {
   }
 
   return (
-    <div className="auth-page">
+    <div className={`auth-page ${theme}-mode`}>
+      <button className="theme-toggle-btn auth-theme-toggle" onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+
       <div className="auth-container">
         <div className="auth-header">
           <h1>Create Account</h1>
