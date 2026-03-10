@@ -10,12 +10,14 @@ import Bills from './pages/Bills'
 import CreditHub from './pages/CreditHub'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
+import ForgotPassword from './pages/ForgotPassword'
 import Goals from './pages/Goals'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Recurring from './pages/Recurring'
 import Register from './pages/Register'
+import ResetPassword from './pages/ResetPassword'
 import Savings from './pages/Savings'
 import Settings from './pages/Settings'
 import Tax from './pages/Tax'
@@ -72,6 +74,16 @@ export default function App() {
               <Route path="/register" element={
                 <PublicRoute>
                   <Register />
+                </PublicRoute>
+              } />
+              <Route path="/forgot-password" element={
+                <PublicRoute>
+                  <ForgotPassword />
+                </PublicRoute>
+              } />
+              <Route path="/reset-password/:token" element={
+                <PublicRoute>
+                  <ResetPassword />
                 </PublicRoute>
               } />
               

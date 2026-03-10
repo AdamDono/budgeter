@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import express from 'express'
 import Joi from 'joi'
 import { pool } from '../database/connection.js'
@@ -167,6 +168,71 @@ router.post('/logout', (req, res) => {
     sameSite: isProduction ? 'none' : 'lax',
   })
   res.json({ message: 'Logged out successfully' })
+})
+
+// Forgot Password - Send Token
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ error: 'Email is required' })
+
+    const userResult = await pool.query('SELECT id FROM users WHERE email = $1', [email])
+    if (userResult.rows.length === 0) {
+      // Don't reveal if user exists for security, but we'll return success anyway
+      return res.json({ message: 'If that email exists in our system, a reset link has been sent!' })
+    }
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiry = new Date(Date.now() + 3600000) // 1 hour
+
+    await pool.query(
+      'UPDATE users SET reset_password_token = $1, reset_password_expiry = $2 WHERE id = $3',
+      [token, expiry, userResult.rows[0].id]
+    )
+
+    // LOCAL DEV: Log the reset link since we don't have a mailer yet
+    console.log('\n----------------------------------------')
+    console.log('🔗 PASSWORD RESET LINK (LOCAL DEV ONLY):')
+    console.log(`http://localhost:5173/reset-password/${token}`)
+    console.log('----------------------------------------\n')
+
+    res.json({ message: 'If that email exists in our system, a reset link has been sent!' })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Reset Password - Verify and Update
+router.post('/reset-password/:token', async (req, res, next) => {
+  try {
+    const { token } = req.params
+    const { password } = req.body
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long' })
+    }
+
+    const result = await pool.query(
+      'SELECT id FROM users WHERE reset_password_token = $1 AND reset_password_expiry > NOW()',
+      [token]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' })
+    }
+
+    const userId = result.rows[0].id
+    const passwordHash = await bcrypt.hash(password, 12)
+
+    await pool.query(
+      'UPDATE users SET password_hash = $1, reset_password_token = NULL, reset_password_expiry = NULL WHERE id = $2',
+      [passwordHash, userId]
+    )
+
+    res.json({ message: 'Password has been reset successfully! You can now log in.' })
+  } catch (error) {
+    next(error)
+  }
 })
 
 export default router

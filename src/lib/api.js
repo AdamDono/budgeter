@@ -17,6 +17,8 @@ export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/me'),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (token, data) => api.post(`/auth/reset-password/${token}`, data),
 }
 
 // Transactions API
