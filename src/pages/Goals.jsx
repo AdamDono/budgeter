@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Plus, Trash2, TrendingUp } from 'lucide-react'
+import { Calendar, Plus, Trash2, TrendingUp, Target, X } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -14,44 +14,28 @@ export default function Goals() {
   
   const queryClient = useQueryClient()
 
-  // Queries
   const { data: goalsData, isLoading, error: goalsError } = useQuery({
     queryKey: ['goals'],
-    queryFn: async () => {
-      try {
-        const response = await goalsAPI.getAll()
-        console.log('✅ Goals API Response:', response)
-        console.log('✅ Goals Data:', response.data)
-        return response.data
-      } catch (err) {
-        console.error('❌ Goals API Error:', err)
-        throw err
-      }
-    },
+    queryFn: async () => (await goalsAPI.getAll()).data,
   })
 
-  // Mutations
   const createMutation = useMutation({
     mutationFn: goalsAPI.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
       setShowAddForm(false)
-      toast.success('Goal created successfully!')
+      toast.success('Goal established successfully!')
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to create goal')
-    }
+    onError: (error) => toast.error(error.response?.data?.error || 'Failed to create goal')
   })
 
   const deleteMutation = useMutation({
     mutationFn: goalsAPI.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
-      toast.success('Goal deleted successfully!')
+      toast.success('Goal removed.')
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to delete goal')
-    }
+    onError: (error) => toast.error(error.response?.data?.error || 'Failed to delete goal')
   })
 
   const contributeMutation = useMutation({
@@ -60,68 +44,35 @@ export default function Goals() {
       queryClient.invalidateQueries({ queryKey: ['goals'] })
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       setShowContributeModal(null)
-      toast.success('Contribution added successfully!')
+      toast.success('Contribution processed.')
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.error || 'Failed to add contribution')
-    }
+    onError: (error) => toast.error(error.response?.data?.error || 'Failed to add contribution')
   })
 
-  const handleCreateGoal = (formData) => {
-    createMutation.mutate(formData)
-  }
-
-  const handleDeleteGoal = (id) => {
-    setDeleteConfirm({ show: true, id })
-  }
-
-  const confirmDelete = () => {
-    if (deleteConfirm.id) {
-      deleteMutation.mutate(deleteConfirm.id)
-    }
-  }
-
-  const handleContribute = (goalId, data) => {
-    contributeMutation.mutate({ goalId, data })
-  }
+  const handleCreateGoal = (formData) => createMutation.mutate(formData)
+  const handleDeleteGoal = (id) => setDeleteConfirm({ show: true, id })
+  const confirmDelete = () => deleteConfirm.id && deleteMutation.mutate(deleteConfirm.id)
+  const handleContribute = (goalId, data) => contributeMutation.mutate({ goalId, data })
 
   const goals = goalsData?.goals || []
 
-  if (isLoading) {
-    return <LoadingSpinner text="Loading goals..." />
-  }
-
-  if (goalsError) {
-    console.error('Goals Error:', goalsError)
-    return (
-      <div className="goals-page">
-        <div style={{ color: 'red', padding: '20px' }}>
-          <h2>Error Loading Goals</h2>
-          <p>{goalsError.message}</p>
-          <pre>{JSON.stringify(goalsError, null, 2)}</pre>
-        </div>
-      </div>
-    )
-  }
+  if (isLoading) return <LoadingSpinner text="Synchronizing goals..." />
 
   return (
-    <div className="goals-page">
-      <div className="page-header">
-        <div>
+    <div className="goals-page-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
           <h1>Financial Goals</h1>
-          <p>Track your savings and financial milestones</p>
+          <p className="text-muted">Track your savings and long-term targets</p>
         </div>
-        <button 
-          className="btn primary"
-          onClick={() => setShowAddForm(true)}
-        >
-          <Plus size={16} />
-          Add Goal
+        <button className="btn primary" onClick={() => setShowAddForm(true)}>
+          <Plus size={18} /> New Goal
         </button>
-      </div>
+      </header>
 
-      {/* Goals Grid */}
-      <div className="goals-grid">
+      <div className="goals-glass-grid">
         {goals.length > 0 ? (
           goals.map(goal => (
             <GoalCard
@@ -132,30 +83,19 @@ export default function Goals() {
             />
           ))
         ) : (
-          <div className="empty-state-improved">
-            <div className="empty-icon">🎯</div>
-            <h3>No Goals Set Yet</h3>
-            <p>Set your first financial goal and start saving with purpose!</p>
-            <div className="empty-tips">
-              <p><strong>💡 Suggested Goals:</strong></p>
-              <ul>
-                <li>Emergency Fund (3-6 months expenses)</li>
-                <li>Vacation or Travel Fund</li>
-                <li>Down Payment for Home/Car</li>
-                <li>Retirement Savings</li>
-              </ul>
+          <div className="empty-state glass-panel" style={{ gridColumn: '1 / -1', padding: '5rem' }}>
+            <div style={{ background: 'rgba(79, 140, 255, 0.1)', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2rem' }}>
+              <Target size={40} className="text-accent" />
             </div>
-            <button 
-              className="btn primary"
-              onClick={() => setShowAddForm(true)}
-            >
-              Create Your First Goal
+            <h3>No Goals Set Yet</h3>
+            <p className="text-muted" style={{ maxWidth: '400px', margin: '0 auto 2rem' }}>Define your first financial objective and start building towards it with precision.</p>
+            <button className="btn primary" onClick={() => setShowAddForm(true)}>
+              Initialize First Goal
             </button>
           </div>
         )}
       </div>
 
-      {/* Add Goal Modal */}
       {showAddForm && (
         <GoalForm
           onSubmit={handleCreateGoal}
@@ -164,7 +104,6 @@ export default function Goals() {
         />
       )}
 
-      {/* Contribute Modal */}
       {showContributeModal && (
         <ContributeModal
           goal={showContributeModal}
@@ -174,13 +113,12 @@ export default function Goals() {
         />
       )}
 
-      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, id: null })}
         onConfirm={confirmDelete}
-        title="Delete Goal"
-        message="Are you sure you want to delete this goal? All transaction history linked to this goal will be preserved but unlinked."
+        title="Delete Goal?"
+        message="Are you sure you want to remove this goal? History will be preserved but the target tracking will end."
         confirmText="Delete"
         type="danger"
       />
@@ -188,7 +126,6 @@ export default function Goals() {
   )
 }
 
-// Goal Card Component
 function GoalCard({ goal, onDelete, onContribute }) {
   const progressPercentage = Math.min(100, goal.progress_percentage || 0)
   const isAchieved = goal.is_achieved || progressPercentage >= 100
@@ -199,82 +136,79 @@ function GoalCard({ goal, onDelete, onContribute }) {
     : null
 
   return (
-    <div className={`goal-card ${isAchieved ? 'achieved' : ''}`}>
-      <div className="goal-header">
-        <div className="goal-title">
+    <div className={`goal-glass-card ${isAchieved ? 'achieved' : ''}`}>
+      <div className="goal-card-header">
+        <div>
           <h3>{goal.name}</h3>
-          {goal.description && <p className="goal-description">{goal.description}</p>}
+          <p>{goal.description || 'General Target'}</p>
         </div>
-        <div className="goal-actions">
-          <button 
-            className="btn ghost small"
-            onClick={() => onDelete(goal.id)}
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
+        <button className="tx-action-btn" onClick={() => onDelete(goal.id)}>
+          <Trash2 size={16} />
+        </button>
       </div>
 
-      <div className="goal-progress">
-        <div className="progress-info">
-          <span className="current-amount">{formatCurrency(goal.current_amount)}</span>
-          <span className="target-amount">of {formatCurrency(goal.target_amount)}</span>
+      <div className="goal-progress-section">
+        <div className="goal-progress-labels">
+          <div className="goal-progress-current">
+            <span className="goal-current-val">{formatCurrency(goal.current_amount)}</span>
+            <span className="goal-target-val">Target: {formatCurrency(goal.target_amount)}</span>
+          </div>
+          {isAchieved ? (
+            <div className="achievement-status">🎉 Goal Achieved!</div>
+          ) : (
+            <div className="goal-percentage-pill">{progressPercentage.toFixed(1)}%</div>
+          )}
         </div>
-        <div className="progress-bar">
+        
+        <div className="premium-progress-container">
           <div 
-            className="progress-fill"
+            className={`premium-progress-fill ${isAchieved ? 'achieved' : ''}`}
             style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        <div className="progress-percentage">
-          {progressPercentage.toFixed(1)}% Complete
+          />
         </div>
       </div>
 
-      <div className="goal-details">
+      <div className="goal-intel-grid">
         {goal.target_date && (
-          <div className="goal-detail">
-            <Calendar size={16} />
-            <span>
-              {daysRemaining > 0 
-                ? `${daysRemaining} days remaining`
-                : daysRemaining === 0
-                ? 'Due today'
-                : `${Math.abs(daysRemaining)} days overdue`
-              }
-            </span>
+          <div className="intel-block">
+            <div className="intel-icon"><Calendar size={16} /></div>
+            <div className="intel-content">
+              <span className="intel-label">Timeline</span>
+              <span className="intel-value">
+                {daysRemaining > 0 
+                  ? `${daysRemaining} Days Left`
+                  : daysRemaining === 0 ? 'Due Today'
+                  : `${Math.abs(daysRemaining)} Overdue`
+                }
+              </span>
+            </div>
           </div>
         )}
         
         {!isAchieved && (
-          <div className="goal-detail">
-            <TrendingUp size={16} />
-            <span>{formatCurrency(remaining)} remaining</span>
-          </div>
-        )}
-
-        {isAchieved && (
-          <div className="achievement-badge">
-            🎉 Goal Achieved!
+          <div className="intel-block">
+            <div className="intel-icon"><TrendingUp size={16} /></div>
+            <div className="intel-content">
+              <span className="intel-label">To Go</span>
+              <span className="intel-value">{formatCurrency(remaining)}</span>
+            </div>
           </div>
         )}
       </div>
 
       {!isAchieved && (
-        <div className="goal-actions-footer">
-          <button 
-            className="btn primary small"
-            onClick={onContribute}
-          >
-            Add Contribution
-          </button>
-        </div>
+        <button 
+          className="btn primary" 
+          style={{ width: 'fit-content', alignSelf: 'center', marginTop: 'auto' }} 
+          onClick={onContribute}
+        >
+          Increase Contribution
+        </button>
       )}
     </div>
   )
 }
 
-// Goal Form Component
 function GoalForm({ onSubmit, onClose, loading }) {
   const [formData, setFormData] = useState({
     name: '',
@@ -286,97 +220,84 @@ function GoalForm({ onSubmit, onClose, loading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    
-    const submitData = {
+    onSubmit({
       ...formData,
       targetAmount: parseFloat(formData.targetAmount),
       targetDate: formData.targetDate || null
-    }
-    
-    onSubmit(submitData)
-  }
-
-  const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
+    })
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Create New Goal</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+      <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.5rem', color: 'white' }}>New Goal</h2>
+            <p className="text-muted">Define a new financial objective</p>
+          </div>
+          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="goal-form">
-          <div className="form-group">
-            <label>Goal Name</label>
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Title</label>
             <input
               type="text"
               name="name"
               value={formData.name}
-              onChange={handleChange}
-              placeholder="e.g., Emergency Fund, New Car, Vacation"
+              onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+              className="premium-input"
+              placeholder="e.g. Dream Car, Home Deposit"
               required
             />
           </div>
 
-          <div className="form-group">
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
             <label>Description (Optional)</label>
             <textarea
               name="description"
               value={formData.description}
-              onChange={handleChange}
-              placeholder="What is this goal for?"
-              rows="3"
+              onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))}
+              className="premium-input"
+              placeholder="Context for this target..."
+              rows="2"
+              style={{ resize: 'none' }}
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label>Target Amount (ZAR)</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
+              <label>Target (ZAR)</label>
               <input
                 type="number"
                 name="targetAmount"
                 value={formData.targetAmount}
-                onChange={handleChange}
+                onChange={(e) => setFormData(p => ({ ...p, targetAmount: e.target.value }))}
+                className="premium-input"
                 step="0.01"
-                min="0"
                 placeholder="0.00"
                 required
               />
             </div>
-
-            <div className="form-group">
-              <label>Target Date (Optional)</label>
+            <div className="premium-form-group">
+              <label>Deadline</label>
               <input
                 type="date"
                 name="targetDate"
                 value={formData.targetDate}
-                onChange={handleChange}
+                onChange={(e) => setFormData(p => ({ ...p, targetDate: e.target.value }))}
+                className="premium-input"
                 min={new Date().toISOString().split('T')[0]}
               />
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Priority</label>
-            <select name="priority" value={formData.priority} onChange={handleChange}>
-              <option value={1}>High Priority</option>
-              <option value={2}>Medium Priority</option>
-              <option value={3}>Low Priority</option>
-            </select>
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="btn ghost" onClick={onClose}>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button type="button" className="btn danger" style={{ flex: 1 }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Goal'}
+            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading}>
+              {loading ? 'Creating...' : 'Initialize Goal'}
             </button>
           </div>
         </form>
@@ -385,65 +306,52 @@ function GoalForm({ onSubmit, onClose, loading }) {
   )
 }
 
-// Contribute Modal Component
 function ContributeModal({ goal, onSubmit, onClose, loading }) {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState(`Contribution to ${goal.name}`)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit({
-      amount: parseFloat(amount),
-      description,
-      accountId: 1 // Default account since we removed account management
-    })
+    onSubmit({ amount: parseFloat(amount), description, accountId: 1 })
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Add Contribution</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+      <div className="modal-content glass-modal shadow-2xl small" style={{ maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
+         <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.3rem', color: 'white' }}>Increase Stake</h2>
+            <p className="text-muted">{goal.name}</p>
+          </div>
+          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <div className="goal-summary">
-          <h3>{goal.name}</h3>
-          <p>Current: {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}</p>
-          <p>Remaining: {formatCurrency(goal.target_amount - goal.current_amount)}</p>
-        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
+          <div className="intel-block" style={{ marginBottom: '1.5rem', justifyContent: 'space-between' }}>
+            <span className="text-muted">Current Progress</span>
+            <span className="text-accent">{formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}</span>
+          </div>
 
-        <form onSubmit={handleSubmit} className="contribute-form">
-          <div className="form-group">
-            <label>Contribution Amount (ZAR)</label>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Amount (ZAR)</label>
             <input
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className="premium-input"
               step="0.01"
-              min="0"
               max={goal.target_amount - goal.current_amount}
               placeholder="0.00"
               required
             />
           </div>
 
-          <div className="form-group">
-            <label>Description</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-actions">
-            <button type="button" className="btn ghost" onClick={onClose}>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button type="button" className="btn danger" style={{ flex: 1 }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Contribution'}
+            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading}>
+              {loading ? 'Processing...' : 'Confirm Contribution'}
             </button>
           </div>
         </form>
