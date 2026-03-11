@@ -229,7 +229,14 @@ body {
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 32px 40px;
+  padding: 24px 32px;
+  background: var(--bg); /* Ensure it matches exactly */
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 16px;
+  }
 }
 
 /* Mobile Sidebar */
@@ -582,6 +589,7 @@ body {
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 10px 16px;
   border: none;

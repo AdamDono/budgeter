@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, FileText, Plus, Search, Trash2 } from 'lucide-react'
+import { Calendar, FileText, Plus, Search, Trash2, TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { Link } from 'react-router-dom'
 import ConfirmModal from '../components/ConfirmModal'
 import CSVImport from '../components/CSVImport'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -37,7 +38,7 @@ export default function Transactions() {
   const { data: transactionsData, isLoading, error: txError } = useQuery({
     queryKey: ['transactions', filters, page],
     queryFn: async () => {
-      const response = await transactionsAPI.getAll({ ...filters, page, limit: 20 })
+      const response = await transactionsAPI.getAll({ ...filters, page, limit: 10 })
       return response.data
     },
   })
@@ -106,177 +107,188 @@ export default function Transactions() {
   const pagination = transactionsData?.pagination || {}
 
   if (isLoading) {
-    return <LoadingSpinner text="Loading transactions..." />
-  }
-
-  if (txError) {
     return (
-      <div className="transactions-page">
-        <div style={{ color: 'red', padding: '20px' }}>
-          <h2>Error Loading Transactions</h2>
-          <p>{txError.message}</p>
-        </div>
+      <div className="dashboard-v2 transactions-page-v2">
+        <LoadingSpinner text="Retrieving Transaction History..." />
       </div>
     )
   }
 
   return (
-    <div className="transactions-page">
-      <div className="page-header">
-        <div>
+    <div className="dashboard-v2 transactions-page-v2">
+      {/* Background Glows */}
+      <div className="bg-glow-1"></div>
+      <div className="bg-glow-2"></div>
+
+      <header className="dash-header">
+        <div className="header-info">
           <h1>Transactions</h1>
-          <p>Manage your income and expenses</p>
+          <p className="text-muted">History for {new Date(selectedMonth + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}</p>
         </div>
         <div className="header-actions">
-          <div className="month-selector">
-            <Calendar size={18} />
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="month-input"
-            />
-          </div>
-          <button 
+           <button 
             className="btn ghost"
             onClick={() => setShowImport(true)}
           >
-            <FileText size={16} />
-            Import Statement
+            <FileText size={16} /> Import
           </button>
           <button 
             className="btn primary"
             onClick={() => setShowAddForm(true)}
           >
-            <Plus size={16} />
-            Add Transaction
+            <Plus size={18} /> New Transaction
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-grid">
-          <div className="filter-group">
-            <label>Type</label>
-            <select 
-              value={filters.type} 
-              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-            >
-              <option value="all">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
+      {/* Filters Glass Panel */}
+      <div className="filters-glass glass-panel shadow-lg">
+        <div className="filter-item">
+          <label>Transaction Type</label>
+          <select 
+            className="filter-input"
+            value={filters.type} 
+            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+          >
+            <option value="all">All Transactions</option>
+            <option value="income">Income Only</option>
+            <option value="expense">Expenses Only</option>
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>Category</label>
+          <select 
+            className="filter-input"
+            value={filters.categoryId} 
+            onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+          >
+            <option value="all">All Categories</option>
+            {categories?.categories?.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>Search</label>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <input
+              type="text"
+              placeholder="Search transactions..."
+              value={filters.search}
+              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              className="filter-input"
+              style={{ paddingLeft: '36px' }}
+            />
           </div>
+        </div>
 
-          <div className="filter-group">
-            <label>Category</label>
-            <select 
-              value={filters.categoryId} 
-              onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-            >
-              <option value="all">All Categories</option>
-              {categories?.categories?.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Search</label>
-            <div className="search-input">
-              <Search size={16} />
-              <input
-                type="text"
-                placeholder="Search transactions..."
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+        <div className="filter-item" style={{ flex: '0 0 auto', minWidth: 'auto' }}>
+           <label>Period</label>
+           <div className="month-picker-pill" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.05)' }}>
+             <Calendar size={14} />
+             <input
+                type="month"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                style={{ fontSize: '0.85rem' }}
               />
-            </div>
-          </div>
+           </div>
         </div>
       </div>
 
-      {/* Transactions List */}
-      <div className="transactions-list">
+      {/* Transactions Table */}
+      <div className="tx-table-container glass-panel shadow-xl">
+        <div className="tx-table-header">
+          <span>Type</span>
+          <span>Details</span>
+          <span className="tx-cat-cell">Category</span>
+          <span className="tx-date-cell">Date</span>
+          <span className="tx-amount-cell" style={{ border: 'none' }}>Amount</span>
+          <span style={{ textAlign: 'right' }}></span>
+        </div>
+
         {transactions.length > 0 ? (
           <>
             {transactions.map(transaction => (
-              <div key={transaction.id} className="transaction-card">
-                <div className="transaction-main">
-                  <div className="transaction-type">
-                    <span className={`type-badge ${transaction.type}`}>
-                      {transaction.type}
-                    </span>
-                  </div>
-                  <div className="transaction-details">
-                    <h3>{transaction.description}</h3>
-                    <div className="transaction-meta">
-                      <span className="category">
-                        {transaction.category_name || 'Uncategorized'}
-                      </span>
-                      <span className="date">
-                        {new Date(transaction.transaction_date).toLocaleDateString()}
-                      </span>
-                      {transaction.goal_name && (
-                        <span className="goal">Goal: {transaction.goal_name}</span>
-                      )}
-                    </div>
+              <div key={transaction.id} className="tx-row">
+                <div className="tx-type-cell">
+                  <div className={`tx-type-icon ${transaction.type}`}>
+                    {transaction.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                 </div>
-                <div className="transaction-actions">
-                  <div className={`transaction-amount ${transaction.type}`}>
+                <div className="tx-desc-cell">
+                  <h4>{transaction.description}</h4>
+                  {transaction.goal_name && <p className="text-accent" style={{ color: '#4f8cff' }}>Goal: {transaction.goal_name}</p>}
+                </div>
+                <div className="tx-cat-cell">
+                  <span className="cat-pill" style={{ pointerEvents: 'none', background: 'rgba(255,255,255,0.03)' }}>
+                    {transaction.category_name || 'General'}
+                  </span>
+                </div>
+                <div className="tx-date-cell">
+                  <span className="text-muted" style={{ fontSize: '0.85rem' }}>
+                    {new Date(transaction.transaction_date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+                <div className="tx-amount-cell-wrapper">
+                  <span className={`tx-amount-cell ${transaction.type}`}>
                     {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                  </div>
-                  <div className="action-buttons">
-                    <button 
-                      className="btn ghost small"
-                      onClick={() => handleDeleteTransaction(transaction.id)}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  </span>
+                </div>
+                <div className="tx-actions-cell">
+                  <button 
+                    className="tx-action-btn"
+                    onClick={() => handleDeleteTransaction(transaction.id)}
+                    title="Delete Transaction"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
             ))}
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {pagination.pages > 1 && (
-              <div className="pagination">
-                <button 
-                  className="btn ghost"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </button>
-                <span className="page-info">
+              <div className="dash-header" style={{ padding: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.03)', marginTop: 0 }}>
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>
                   Page {page} of {pagination.pages}
                 </span>
-                <button 
-                  className="btn ghost"
-                  disabled={page === pagination.pages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    className="btn ghost small"
+                    disabled={page === 1}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    Previous
+                  </button>
+                  <button 
+                    className="btn ghost small"
+                    disabled={page === pagination.pages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </>
         ) : (
-          <div className="empty-state">
-            <p>No transactions found</p>
-            <button 
+          <div className="empty-state" style={{ padding: '5rem' }}>
+             <p className="text-muted" style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>No transactions found for this period.</p>
+             <button 
               className="btn primary"
               onClick={() => setShowAddForm(true)}
             >
-              Add Your First Transaction
+              Add Transaction
             </button>
           </div>
         )}
       </div>
 
-      {/* Add Transaction Modal */}
+      {/* Modals */}
       {showImport && (
         <CSVImport 
           onClose={() => setShowImport(false)} 
@@ -300,13 +312,12 @@ export default function Transactions() {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteConfirm.show}
         onClose={() => setDeleteConfirm({ show: false, id: null })}
         onConfirm={confirmDelete}
-        title="Delete Transaction"
-        message="Are you sure you want to delete this transaction? This will revert any balance updates associated with it."
+        title="Delete Transaction?"
+        message="Are you sure you want to delete this transaction? This action will reverse all associated balance adjustments."
         confirmText="Delete"
         type="danger"
       />
@@ -314,7 +325,6 @@ export default function Transactions() {
   )
 }
 
-// Transaction Form Component
 function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose, loading }) {
   const [formData, setFormData] = useState({
     type: 'expense',
@@ -328,21 +338,8 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
     tags: []
   })
 
-  // Auto-select category for special types
-  useEffect(() => {
-    if (formData.categoryId) {
-      const selectedCat = categories.find(c => c.id === parseInt(formData.categoryId))
-      if (selectedCat) {
-        if (selectedCat.name === 'Debt Repayment') {
-          // Keep as is or trigger something
-        }
-      }
-    }
-  }, [formData.categoryId, categories])
-
   const handleSubmit = (e) => {
     e.preventDefault()
-    
     const submitData = {
       ...formData,
       amount: parseFloat(formData.amount),
@@ -352,140 +349,132 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
       savingsId: formData.savingsId || null,
       tags: formData.tags.filter(tag => tag.trim())
     }
-    
     onSubmit(submitData)
   }
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const selectedCategoryName = categories.find(c => c.id === parseInt(formData.categoryId))?.name
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div>
-            <h2>Add Transaction</h2>
-            <p className="section-subtitle">Record your financial movement</p>
+      <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.5rem', color: 'white' }}>New Transaction</h2>
+            <p className="text-muted">Record your income or expense</p>
           </div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="transaction-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Transaction Type</label>
-              <div className="type-toggle">
-                <button 
-                  type="button" 
-                  className={`toggle-btn ${formData.type === 'expense' ? 'active expense' : ''}`}
-                  onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
-                >
-                  Expense
-                </button>
-                <button 
-                  type="button" 
-                  className={`toggle-btn ${formData.type === 'income' ? 'active income' : ''}`}
-                  onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
-                >
-                  Income
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Amount (ZAR)</label>
-              <div className="amount-input-wrapper">
-                <span className="currency-prefix">R</span>
-                <input
-                  type="number"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleChange}
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  required
-                  className="amount-input"
-                />
-              </div>
-            </div>
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+             <div className="premium-form-group">
+                <label>Type</label>
+                <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px' }}>
+                   <button 
+                      type="button"
+                      className={`btn small ${formData.type === 'expense' ? 'primary' : 'ghost'}`}
+                      style={{ flex: 1 }}
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+                   >Expense</button>
+                   <button 
+                      type="button"
+                      className={`btn small ${formData.type === 'income' ? 'primary' : 'ghost'}`}
+                      style={{ flex: 1 }}
+                      onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+                   >Income</button>
+                </div>
+             </div>
+             <div className="premium-form-group">
+                <label>Amount (ZAR)</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}>R</span>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleChange}
+                    className="premium-input"
+                    style={{ paddingLeft: '28px' }}
+                    placeholder="0.00"
+                    step="0.01"
+                    required
+                  />
+                </div>
+             </div>
           </div>
 
-          <div className="form-group">
-            <label>What was this for?</label>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Description</label>
             <input
               type="text"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="e.g. Woolworths Groceries, Rent, Salary"
+              className="premium-input"
+              placeholder="What was this for?"
               required
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
               <label>Category</label>
-              <select name="categoryId" value={formData.categoryId} onChange={handleChange} required>
-                <option value="">Select category</option>
+              <select name="categoryId" value={formData.categoryId} onChange={handleChange} className="premium-input" required>
+                <option value="">Select Category</option>
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
-
-            <div className="form-group">
+            <div className="premium-form-group">
               <label>Date</label>
               <input
                 type="date"
                 name="transactionDate"
                 value={formData.transactionDate}
                 onChange={handleChange}
+                className="premium-input"
                 required
               />
             </div>
           </div>
 
-          {/* Dynamic Sections Based on Selection */}
-          <div className="dynamic-sections">
+          {/* Dynamic Linkage Sections */}
+          <div style={{ marginBottom: '1.5rem' }}>
             {selectedCategoryName === 'Debt Repayment' && (
-              <div className="special-link-section debt animated fadeIn">
-                <label>Select Debt to Pay Off</label>
-                <select name="debtId" value={formData.debtId} onChange={handleChange} required>
-                  <option value="">Choose debt...</option>
+              <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                <label className="text-muted" style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem' }}>Link to Debt</label>
+                <select name="debtId" value={formData.debtId} onChange={handleChange} className="premium-input" required>
+                  <option value="">Select debt...</option>
                   {debts.filter(d => parseFloat(d.balance) > 0).map(debt => (
-                    <option key={debt.id} value={debt.id}>{debt.name} (Bal: R{debt.balance})</option>
+                    <option key={debt.id} value={debt.id}>{debt.name} (R{debt.balance})</option>
                   ))}
                 </select>
-                <p className="help-text">Linking to a debt will automatically reduce its balance.</p>
               </div>
             )}
 
             {selectedCategoryName === 'Savings Contribution' && (
-              <div className="special-link-section savings animated fadeIn">
-                <label>Select Savings Pot</label>
-                <select name="savingsId" value={formData.savingsId} onChange={handleChange} required>
-                  <option value="">Choose pot...</option>
+              <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                <label className="text-muted" style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem' }}>Link to Savings Pot</label>
+                <select name="savingsId" value={formData.savingsId} onChange={handleChange} className="premium-input" required>
+                  <option value="">Select pot...</option>
                   {savings.map(pot => (
-                    <option key={pot.id} value={pot.id}>{pot.name} (Goal: R{pot.target_amount})</option>
+                    <option key={pot.id} value={pot.id}>{pot.name}</option>
                   ))}
                 </select>
-                <p className="help-text">This will add funds to your savings goal.</p>
               </div>
             )}
 
             {formData.type === 'income' && selectedCategoryName !== 'Savings Contribution' && (
-              <div className="special-link-section goal animated fadeIn">
-                <label>Add to Goal? (Optional)</label>
-                <select name="goalId" value={formData.goalId} onChange={handleChange}>
-                  <option value="">No goal</option>
+              <div className="premium-form-group">
+                <label>Link to Goal? (Optional)</label>
+                <select name="goalId" value={formData.goalId} onChange={handleChange} className="premium-input">
+                  <option value="">No specific goal</option>
                   {goals.map(goal => (
                     <option key={goal.id} value={goal.id}>{goal.name}</option>
                   ))}
@@ -494,15 +483,21 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
             )}
           </div>
 
-          <div className="form-actions">
-            <button type="button" className="btn ghost" onClick={onClose}>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button type="button" className="btn danger" style={{ flex: 1 }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? 'Processing...' : 'Save Transaction'}
+            <button 
+              type="submit" 
+              className="btn primary" 
+              style={{ flex: 2 }}
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Add Transaction'}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   )

@@ -12,6 +12,7 @@ import {
     Target,
     TrendingDown,
     TrendingUp,
+    Globe,
     X
 } from 'lucide-react'
 import { useState } from 'react'
@@ -30,7 +31,7 @@ export default function Layout() {
     { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
     { name: 'Fixed Goals', href: '/app/goals', icon: Target },
     { name: 'Savings Pots', href: '/app/savings', icon: DollarSign },
-    { name: 'Bills & Reminders', href: '/app/bills', icon: Bell },
+    { name: 'Forex Analytics', href: '/app/forex', icon: Globe },
     { name: 'Analytics', href: '/app/analytics', icon: TrendingUp },
     { name: 'Recurring', href: '/app/recurring', icon: Repeat },
     { name: 'Spending Trends', href: '/app/trends', icon: TrendingDown },

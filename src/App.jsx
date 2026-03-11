@@ -10,6 +10,7 @@ import Bills from './pages/Bills'
 import CreditHub from './pages/CreditHub'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
+import Forex from './pages/Forex'
 import ForgotPassword from './pages/ForgotPassword'
 import Goals from './pages/Goals'
 import LandingPage from './pages/LandingPage'
@@ -103,7 +104,7 @@ export default function App() {
                 <Route path="trends" element={<Trends />} />
                 <Route path="debt" element={<Debt />} />
                 <Route path="tax" element={<Tax />} />
-                <Route path="bills" element={<Bills />} />
+                <Route path="forex" element={<Forex />} />
                 <Route path="credit-hub" element={<CreditHub />} />
                 <Route path="settings" element={<Settings />} />
               </Route>

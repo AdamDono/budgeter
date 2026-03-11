@@ -45,7 +45,7 @@ export default function ConfirmModal({
           </div>
           
           <div className="confirm-actions">
-            <button className="btn ghost" onClick={onClose}>
+            <button className="btn danger" onClick={onClose}>
               {cancelText}
             </button>
             <button className={`btn ${config.confirmClass}`} onClick={() => {
