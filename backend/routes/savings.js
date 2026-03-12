@@ -82,6 +82,52 @@ router.put('/:id', async (req, res, next) => {
   }
 })
 
+// Add funds to saving pot
+router.post('/:id/add-funds', async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const { amount, description } = req.body
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'Valid amount required' })
+    }
+
+    // Verify pot exists and belongs to user
+    const potResult = await pool.query(
+      'SELECT * FROM savings WHERE id = $1 AND user_id = $2',
+      [id, req.user.id]
+    )
+
+    if (potResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Savings pot not found' })
+    }
+
+    const pot = potResult.rows[0]
+
+    // Create transaction for the fund addition
+    await pool.query(`
+      INSERT INTO transactions 
+      (user_id, category_id, type, amount, description, transaction_date)
+      VALUES ($1, (SELECT id FROM budget_categories WHERE name = 'Savings' LIMIT 1), 'expense', $2, $3, CURRENT_DATE)
+    `, [req.user.id, amount, description || `Added funds to ${pot.name}`])
+
+    // Update pot balance
+    const updatedPot = await pool.query(`
+      UPDATE savings 
+      SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2 AND user_id = $3
+      RETURNING *
+    `, [amount, id, req.user.id])
+
+    res.json({
+      message: 'Funds added successfully',
+      saving: updatedPot.rows[0]
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
 // Delete saving pot
 router.delete('/:id', async (req, res, next) => {
   try {

@@ -82,6 +82,7 @@ export const savingsAPI = {
     create: (data) => api.post('/savings', data),
     update: (id, data) => api.put(`/savings/${id}`, data),
     delete: (id) => api.delete(`/savings/${id}`),
+    addFunds: (id, data) => api.post(`/savings/${id}/add-funds`, data),
 }
 
 // Tax API

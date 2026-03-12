@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Calendar, PieChart, TrendingDown, TrendingUp } from 'lucide-react'
+import { BarChart3, Calendar, PieChart, TrendingDown, TrendingUp, Sparkles, Target, Zap, LayoutDashboard } from 'lucide-react'
 import { useState } from 'react'
 import ForexWidget from '../components/ForexWidget'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -20,7 +20,7 @@ export default function Analytics() {
   })
 
   if (isLoading) {
-    return <LoadingSpinner text="Loading analytics..." />
+    return <LoadingSpinner text="Analyzing financial protocols..." />
   }
 
   const summary = dashboardData?.summary || {}
@@ -30,6 +30,13 @@ export default function Analytics() {
   const insightsData = insights || {}
 
   const periodLabels = {
+    '7d': '7D',
+    '30d': '30D',
+    '90d': '90D',
+    '1y': '1Y'
+  }
+
+  const fullPeriodLabels = {
     '7d': 'Last 7 Days',
     '30d': 'Last 30 Days',
     '90d': 'Last 90 Days',
@@ -37,315 +44,281 @@ export default function Analytics() {
   }
 
   return (
-    <div className="analytics-page">
-      <div className="page-header">
-        <div>
-          <h1>Analytics</h1>
-          <p>Insights into your spending patterns and financial health</p>
+    <div className="analytics-page-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
+          <h1>Tactical Analytics</h1>
+          <p className="text-muted">High-fidelity insights into your financial behavior</p>
         </div>
         
-        <div className="period-selector">
+        <div className="period-selector glass-panel" style={{ padding: '0.25rem', borderRadius: '12px', display: 'flex', gap: '0.25rem' }}>
           {Object.entries(periodLabels).map(([key, label]) => (
             <button
               key={key}
-              className={`period-btn ${period === key ? 'active' : ''}`}
+              className={`btn ${period === key ? 'primary' : 'ghost'} extra-small`}
+              style={{ padding: '0.5rem 1rem', borderRadius: '8px' }}
               onClick={() => setPeriod(key)}
             >
               {label}
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
-      {/* Summary Cards */}
-      <div className="analytics-summary">
-        <div className="summary-card">
-          <div className="summary-icon income">
-            <TrendingUp size={24} />
+      {/* High-Fidelity Summary Row */}
+      <div className="analytics-summary-stats">
+        <div className="intel-block glass-panel highlight" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+            <TrendingUp size={20} />
           </div>
-          <div className="summary-content">
-            <h3>Total Income</h3>
-            <p className="summary-amount">{formatCurrency(summary.totalIncome || 0)}</p>
-            <span className="summary-period">{periodLabels[period]}</span>
+          <div className="intel-content">
+            <span className="intel-label">Total Inflow</span>
+            <span className="intel-value">{formatCurrency(summary.totalIncome || 0)}</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <div className="summary-icon expense">
-            <TrendingDown size={24} />
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+            <TrendingDown size={20} />
           </div>
-          <div className="summary-content">
-            <h3>Total Expenses</h3>
-            <p className="summary-amount">{formatCurrency(summary.totalExpenses || 0)}</p>
-            <span className="summary-period">{periodLabels[period]}</span>
+          <div className="intel-content">
+            <span className="intel-label">Total Outflow</span>
+            <span className="intel-value">{formatCurrency(summary.totalExpenses || 0)}</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <div className="summary-icon net">
-            <BarChart3 size={24} />
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <Zap size={20} />
           </div>
-          <div className="summary-content">
-            <h3>Net Income</h3>
-            <p className={`summary-amount ${summary.netIncome >= 0 ? 'positive' : 'negative'}`}>
+          <div className="intel-content">
+            <span className="intel-label">Net Delta</span>
+            <span className={`intel-value ${summary.netIncome >= 0 ? 'text-positive' : 'text-danger'}`}>
               {formatCurrency(summary.netIncome || 0)}
-            </p>
-            <span className="summary-period">{periodLabels[period]}</span>
+            </span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <div className="summary-icon savings">
-            <PieChart size={24} />
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>
+            <PieChart size={20} />
           </div>
-          <div className="summary-content">
-            <h3>Savings Rate</h3>
-            <p className="summary-amount">{summary.savingsRate || 0}%</p>
-            <span className="summary-period">of income saved</span>
+          <div className="intel-content">
+            <span className="intel-label">Savings Velocity</span>
+            <span className="intel-value">{summary.savingsRate || 0}%</span>
           </div>
         </div>
       </div>
 
-      <div className="analytics-grid">
+      <div className="goals-glass-grid" style={{ marginTop: '2.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+        
         {/* Spending by Category */}
-        <div className="analytics-card">
-          <div className="card-header">
-            <h2>Spending by Category</h2>
-            <span className="card-subtitle">{periodLabels[period]}</span>
+        <div className="analytics-glass-card shadow-2xl">
+          <div className="card-v2-header">
+            <div>
+              <span className="card-v2-subtitle">Distribution</span>
+              <h2>Spending by Category</h2>
+            </div>
+            <div className="pot-yield-badge"><PieChart size={14} /> Global</div>
           </div>
-          <div className="category-chart">
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
             {categories.length > 0 ? (
-              <div className="category-list">
-                {categories.map((category, index) => {
-                  const percentage = summary.totalExpenses > 0 
-                    ? ((category.total / summary.totalExpenses) * 100).toFixed(1)
-                    : 0
-                  
-                  return (
-                    <div key={category.category} className="category-item">
-                      <div className="category-info">
+              categories.map((category, index) => {
+                const percentage = summary.totalExpenses > 0 
+                  ? ((category.total / summary.totalExpenses) * 100).toFixed(1)
+                  : 0
+                
+                return (
+                  <div key={category.category} className="spending-category-row">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                         <div 
-                          className="category-color"
-                          style={{ backgroundColor: category.color || `hsl(${index * 45}, 70%, 50%)` }}
+                          style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: category.color || `hsl(${index * 45}, 70%, 50%)` }}
                         ></div>
-                        <span className="category-name">{category.category}</span>
+                        <span style={{ fontWeight: '600', color: '#f1f5f9', fontSize: '0.9rem' }}>{category.category}</span>
                       </div>
-                      <div className="category-stats">
-                        <span className="category-amount">{formatCurrency(category.total)}</span>
-                        <span className="category-percentage">{percentage}%</span>
-                      </div>
-                      <div className="category-bar">
-                        <div 
-                          className="category-fill"
-                          style={{ 
-                            width: `${percentage}%`,
-                            backgroundColor: category.color || `hsl(${index * 45}, 70%, 50%)`
-                          }}
-                        ></div>
-                      </div>
+                      <span style={{ fontFamily: 'monospace', fontWeight: '700', color: 'white' }}>{formatCurrency(category.total)}</span>
                     </div>
-                  )
-                })}
-              </div>
+                    <div className="premium-progress-container" style={{ height: '6px' }}>
+                      <div 
+                        className="premium-progress-fill"
+                        style={{ 
+                          width: `${percentage}%`,
+                          backgroundColor: category.color || `hsl(${index * 45}, 70%, 50%)`,
+                          boxShadow: `0 0 10px ${category.color || `hsl(${index * 45}, 70%, 50%)`}40`
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.7rem', color: '#64748b' }}>
+                      {percentage}% of total
+                    </div>
+                  </div>
+                )
+              })
             ) : (
-              <div className="empty-chart">
-                <PieChart size={48} />
-                <p>No spending data available for this period</p>
+              <div className="empty-state-pot" style={{ padding: '2rem' }}>
+                <PieChart size={32} />
+                <p>No distribution data available.</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Daily Trend */}
-        <div className="analytics-card">
-          <div className="card-header">
-            <h2>Daily Spending Trend</h2>
-            <span className="card-subtitle">{periodLabels[period]}</span>
+        {/* Daily Spending Trend */}
+        <div className="analytics-glass-card shadow-2xl">
+          <div className="card-v2-header">
+            <div>
+              <span className="card-v2-subtitle">Velocity</span>
+              <h2>Spending Trend</h2>
+            </div>
+            <div className="pot-yield-badge"><BarChart3 size={14} /> Weekly</div>
           </div>
-          <div className="trend-chart">
+
+          <div className="trend-high-fidelity">
             {dailyTrend.length > 0 ? (
-              <div className="trend-list">
-                {dailyTrend.slice(-7).map(day => (
-                  <div key={day.date} className="trend-item">
-                    <div className="trend-date">
-                      {new Date(day.date).toLocaleDateString('en-ZA', { 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
+              dailyTrend.slice(-7).map((day, i) => {
+                const maxVal = Math.max(...dailyTrend.map(d => Math.max(d.income, d.expenses)))
+                const incomeH = (day.income / (maxVal || 1)) * 100
+                const expenseH = (day.expenses / (maxVal || 1)) * 100
+
+                return (
+                  <div key={day.date} className="premium-bar-group">
+                    <div className="bar-stack">
+                      <div 
+                        className="bar-indicator" 
+                        style={{ 
+                          height: `${Math.max(2, expenseH)}%`, 
+                          backgroundColor: '#ef4444', 
+                          color: '#ef4444', 
+                          opacity: 0.8 
+                        }} 
+                      />
+                      <div 
+                        className="bar-indicator" 
+                        style={{ 
+                          height: `${Math.max(2, incomeH)}%`, 
+                          backgroundColor: '#10b981', 
+                          color: '#10b981', 
+                          opacity: 0.8 
+                        }} 
+                      />
                     </div>
-                    <div className="trend-bars">
-                      <div className="trend-bar income">
-                        <div 
-                          className="bar-fill"
-                          style={{ height: `${Math.max(5, (day.income / Math.max(...dailyTrend.map(d => Math.max(d.income, d.expenses)))) * 100)}%` }}
-                        ></div>
-                      </div>
-                      <div className="trend-bar expense">
-                        <div 
-                          className="bar-fill"
-                          style={{ height: `${Math.max(5, (day.expenses / Math.max(...dailyTrend.map(d => Math.max(d.income, d.expenses)))) * 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div className="trend-amounts">
-                      <span className="income">+{formatCurrency(day.income)}</span>
-                      <span className="expense">-{formatCurrency(day.expenses)}</span>
-                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700' }}>
+                      {new Date(day.date).toLocaleDateString('en-ZA', { day: '2-digit' })}
+                    </span>
                   </div>
-                ))}
-              </div>
+                )
+              })
             ) : (
-              <div className="empty-chart">
-                <BarChart3 size={48} />
-                <p>No trend data available for this period</p>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p className="text-muted">Insufficient trend data.</p>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Budget Performance */}
-        <div className="analytics-card">
-          <div className="card-header">
-            <h2>Budget Performance</h2>
-            <span className="card-subtitle">Current Month</span>
-          </div>
-          <div className="budget-performance">
-            {budgetPerformance.length > 0 ? (
-              <div className="budget-list">
-                {budgetPerformance.map(budget => (
-                  <div key={budget.id} className="budget-performance-item">
-                    <div className="budget-info">
-                      <span className="budget-name">{budget.name}</span>
-                      <span className="budget-amounts">
-                        {formatCurrency(budget.actual_spent)} / {formatCurrency(budget.monthly_limit)}
-                      </span>
-                    </div>
-                    <div className="budget-progress">
-                      <div className="progress-bar">
-                        <div 
-                          className={`progress-fill ${budget.percentage_used > 100 ? 'over-budget' : budget.percentage_used > 80 ? 'warning' : ''}`}
-                          style={{ width: `${Math.min(budget.percentage_used, 100)}%` }}
-                        ></div>
-                      </div>
-                      <span className={`budget-percentage ${budget.percentage_used > 100 ? 'over-budget' : ''}`}>
-                        {budget.percentage_used.toFixed(1)}%
-                      </span>
-                    </div>
-                    {budget.percentage_used > 100 && (
-                      <div className="over-budget-warning">
-                        Over budget by {formatCurrency(budget.actual_spent - budget.monthly_limit)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-chart">
-                <Calendar size={48} />
-                <p>Set up budget categories to track performance</p>
-              </div>
-            )}
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+             <div className="intel-block glass-panel" style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#10b981', marginBottom: '0.25rem' }}>
+                  <TrendingUp size={12} /> <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>Inflow</span>
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: '800' }}>
+                  {formatCurrency(dailyTrend.slice(-7).reduce((acc, d) => acc + (parseFloat(d.income) || 0), 0))}
+                </div>
+             </div>
+             <div className="intel-block glass-panel" style={{ padding: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#ef4444', marginBottom: '0.25rem' }}>
+                  <TrendingDown size={12} /> <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>Outflow</span>
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: '800' }}>
+                  {formatCurrency(dailyTrend.slice(-7).reduce((acc, d) => acc + (parseFloat(d.expenses) || 0), 0))}
+                </div>
+             </div>
           </div>
         </div>
+      </div>
 
-        {/* Insights */}
-        <div className="analytics-card">
-          <div className="card-header">
+      {/* Financial Insights Section */}
+      <section style={{ marginTop: '3rem' }}>
+        <div className="card-v2-header" style={{ marginBottom: '1.5rem' }}>
+          <div>
+            <span className="card-v2-subtitle">Optimization</span>
             <h2>Financial Insights</h2>
-            <span className="card-subtitle">AI-powered recommendations</span>
           </div>
-          <div className="insights-list">
-            {/* Spending Pattern Insights */}
-            {insightsData.topCategories?.length > 0 && (
-              <div className="insight-item">
-                <div className="insight-icon">📊</div>
-                <div className="insight-content">
-                  <h4>Top Spending Category</h4>
-                  <p>
-                    You spent the most on <strong>{insightsData.topCategories[0]?.name}</strong> 
-                    ({formatCurrency(insightsData.topCategories[0]?.total)}) this month.
+          <button className="btn ghost extra-small"><Sparkles size={14} /> AI Analysis</button>
+        </div>
+
+        <div className="insight-intel-grid">
+           {/* Primary Category Insight */}
+           {insightsData.topCategories?.length > 0 && (
+             <div className="insight-glass-item shadow-lg">
+                <div className="intel-icon" style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px' }}>📊</div>
+                <div className="intel-content">
+                  <h4 style={{ color: 'white', marginBottom: '4px' }}>Peak Consumption</h4>
+                  <p className="text-muted" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                    Major outflow detected in <strong>{insightsData.topCategories[0]?.name}</strong>. 
+                    Allocation: {formatCurrency(insightsData.topCategories[0]?.total)}.
+                  </p>
+                </div>
+             </div>
+           )}
+
+           {/* Savings Recommendation */}
+           <div className={`insight-glass-item shadow-lg ${summary.savingsRate < 15 ? 'warning' : ''}`}>
+              <div className="intel-icon" style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px' }}>
+                {summary.savingsRate > 20 ? '🏆' : summary.savingsRate > 10 ? '📈' : '⚠️'}
+              </div>
+              <div className="intel-content">
+                <h4 style={{ color: 'white', marginBottom: '4px' }}>Savings Performance</h4>
+                <p className="text-muted" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                  Current velocity: {summary.savingsRate}%. 
+                  {summary.savingsRate > 20 
+                    ? "Protocol optimized. Maintaining high-yield posture." 
+                    : "Below tactical threshold. Recommend expense reduction."}
+                </p>
+              </div>
+           </div>
+
+           {/* Budget Alert */}
+           {budgetPerformance.filter(b => b.percentage_used > 80).length > 0 && (
+              <div className="insight-glass-item warning shadow-lg">
+                <div className="intel-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>🚨</div>
+                <div className="intel-content">
+                  <h4 style={{ color: 'white', marginBottom: '4px' }}>Budget Violation</h4>
+                  <p className="text-muted" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                    Threshold breach in {budgetPerformance.filter(b => b.percentage_used > 80).length} sectors. 
+                    Recommend immediate containment.
                   </p>
                 </div>
               </div>
-            )}
+           )}
 
-            {/* Savings Rate Insight */}
-            {summary.savingsRate !== undefined && (
-              <div className="insight-item">
-                <div className="insight-icon">
-                  {summary.savingsRate > 20 ? '🎉' : summary.savingsRate > 10 ? '👍' : '⚠️'}
-                </div>
-                <div className="insight-content">
-                  <h4>Savings Rate</h4>
-                  <p>
-                    {summary.savingsRate > 20 
-                      ? `Excellent! You're saving ${summary.savingsRate}% of your income.`
-                      : summary.savingsRate > 10
-                      ? `Good job! You're saving ${summary.savingsRate}% of your income. Try to reach 20%.`
-                      : `Your savings rate is ${summary.savingsRate}%. Consider reducing expenses to save more.`
-                    }
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Budget Alerts */}
-            {budgetPerformance.filter(b => b.percentage_used > 80).length > 0 && (
-              <div className="insight-item warning">
-                <div className="insight-icon">🚨</div>
-                <div className="insight-content">
-                  <h4>Budget Alert</h4>
-                  <p>
-                    You're close to or over budget in {budgetPerformance.filter(b => b.percentage_used > 80).length} categories. 
-                    Consider adjusting your spending.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Spending Trend */}
-            {dailyTrend.length >= 7 && (
-              <div className="insight-item">
-                <div className="insight-icon">📈</div>
-                <div className="insight-content">
-                  <h4>Spending Trend</h4>
-                  <p>
-                    {(() => {
+           {/* Trend Analysis */}
+           <div className="insight-glass-item shadow-lg">
+              <div className="intel-icon" style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7' }}>📉</div>
+              <div className="intel-content">
+                <h4 style={{ color: 'white', marginBottom: '4px' }}>Historical Delta</h4>
+                <p className="text-muted" style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+                   Data indicates a {(() => {
                       const recent = dailyTrend.slice(-3).reduce((sum, day) => sum + day.expenses, 0) / 3
                       const previous = dailyTrend.slice(-7, -3).reduce((sum, day) => sum + day.expenses, 0) / 4
-                      const change = ((recent - previous) / previous * 100).toFixed(1)
-                      
-                      if (Math.abs(change) < 5) {
-                        return "Your spending has been consistent over the past week."
-                      } else if (change > 0) {
-                        return `Your daily spending increased by ${change}% compared to last week.`
-                      } else {
-                        return `Great! Your daily spending decreased by ${Math.abs(change)}% compared to last week.`
-                      }
-                    })()}
-                  </p>
-                </div>
+                      const change = ((recent - previous) / (previous || 1) * 100).toFixed(1)
+                      return change > 0 ? `spike of ${change}%` : `reduction of ${Math.abs(change)}%`
+                   })()} in daily velocity compared to previous cycles.
+                </p>
               </div>
-            )}
-
-            {/* Default message if no insights */}
-            {!insightsData.topCategories?.length && !dailyTrend.length && (
-              <div className="insight-item">
-                <div className="insight-icon">💡</div>
-                <div className="insight-content">
-                  <h4>Start Tracking</h4>
-                  <p>Add more transactions to get personalized financial insights and recommendations.</p>
-                </div>
-              </div>
-            )}
-          </div>
+           </div>
         </div>
+      </section>
 
-        {/* Forex Widget */}
-        <div className="analytics-card-span-2">
-          <ForexWidget />
-        </div>
-      </div>
+      {/* Forex Intelligence */}
+      <section style={{ marginTop: '3rem' }}>
+         <div className="analytics-glass-card shadow-2xl" style={{ padding: '0' }}>
+            <ForexWidget />
+         </div>
+      </section>
     </div>
   )
 }
