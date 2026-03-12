@@ -9,6 +9,8 @@ import { formatCurrency } from '../utils/format'
 export default function Analytics() {
   const [period, setPeriod] = useState('30d')
   
+  const [trendView, setTrendView] = useState('weekly')
+  
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ['analytics', period],
     queryFn: async () => (await analyticsAPI.getDashboard(period)).data,
@@ -28,6 +30,22 @@ export default function Analytics() {
   const dailyTrend = dashboardData?.dailyTrend || []
   const budgetPerformance = dashboardData?.budgetPerformance || []
   const insightsData = insights || {}
+
+  const trendData = trendView === 'weekly' 
+    ? dailyTrend.slice(-7) 
+    : (() => {
+        const monthlyMap = dailyTrend.reduce((acc, day) => {
+          const date = new Date(day.date)
+          const monthKey = date.toLocaleString('en-ZA', { month: 'short', year: 'numeric' })
+          if (!acc[monthKey]) {
+            acc[monthKey] = { label: date.toLocaleString('en-ZA', { month: 'short' }), income: 0, expenses: 0, timestamp: date.getTime() }
+          }
+          acc[monthKey].income += parseFloat(day.income) || 0
+          acc[monthKey].expenses += parseFloat(day.expenses) || 0
+          return acc
+        }, {})
+        return Object.values(monthlyMap).sort((a, b) => a.timestamp - b.timestamp).slice(-3)
+      })()
 
   const periodLabels = {
     '7d': '7D',
@@ -133,7 +151,7 @@ export default function Analytics() {
                 
                 return (
                   <div key={category.category} className="spending-category-row">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="category-row-info">
                       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                         <div 
                           style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: category.color || `hsl(${index * 45}, 70%, 50%)` }}
@@ -174,18 +192,24 @@ export default function Analytics() {
               <span className="card-v2-subtitle">Velocity</span>
               <h2>Spending Trend</h2>
             </div>
-            <div className="pot-yield-badge"><BarChart3 size={14} /> Weekly</div>
+            <button 
+              onClick={() => setTrendView(prev => prev === 'weekly' ? 'monthly' : 'weekly')}
+              className="pot-yield-badge btn ghost" 
+              style={{ border: 'none', cursor: 'pointer', padding: '4px 12px' }}
+            >
+              <BarChart3 size={14} /> {trendView === 'weekly' ? 'Weekly' : 'Monthly'}
+            </button>
           </div>
 
-          <div className="trend-high-fidelity">
-            {dailyTrend.length > 0 ? (
-              dailyTrend.slice(-7).map((day, i) => {
-                const maxVal = Math.max(...dailyTrend.map(d => Math.max(d.income, d.expenses)))
-                const incomeH = (day.income / (maxVal || 1)) * 100
-                const expenseH = (day.expenses / (maxVal || 1)) * 100
+          <div className="trend-high-fidelity" style={{ gap: trendView === 'weekly' ? '1.5rem' : '4rem', padding: '0 1rem' }}>
+            {trendData.length > 0 ? (
+              trendData.map((item, i) => {
+                const maxVal = Math.max(...trendData.map(d => Math.max(d.income, d.expenses)))
+                const incomeH = (item.income / (maxVal || 1)) * 100
+                const expenseH = (item.expenses / (maxVal || 1)) * 100
 
                 return (
-                  <div key={day.date} className="premium-bar-group">
+                  <div key={i} className="premium-bar-group" style={{ flex: 1 }}>
                     <div className="bar-stack">
                       <div 
                         className="bar-indicator" 
@@ -206,8 +230,10 @@ export default function Analytics() {
                         }} 
                       />
                     </div>
-                    <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700' }}>
-                      {new Date(day.date).toLocaleDateString('en-ZA', { day: '2-digit' })}
+                    <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700', marginTop: '0.5rem' }}>
+                      {trendView === 'weekly' 
+                        ? new Date(item.date).toLocaleDateString('en-ZA', { day: '2-digit' })
+                        : item.label}
                     </span>
                   </div>
                 )
@@ -219,13 +245,13 @@ export default function Analytics() {
             )}
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <div className="trend-summary-grid">
              <div className="intel-block glass-panel" style={{ padding: '1rem' }}>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#10b981', marginBottom: '0.25rem' }}>
                   <TrendingUp size={12} /> <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>Inflow</span>
                 </div>
                 <div style={{ fontSize: '1rem', fontWeight: '800' }}>
-                  {formatCurrency(dailyTrend.slice(-7).reduce((acc, d) => acc + (parseFloat(d.income) || 0), 0))}
+                  {formatCurrency(trendData.reduce((acc, d) => acc + (parseFloat(d.income) || 0), 0))}
                 </div>
              </div>
              <div className="intel-block glass-panel" style={{ padding: '1rem' }}>
@@ -233,7 +259,7 @@ export default function Analytics() {
                   <TrendingDown size={12} /> <span style={{ fontSize: '0.7rem', fontWeight: '700' }}>Outflow</span>
                 </div>
                 <div style={{ fontSize: '1rem', fontWeight: '800' }}>
-                  {formatCurrency(dailyTrend.slice(-7).reduce((acc, d) => acc + (parseFloat(d.expenses) || 0), 0))}
+                  {formatCurrency(trendData.reduce((acc, d) => acc + (parseFloat(d.expenses) || 0), 0))}
                 </div>
              </div>
           </div>
@@ -241,7 +267,7 @@ export default function Analytics() {
       </div>
 
       {/* Financial Insights Section */}
-      <section style={{ marginTop: '3rem' }}>
+      <section style={{ marginTop: '3rem', marginBottom: '4rem' }}>
         <div className="card-v2-header" style={{ marginBottom: '1.5rem' }}>
           <div>
             <span className="card-v2-subtitle">Optimization</span>
@@ -311,13 +337,6 @@ export default function Analytics() {
               </div>
            </div>
         </div>
-      </section>
-
-      {/* Forex Intelligence */}
-      <section style={{ marginTop: '3rem' }}>
-         <div className="analytics-glass-card shadow-2xl" style={{ padding: '0' }}>
-            <ForexWidget />
-         </div>
       </section>
     </div>
   )
