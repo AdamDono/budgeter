@@ -91,7 +91,9 @@ export default function Recurring() {
   }
 
   return (
-    <div className="recurring-page">
+    <div className="recurring-page-v2">
+      <div className="bg-glow"></div>
+      
       <div className="page-header">
         <div>
           <h1>Recurring Transactions</h1>
@@ -99,6 +101,7 @@ export default function Recurring() {
         </div>
         <button 
           className="btn primary"
+          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
           onClick={() => setShowAddForm(true)}
         >
           <Plus size={16} />
@@ -106,25 +109,24 @@ export default function Recurring() {
         </button>
       </div>
 
-      <div className="recurring-grid">
+      <div className="recurring-grid-v2">
         {recurring.length > 0 ? (
           recurring.map(item => (
-            <div key={item.id} className="recurring-card">
-              <div className="recurring-header">
-                <div className="recurring-title">
+            <div key={item.id} className="recurring-glass-card shadow-2xl">
+              <div className="recurring-card-header">
+                <div className="recurring-card-title">
                   <h3>{item.description}</h3>
-                  <p className="recurring-category">{item.category_name || 'Uncategorized'}</p>
+                  <p className="recurring-card-category">{item.category_name || 'Uncategorized'}</p>
                 </div>
-                <div className="recurring-actions">
+                <div className="recurring-card-actions">
                   <button 
-                    className="btn ghost small"
                     onClick={() => handleExecute(item.id)}
                     title="Process Today"
                   >
                     <Play size={14} />
                   </button>
                   <button 
-                    className="btn ghost small"
+                    className="text-danger"
                     onClick={() => handleDelete(item.id)}
                     title="Delete"
                   >
@@ -133,37 +135,36 @@ export default function Recurring() {
                 </div>
               </div>
 
-              <div className="recurring-details">
-                <div className="detail-item">
-                  <DollarSign size={16} />
-                  <span>{formatCurrency(item.amount)}</span>
-                </div>
-                <div className="detail-item">
-                  <Calendar size={16} />
-                  <span>{frequencyLabels[item.frequency]}</span>
-                </div>
-                <div className={`detail-item type ${item.type}`}>
-                  <span>{item.type === 'income' ? '+' : '-'} {item.type}</span>
-                </div>
+              <div className="recurring-amount-block">
+                <span className="recurring-value">{formatCurrency(item.amount)}</span>
+                <span className={`recurring-type ${item.type}`}>
+                  {item.type === 'income' ? '+ Income' : '- Expense'}
+                </span>
               </div>
 
-              <div className="recurring-meta">
-                <span className="next-due">
-                  Next: {new Date(item.next_due_date).toLocaleDateString()}
+              <div className="recurring-freq-bar">
+                <Calendar size={14} />
+                <span>{frequencyLabels[item.frequency]}</span>
+              </div>
+
+              <div className="recurring-meta-row">
+                <span className="recurring-next-due">
+                  Next: {new Date(item.next_due_date).toLocaleDateString('en-ZA')}
                 </span>
                 {item.auto_create && (
-                  <span className="auto-create-badge">Auto</span>
+                  <span className="recurring-auto-badge">Auto</span>
                 )}
               </div>
             </div>
           ))
         ) : (
-          <div className="empty-state">
+          <div className="empty-state glass-panel" style={{ gridColumn: '1 / -1', padding: '4rem 2rem' }}>
             <Calendar size={48} />
             <h3>No Recurring Transactions</h3>
-            <p>Set up recurring income like salary or expenses like rent</p>
+            <p className="text-muted">Set up recurring income like salary or expenses like rent</p>
             <button 
               className="btn primary"
+              style={{ marginTop: '1.5rem' }}
               onClick={() => setShowAddForm(true)}
             >
               Create Your First Recurring Transaction

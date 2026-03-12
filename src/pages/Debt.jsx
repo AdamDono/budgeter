@@ -72,129 +72,143 @@ export default function Debt() {
   const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment || 0), 0)
 
   return (
-    <div className="debt-page">
-      <div className="page-header">
-        <div>
-          <h1>Debt Management</h1>
-          <p>Track and pay off your debts strategically</p>
+    <div className="debt-page-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Debt Management</h1>
+          <p className="text-muted">Track and pay off your debts strategically</p>
         </div>
         <button
-          className="btn primary"
+          className="btn primary extra-small"
+          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
           onClick={() => setShowAddForm(true)}
         >
           <Plus size={16} />
           Add Debt
         </button>
-      </div>
+      </header>
 
-      {/* Summary Cards */}
-      <div className="debt-summary">
-        <div className="summary-card">
-          <DollarSign size={24} />
-          <div>
-            <h3>Total Debt</h3>
-            <p className="amount">{formatCurrency(totalDebt)}</p>
+      {/* High-Fidelity Intel Row */}
+      <div className="analytics-summary-stats">
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <DollarSign size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Total Debt</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(totalDebt)}</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <TrendingDown size={24} />
-          <div>
-            <h3>Monthly Payment</h3>
-            <p className="amount">{formatCurrency(totalMonthlyPayment)}</p>
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <TrendingDown size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Monthly Payment</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(totalMonthlyPayment)}</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <Calendar size={24} />
-          <div>
-            <h3>Payoff Timeline</h3>
-            <p className="amount">
+        <div className="intel-block glass-panel highlight" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <Calendar size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Payoff Timeline</span>
+            <span className="intel-value" style={{ fontSize: '1.25rem', marginTop: '0.25rem' }}>
               {payoffPlan ? `${payoffPlan.months} months` : 'N/A'}
-            </p>
+            </span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <DollarSign size={24} />
-          <div>
-            <h3>Total Interest</h3>
-            <p className="amount">
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <DollarSign size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Total Interest</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>
               {payoffPlan ? formatCurrency(payoffPlan.totalInterest) : 'N/A'}
-            </p>
+            </span>
           </div>
         </div>
       </div>
 
       {/* Payoff Strategy Selector */}
       {debts.length > 0 && (
-        <div className="strategy-selector">
-          <h3>Payoff Strategy</h3>
-          <div className="strategy-buttons">
-            <button
-              className={`strategy-btn ${payoffStrategy === 'snowball' ? 'active' : ''}`}
+        <div className="payoff-plan-v2">
+          <div className="card-v2-header">
+            <div>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>Payoff Strategy</h2>
+            </div>
+          </div>
+          <div className="strategy-row-v2">
+            <div
+              className={`strategy-btn-v2 ${payoffStrategy === 'snowball' ? 'active' : ''}`}
               onClick={() => setPayoffStrategy('snowball')}
             >
               <h4>Snowball Method</h4>
               <p>Pay smallest debt first for quick wins</p>
-            </button>
-            <button
-              className={`strategy-btn ${payoffStrategy === 'avalanche' ? 'active' : ''}`}
+            </div>
+            <div
+              className={`strategy-btn-v2 ${payoffStrategy === 'avalanche' ? 'active' : ''}`}
               onClick={() => setPayoffStrategy('avalanche')}
             >
               <h4>Avalanche Method</h4>
               <p>Pay highest interest first to save money</p>
-            </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Debts List */}
-      <div className="debts-section">
-        <h2>Your Debts</h2>
+      <div className="payoff-plan-v2">
+        <div className="card-v2-header">
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '1.5rem' }}>Your Debts</h2>
+          </div>
+        </div>
         {debts.length > 0 ? (
-          <div className="debts-grid">
+          <div className="goals-glass-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', display: 'grid', gap: '1.5rem' }}>
             {debts.map((debt, idx) => {
               const payoffInfo = payoffPlan?.plan[idx]
               const isPaidOff = parseFloat(debt.balance) <= 0
               return (
-                <div key={debt.id} className={`debt-card ${isPaidOff ? 'paid-off' : ''}`}>
-                  <div className="debt-header">
+                <div key={debt.id} className={`debt-glass-card shadow-2xl ${isPaidOff ? 'paid-off' : ''}`}>
+                  <div className="debt-card-header-v2">
                     <h3>{debt.name}</h3>
-                    <div className="debt-actions-header">
-                      {isPaidOff && <CheckCircle size={18} className="text-pos mr-2" />}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {isPaidOff && <CheckCircle size={18} className="text-pos" />}
                       <button
-                        className="btn ghost small"
+                        className="btn ghost extra-small"
+                        style={{ padding: '0.4rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                         onClick={() => handleDeleteDebt(debt.id)}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={14} color="#94a3b8" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="debt-details">
-                    <div className="detail-row">
-                      <span>Balance:</span>
-                      <strong>{formatCurrency(debt.balance)}</strong>
+                  <div className="debt-details-grid">
+                    <div className="debt-detail-v2">
+                      <span className="label">Balance:</span>
+                      <span className="value highlight">{formatCurrency(debt.balance)}</span>
                     </div>
-                    <div className="detail-row">
-                      <span>Interest Rate:</span>
-                      <strong>{debt.interest_rate}%</strong>
+                    <div className="debt-detail-v2">
+                      <span className="label">Interest Rate:</span>
+                      <span className="value highlight">{debt.interest_rate}%</span>
                     </div>
-                    <div className="detail-row">
-                      <span>Monthly Payment:</span>
-                      <strong>{formatCurrency(debt.monthly_payment)}</strong>
+                    <div className="debt-detail-v2">
+                      <span className="label">Monthly Payment:</span>
+                      <span className="value highlight">{formatCurrency(debt.monthly_payment)}</span>
                     </div>
-                    {parseFloat(debt.credit_limit) > 0 && (
-                      <div className="detail-row">
-                        <span>Credit Limit:</span>
-                        <strong>{formatCurrency(debt.credit_limit)}</strong>
-                      </div>
-                    )}
                   </div>
 
                   {payoffInfo && (
-                    <div className="payoff-info">
+                    <div className="debt-payoff-info-v2">
                       <div className="payoff-row">
                         <span>Payoff Time:</span>
                         <strong>{payoffInfo.payoffMonths} months</strong>
@@ -206,9 +220,9 @@ export default function Debt() {
                     </div>
                   )}
 
-                  <div className="progress-bar">
+                  <div className="debt-progress-v2" style={{ marginTop: 'auto' }}>
                     <div
-                      className="progress-fill"
+                      className="debt-progress-fill-v2"
                       style={{
                         width: `${Math.min(100, ((parseFloat(debt.monthly_payment) || 0) / (parseFloat(debt.balance) || 1) * 100))}%`
                       }}
@@ -219,10 +233,12 @@ export default function Debt() {
             })}
           </div>
         ) : (
-          <div className="empty-state">
-            <TrendingDown size={48} />
-            <h3>No Debts Tracked</h3>
-            <p>Add your debts to create a payoff plan</p>
+          <div className="savings-empty-state">
+            <div className="empty-pot-icon">
+              <TrendingDown size={32} />
+            </div>
+            <h3 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 700 }}>No Debts Tracked</h3>
+            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Add your debts to create a payoff plan</p>
             <button
               className="btn primary"
               onClick={() => setShowAddForm(true)}
@@ -233,27 +249,36 @@ export default function Debt() {
         )}
       </div>
 
-      {/* Payoff Plan */}
-      {payoffPlan && (
-        <div className="payoff-plan-section">
-          <h2>Payoff Plan ({payoffStrategy === 'snowball' ? 'Snowball' : 'Avalanche'})</h2>
-          <div className="payoff-timeline">
-            <p className="timeline-summary">
-              Pay off all debts in <strong>{payoffPlan.months} months</strong> with total interest of <strong>{formatCurrency(payoffPlan.totalInterest)}</strong>
-            </p>
-            <div className="timeline-items">
-              {payoffPlan.plan.map((debt, idx) => (
-                <div key={idx} className="timeline-item">
-                  <div className="timeline-marker"></div>
-                  <div className="timeline-content">
-                    <h4>{debt.name}</h4>
-                    <p>
-                      {debt.payoffMonths} months • Interest: {formatCurrency(debt.totalInterest)}
-                    </p>
+      {/* High-Fidelity Payoff Plan Timeline */}
+      {debts.length > 0 && payoffPlan && payoffPlan.plan.length > 0 && (
+        <div className="payoff-plan-v2">
+          <div className="card-v2-header">
+            <div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+                Strategic Roadmap
+              </h2>
+              <p className="text-muted" style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+                Estimated elimination path via <strong>{payoffStrategy === 'snowball' ? 'Snowball' : 'Avalanche'}</strong>. All debts clear in <strong>{payoffPlan.months} months</strong> with a total interest cost of <strong>{formatCurrency(payoffPlan.totalInterest)}</strong>.
+              </p>
+            </div>
+          </div>
+          
+          <div className="payoff-timeline-v2">
+            {payoffPlan.plan.map((debtInfo, idx) => (
+              <div key={idx} className="timeline-step-v2">
+                <div className="timeline-marker-v2"></div>
+                <div className="timeline-content-v2">
+                  <div>
+                    <h4>{debtInfo.name}</h4>
+                    <p>Targeted payoff in {debtInfo.payoffMonths} months</p>
+                  </div>
+                  <div className="timeline-metric-v2">
+                    <span className="value">{formatCurrency(debtInfo.totalInterest)}</span>
+                    <span className="label">Interest Cost</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
