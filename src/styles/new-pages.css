@@ -2668,3 +2668,329 @@
     text-align: left;
   }
 }
+
+/* CREDIT HUB V2 - PREMIUM STYLING */
+.credit-hub-v2 {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 8rem;
+  position: relative;
+}
+
+.credit-grid-v2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.credit-glass-card {
+  background: rgba(17, 24, 39, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.credit-glass-card:hover {
+  background: rgba(17, 24, 39, 0.5);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.score-main-card-v2 {
+  grid-column: 1 / -1;
+  align-items: center;
+  text-align: center;
+}
+
+.score-gauge-container-v2 {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.score-gauge-v2 {
+  width: 100%;
+  overflow: visible;
+}
+
+.score-value-overlay-v2 {
+  position: absolute;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-number-v2 {
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  font-size: 5.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-label-v2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+.score-info-v2 {
+  margin-top: 1.5rem;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.score-range-v2 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #64748b;
+  font-size: 0.85rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+.range-bar-v2 {
+  height: 6px;
+  flex: 1;
+  background: linear-gradient(to right, #EF4444, #F59E0B, #FBBF24, #34D399, #10B981);
+  border-radius: 6px;
+}
+
+.card-header-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.card-title-v2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.badge-amber-v2 {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.empty-simulator-v2 {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.insights-list-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.insight-item-v2 {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.insight-item-v2:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateX(6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.insight-icon-v2 {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.insight-text-v2 {
+  flex: 1;
+}
+
+.insight-header-v2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.insight-header-v2 h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+
+.insight-impact-v2 {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.insight-text-v2 p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.insight-arrow-v2 {
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.insight-item-v2:hover .insight-arrow-v2 {
+  transform: translateX(4px);
+  color: #e2e8f0;
+}
+
+.simulator-footer-v2 {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.9rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.history-chart-placeholder-v2 {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  margin-top: 1.5rem;
+  min-height: 200px;
+}
+
+.mini-chart-v2 {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  width: 100%;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.chart-bar-wrapper-v2 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chart-bar-v2 {
+  width: 100%;
+  max-width: 48px;
+  border-radius: 8px 8px 0 0;
+  min-height: 4px;
+  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar-label-v2 {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.edu-list-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.edu-item-v2 {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  font-weight: 500;
+}
+
+@media (max-width: 1024px) {
+  .credit-hub-v2 {
+    padding: 1.5rem 1rem 6rem;
+  }
+  .credit-grid-v2 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .score-number-v2 {
+    font-size: 4.5rem;
+  }
+  .insight-item-v2 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .insight-header-v2 {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .insight-arrow-v2 {
+    align-self: flex-end;
+  }
+}

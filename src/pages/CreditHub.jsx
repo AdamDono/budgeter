@@ -112,76 +112,84 @@ export default function CreditHub() {
   if (loadingCredit || loadingDebts) return <div className="p-8">Loading your credit profile...</div>
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Credit Excellence Hub</h1>
-          <p className="page-subtitle">Track, simulate, and boost your financial reputation</p>
+    <div className="credit-hub-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Credit Excellence Hub</h1>
+          <p className="text-muted">Track, simulate, and boost your financial reputation</p>
         </div>
-        <button className="btn primary" onClick={() => setShowUpdateModal(true)}>
-          <Plus size={18} /> Update Score
+        <button
+          className="btn primary extra-small"
+          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
+          onClick={() => setShowUpdateModal(true)}
+        >
+          <Plus size={16} />
+          Update Score
         </button>
-      </div>
+      </header>
 
-      <div className="credit-grid">
+      <div className="credit-grid-v2">
         {/* Main Gauge Section */}
-        <div className="credit-card score-main-card">
-          <div className="score-gauge-container">
-            <svg viewBox="0 0 100 55" className="score-gauge">
+        <div className="credit-glass-card score-main-card-v2 shadow-2xl">
+          <div className="score-gauge-container-v2">
+            <svg viewBox="0 0 100 55" className="score-gauge-v2">
               <path
                 d="M 10 50 A 40 40 0 0 1 90 50"
                 fill="none"
-                stroke="#2D3748"
-                strokeWidth="8"
+                stroke="#1e293b"
+                strokeWidth="6"
                 strokeLinecap="round"
               />
               <path
                 d="M 10 50 A 40 40 0 0 1 90 50"
                 fill="none"
                 stroke={getScoreColor(currentScore)}
-                strokeWidth="8"
+                strokeWidth="6"
                 strokeLinecap="round"
-                strokeDasharray={`${(currentScore - 300) / (850 - 300) * 125.6} 125.6`}
+                strokeDasharray={`${Math.max(0, (currentScore - 300) / (850 - 300) * 125.6)} 125.6`}
+                style={{ filter: `drop-shadow(0 0 8px ${getScoreColor(currentScore)}40)` }}
               />
             </svg>
-            <div className="score-value-overlay">
-              <span className="score-number">{currentScore || '---'}</span>
-              <span className="score-label" style={{ color: getScoreColor(currentScore) }}>
+            <div className="score-value-overlay-v2">
+              <span className="score-number-v2" style={{ textShadow: `0 0 20px ${getScoreColor(currentScore)}80`, color: getScoreColor(currentScore) }}>{currentScore || '---'}</span>
+              <span className="score-label-v2" style={{ color: getScoreColor(currentScore) }}>
                 {getScoreLabel(currentScore)}
               </span>
             </div>
           </div>
-          <div className="score-info">
+          <div className="score-info-v2">
             <p>Score updated {creditData?.latestScore?.last_updated ? new Date(creditData.latestScore.last_updated).toLocaleDateString() : 'never'}</p>
-            <div className="score-range">
+            <div className="score-range-v2">
               <span>300</span>
-              <div className="range-bar"></div>
+              <div className="range-bar-v2"></div>
               <span>850</span>
             </div>
           </div>
         </div>
 
         {/* Simulator Section */}
-        <div className="credit-card simulator-card">
-          <div className="card-header">
-            <h3 className="card-title">
+        <div className="credit-glass-card simulator-card-v2">
+          <div className="card-header-v2">
+            <h3 className="card-title-v2">
               <Zap size={20} className="text-amber-400" /> Smart Score Simulator
             </h3>
-            <span className="badge amber">Secret Sauce AI</span>
+            <span className="badge-amber-v2">Secret Sauce AI</span>
           </div>
           
-          <div className="simulator-content">
+          <div className="simulator-content-v2">
             {currentScore === 0 ? (
-              <div className="empty-simulator">
+              <div className="empty-simulator-v2">
                 <Info size={32} />
                 <p>Update your credit score to unlock the simulator insights.</p>
               </div>
             ) : (
-              <div className="insights-list">
+              <div className="insights-list-v2">
                 {simulateInsights?.map((insight, i) => {
                   const getColor = (type) => {
                     if (type === 'danger') return '#EF4444'
-                    if (type === 'boost') return '#3B82F6'
+                    if (type === 'boost') return '#4f8cff'
                     if (type === 'success') return '#10B981'
                     return '#94A3B8'
                   }
@@ -189,20 +197,20 @@ export default function CreditHub() {
                   return (
                     <div 
                       key={i} 
-                      className={`insight-item ${insight.type}`}
+                      className={`insight-item-v2 ${insight.type}`}
                       onClick={() => openCoach(`I'm looking at my credit score insight: "${insight.title}". ${insight.desc} Can you give me more specific steps on how to execute this?`)}
                     >
-                      <div className="insight-icon" style={{ backgroundColor: `${getColor(insight.type)}20`, color: getColor(insight.type) }}>
+                      <div className="insight-icon-v2" style={{ backgroundColor: `${getColor(insight.type)}20`, color: getColor(insight.type) }}>
                         {insight.type === 'danger' ? <TrendingDown size={18} /> : <ShieldCheck size={18} />}
                       </div>
-                      <div className="insight-text">
-                        <div className="insight-header">
+                      <div className="insight-text-v2">
+                        <div className="insight-header-v2">
                           <h4>{insight.title}</h4>
-                          <span className="insight-impact" style={{ color: getColor(insight.type) }}>{insight.impact}</span>
+                          <span className="insight-impact-v2" style={{ color: getColor(insight.type), border: `1px solid ${getColor(insight.type)}30` }}>{insight.impact}</span>
                         </div>
                         <p>{insight.desc}</p>
                       </div>
-                      <ChevronRight className="insight-arrow" />
+                      <ChevronRight className="insight-arrow-v2" />
                     </div>
                   )
                 })}
@@ -210,63 +218,68 @@ export default function CreditHub() {
             )}
           </div>
           
-          <div className="simulator-footer">
+          <div className="simulator-footer-v2">
             <p>Based on your current debt profile of <strong>R{debts.reduce((sum, d) => sum + parseFloat(d.balance), 0).toLocaleString()}</strong></p>
           </div>
         </div>
 
         {/* Score History Chart Placeholder */}
-        <div className="credit-card history-card">
-          <div className="card-header">
-            <h3 className="card-title">
-              <ChartIcon size={20} /> Score History
+        <div className="credit-glass-card history-card-v2">
+          <div className="card-header-v2">
+            <h3 className="card-title-v2">
+              <ChartIcon size={20} className="text-blue-400" /> Score History
             </h3>
           </div>
-          <div className="history-chart-placeholder">
+          <div className="history-chart-placeholder-v2">
             {history.length > 1 ? (
-              <div className="mini-chart">
-                {/* Simplified bar chart for history */}
+              <div className="mini-chart-v2">
                 {history.slice().reverse().map((h, i) => (
-                   <div key={i} className="chart-bar-wrapper">
+                   <div key={i} className="chart-bar-wrapper-v2">
                      <div 
-                      className="chart-bar" 
+                      className="chart-bar-v2" 
                       style={{ 
-                        height: `${(h.score - 300) / (850 - 300) * 100}%`,
-                        backgroundColor: getScoreColor(h.score)
+                        height: `${Math.max(10, (h.score - 300) / (850 - 300) * 100)}%`,
+                        backgroundColor: getScoreColor(h.score),
+                        boxShadow: `0 0 10px ${getScoreColor(h.score)}40`
                       }}
                      ></div>
-                     <span className="bar-label">{new Date(h.last_updated).toLocaleDateString(undefined, { month: 'short' })}</span>
+                     <span className="bar-label-v2">{new Date(h.last_updated).toLocaleDateString(undefined, { month: 'short' })}</span>
                    </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400">Not enough data to show history yet.</p>
+              <p className="text-gray-400" style={{ textAlign: 'center', width: '100%', paddingBottom: '2rem' }}>Not enough data to show history yet.</p>
             )}
           </div>
         </div>
 
         {/* Credit Education Section */}
-        <div className="credit-card education-card">
-           <h3 className="card-title">How to master your score</h3>
-           <div className="edu-list">
-             <div className="edu-item">
-                <TrendingUp size={16} className="text-emerald-400" />
+        <div className="credit-glass-card education-card-v2">
+           <div className="card-header-v2">
+             <h3 className="card-title-v2">
+               <Info size={20} className="text-emerald-400" /> Mastery Guide
+             </h3>
+           </div>
+           <div className="edu-list-v2">
+             <div className="edu-item-v2">
+                <TrendingUp size={18} className="text-emerald-400" />
                 <span>Pay all accounts on time (35% of score)</span>
              </div>
-             <div className="edu-item">
-                <TrendingUp size={16} className="text-emerald-400" />
+             <div className="edu-item-v2">
+                <TrendingUp size={18} className="text-emerald-400" />
                 <span>Keep credit use below 30% (30% of score)</span>
              </div>
-             <div className="edu-item">
-                <TrendingUp size={16} className="text-emerald-400" />
+             <div className="edu-item-v2">
+                <TrendingUp size={18} className="text-emerald-400" />
                 <span>Don't open too many new accounts at once</span>
              </div>
            </div>
            <button 
-             className="btn ghost full-width" 
+             className="btn secondary full-width" 
+             style={{ marginTop: 'auto', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
              onClick={() => openCoach("I want some deep advice on mastering my credit score based on my current financial profile (debts, score, etc.). What are some long-term habits I should start 🇿🇦?")}
            >
-             View Deep Advice <ArrowRight size={16} />
+             Get Deep Advice <ArrowRight size={16} />
            </button>
         </div>
       </div>
