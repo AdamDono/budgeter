@@ -82,21 +82,25 @@ export default function Settings() {
   }
 
   return (
-    <div className="settings-page">
-      <div className="page-header">
-        <h1>Settings</h1>
-        <p>Manage your account and preferences</p>
-      </div>
+    <div className="settings-page-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Settings</h1>
+          <p className="text-muted">Manage your account and preferences</p>
+        </div>
+      </header>
 
-      <div className="settings-container">
+      <div className="settings-container-v2">
         {/* Settings Navigation */}
-        <div className="settings-nav">
+        <div className="settings-nav-v2">
           {tabs.map(tab => {
             const Icon = tab.icon
             return (
               <button
                 key={tab.id}
-                className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+                className={`settings-tab-v2 ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 <Icon size={18} />
@@ -107,7 +111,7 @@ export default function Settings() {
         </div>
 
         {/* Settings Content */}
-        <div className="settings-content">
+        <div className="settings-content-v2">
           {activeTab === 'profile' && (
             <ProfileSettings user={user} onLogout={logout} />
           )}
@@ -138,30 +142,30 @@ export default function Settings() {
 // Profile Settings Component
 function ProfileSettings({ user, onLogout }) {
   return (
-    <div className="settings-section">
+    <div className="glass-panel settings-section-v2">
       <h2>Profile Information</h2>
       
-      <div className="profile-card">
-        <div className="profile-avatar">
+      <div className="profile-card-v2">
+        <div className="profile-avatar-v2">
           {user?.firstName?.[0]}{user?.lastName?.[0]}
         </div>
-        <div className="profile-info">
+        <div className="profile-info-v2">
           <h3>{user?.firstName} {user?.lastName}</h3>
           <p>{user?.email}</p>
         </div>
       </div>
 
-      <div className="settings-group">
+      <div className="settings-group-v2">
         <h3>Account Details</h3>
-        <div className="form-group">
+        <div className="form-group-v2">
           <label>First Name</label>
           <input type="text" value={user?.firstName || ''} disabled />
         </div>
-        <div className="form-group">
+        <div className="form-group-v2">
           <label>Last Name</label>
           <input type="text" value={user?.lastName || ''} disabled />
         </div>
-        <div className="form-group">
+        <div className="form-group-v2">
           <label>Email Address</label>
           <input type="email" value={user?.email || ''} disabled />
         </div>
@@ -170,9 +174,12 @@ function ProfileSettings({ user, onLogout }) {
         </p>
       </div>
 
-      <div className="settings-group">
+      <div className="settings-group-v2">
         <h3>Account Actions</h3>
-        <button className="btn danger" onClick={onLogout}>
+        <button 
+          className="btn danger"
+          onClick={onLogout}
+        >
           Sign Out
         </button>
       </div>
@@ -193,11 +200,11 @@ function CategoriesSettings({
   loading
 }) {
   return (
-    <div className="settings-section">
-      <div className="section-header">
+    <div className="glass-panel settings-section-v2">
+      <div className="section-header-v2">
         <h2>Budget Categories</h2>
         <button 
-          className="btn primary"
+          className="btn primary extra-small"
           onClick={() => setShowForm(true)}
         >
           <Plus size={16} />
@@ -209,15 +216,15 @@ function CategoriesSettings({
         Manage your spending categories and monthly budget limits.
       </p>
 
-      <div className="categories-list">
+      <div className="categories-list-v2">
         {categories.map(category => (
-          <div key={category.id} className="category-item">
-            <div className="category-info">
+          <div key={category.id} className="category-item-v2">
+            <div className="category-info-v2">
               <div 
-                className="category-color"
+                className="category-color-v2"
                 style={{ backgroundColor: category.color || '#6B7280' }}
               ></div>
-              <div className="category-details">
+              <div className="category-details-v2">
                 <h4>{category.name}</h4>
                 <p>
                   {category.monthly_limit 
@@ -227,18 +234,18 @@ function CategoriesSettings({
                 </p>
               </div>
             </div>
-            <div className="category-actions">
+            <div className="category-actions-v2">
               <button 
-                className="btn ghost small"
+                className="btn ghost extra-small"
                 onClick={() => setEditingCategory(category)}
               >
-                <Edit size={14} />
+                <Edit size={16} />
               </button>
               <button 
-                className="btn ghost small"
+                className="btn ghost extra-small hover-danger"
                 onClick={() => onDeleteCategory(category.id)}
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </button>
             </div>
           </div>
@@ -296,15 +303,15 @@ function CategoryForm({ category, onSubmit, onClose, loading }) {
   ]
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <div className="modal-overlay-v2" onClick={onClose}>
+      <div className="modal-content-v2" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-v2">
           <h2>{category ? 'Edit Category' : 'Add Category'}</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button className="modal-close-v2" onClick={onClose}>✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="category-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="category-form-v2">
+          <div className="form-group-v2">
             <label>Category Name</label>
             <input
               type="text"
@@ -316,22 +323,22 @@ function CategoryForm({ category, onSubmit, onClose, loading }) {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group-v2">
             <label>Color</label>
-            <div className="color-picker">
+            <div className="color-picker-v2">
               <input
                 type="color"
                 name="color"
                 value={formData.color}
                 onChange={handleChange}
-                className="color-input"
+                className="color-input-v2"
               />
-              <div className="color-presets">
+              <div className="color-presets-v2">
                 {predefinedColors.map(color => (
                   <button
                     key={color}
                     type="button"
-                    className={`color-preset ${formData.color === color ? 'selected' : ''}`}
+                    className={`color-preset-v2 ${formData.color === color ? 'selected' : ''}`}
                     style={{ backgroundColor: color }}
                     onClick={() => setFormData(prev => ({ ...prev, color }))}
                   />
@@ -340,7 +347,7 @@ function CategoryForm({ category, onSubmit, onClose, loading }) {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="form-group-v2">
             <label>Monthly Budget Limit (Optional)</label>
             <input
               type="number"
@@ -356,12 +363,12 @@ function CategoryForm({ category, onSubmit, onClose, loading }) {
             </p>
           </div>
 
-          <div className="form-actions">
+          <div className="modal-actions-v2">
             <button type="button" className="btn ghost" onClick={onClose}>
               Cancel
             </button>
             <button type="submit" className="btn primary" disabled={loading}>
-              {loading ? 'Saving...' : category ? 'Update Category' : 'Add Category'}
+              {loading ? 'Saving...' : category ? 'Update' : 'Add'}
             </button>
           </div>
         </form>
@@ -379,6 +386,15 @@ function NotificationSettings() {
     emailNotifications: false
   })
 
+  const Toggle = ({ checked, onChange, disabled = false }) => (
+    <div 
+      className={`toggle-track-v2 ${checked ? 'checked' : ''} ${disabled ? 'disabled' : ''}`}
+      onClick={() => !disabled && onChange()}
+    >
+      <div className="toggle-thumb-v2"></div>
+    </div>
+  )
+
   const handleToggle = (key) => {
     setSettings(prev => ({
       ...prev,
@@ -387,72 +403,43 @@ function NotificationSettings() {
   }
 
   return (
-    <div className="settings-section">
+    <div className="glass-panel settings-section-v2">
       <h2>Notification Preferences</h2>
       <p className="section-description">
         Choose what notifications you'd like to receive.
       </p>
 
-      <div className="settings-group">
-        <div className="setting-item">
-          <div className="setting-info">
+      <div className="settings-list-v2">
+        <div className="setting-item-v2">
+          <div className="setting-info-v2">
             <h4>Budget Alerts</h4>
             <p>Get notified when you're close to or over your budget limits</p>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.budgetAlerts}
-              onChange={() => handleToggle('budgetAlerts')}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+          <Toggle checked={settings.budgetAlerts} onChange={() => handleToggle('budgetAlerts')} />
         </div>
 
-        <div className="setting-item">
-          <div className="setting-info">
+        <div className="setting-item-v2">
+          <div className="setting-info-v2">
             <h4>Goal Reminders</h4>
             <p>Receive reminders to contribute to your financial goals</p>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.goalReminders}
-              onChange={() => handleToggle('goalReminders')}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+          <Toggle checked={settings.goalReminders} onChange={() => handleToggle('goalReminders')} />
         </div>
 
-        <div className="setting-item">
-          <div className="setting-info">
+        <div className="setting-item-v2">
+          <div className="setting-info-v2">
             <h4>Monthly Reports</h4>
             <p>Get a monthly summary of your spending and savings</p>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.monthlyReports}
-              onChange={() => handleToggle('monthlyReports')}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+          <Toggle checked={settings.monthlyReports} onChange={() => handleToggle('monthlyReports')} />
         </div>
 
-        <div className="setting-item">
-          <div className="setting-info">
+        <div className="setting-item-v2 disabled">
+          <div className="setting-info-v2">
             <h4>Email Notifications</h4>
             <p>Receive notifications via email (coming soon)</p>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={settings.emailNotifications}
-              onChange={() => handleToggle('emailNotifications')}
-              disabled
-            />
-            <span className="toggle-slider"></span>
-          </label>
+          <Toggle checked={settings.emailNotifications} onChange={() => handleToggle('emailNotifications')} disabled />
         </div>
       </div>
     </div>
@@ -462,36 +449,38 @@ function NotificationSettings() {
 // Data Settings Component
 function DataSettings() {
   return (
-    <div className="settings-section">
+    <div className="glass-panel settings-section-v2">
       <h2>Data & Privacy</h2>
       <p className="section-description">
         Manage your data and privacy settings.
       </p>
 
-      <div className="settings-group">
-        <h3>Data Storage</h3>
-        <p>
-          Your financial data is stored securely and encrypted. We never share your 
-          personal information with third parties.
-        </p>
-      </div>
+      <div className="settings-list-v2">
+        <div className="setting-item-card-v2">
+          <h3>Data Storage</h3>
+          <p>
+            Your financial data is stored securely and encrypted. We never share your 
+            personal information with third parties.
+          </p>
+        </div>
 
-      <div className="settings-group">
-        <h3>Export Data</h3>
-        <p>
-          You can export your transaction data at any time from the main dashboard 
-          using the Export feature.
-        </p>
-      </div>
+        <div className="setting-item-card-v2">
+          <h3>Export Data</h3>
+          <p>
+            You can export your transaction data at any time from the main dashboard 
+            using the Export feature.
+          </p>
+        </div>
 
-      <div className="settings-group">
-        <h3>Delete Account</h3>
-        <p>
-          Permanently delete your account and all associated data. This action cannot be undone.
-        </p>
-        <button className="btn danger" disabled>
-          Delete Account (Coming Soon)
-        </button>
+        <div className="setting-item-card-v2 danger">
+          <h3 className="text-danger">Delete Account</h3>
+          <p>
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          <button className="btn danger extra-small disabled">
+            Delete Account (Coming Soon)
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -59,14 +59,25 @@ export default function Dashboard() {
   const savingsRate = summary.savingsRate || 0
   
   // AI Strategic Insights - Now based on real data
-  const aiBriefing = {
-    headline: netIncome > 0 
-      ? `You've generated ${formatCurrency(netIncome)} in surplus capital this month!` 
-      : `Notice: You are currently running a ${formatCurrency(Math.abs(netIncome))} deficit.`,
-    suggestion: netIncome > 0
-      ? `I recommend allocating ${formatCurrency(netIncome * 0.4)} towards your '${goals?.goals?.[0]?.name || 'Savings'}' to maintain your ${savingsRate}% velocity.`
-      : `I suggest reviewing your Outflow items to identify at least ${formatCurrency(Math.abs(netIncome))} in potential optimizations.`,
-    action: netIncome > 0 ? "/app/savings" : "/app/transactions"
+  let aiBriefing = {}
+  if (summary.totalIncome === 0 && summary.totalExpenses === 0) {
+    aiBriefing = {
+      headline: "Welcome to PaceFinance.",
+      suggestion: "Initiate your financial tracking by logging your first transaction or setting up a savings target.",
+      action: "/app/transactions"
+    }
+  } else if (netIncome >= 0) {
+    aiBriefing = {
+      headline: `You've generated ${formatCurrency(netIncome)} in surplus capital this month!`,
+      suggestion: `I recommend allocating ${formatCurrency(netIncome * 0.4)} towards your '${goals?.goals?.[0]?.name || 'Savings'}' to maintain your ${savingsRate}% velocity.`,
+      action: "/app/savings"
+    }
+  } else {
+    aiBriefing = {
+      headline: `Notice: You are currently running a ${formatCurrency(Math.abs(netIncome))} deficit.`,
+      suggestion: `I suggest reviewing your Outflow items to identify at least ${formatCurrency(Math.abs(netIncome))} in potential optimizations.`,
+      action: "/app/transactions"
+    }
   }
 
   return (
@@ -154,7 +165,10 @@ export default function Dashboard() {
             <Link to="/app/debt" className="view-link">Analyze Liability</Link>
           </div>
           <div className="debt-stats">
-            <div className="stat-circle">
+            <div 
+              className="stat-circle" 
+              style={activeDebtsCount === 0 ? { borderColor: 'rgba(255, 255, 255, 0.05)' } : undefined}
+            >
               <div className="circle-content">
                 <span className="c-val">{activeDebtsCount}</span>
                 <span className="c-label">Holdings</span>

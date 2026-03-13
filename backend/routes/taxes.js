@@ -10,7 +10,7 @@ const deductionSchema = Joi.object({
   amount: Joi.number().positive().required(),
   category: Joi.string().required(),
   date: Joi.date().required(),
-  receipt: Joi.string().max(200).optional(),
+  receipt: Joi.string().max(200).optional().allow(null, ''),
 })
 
 // Get all tax deductions for user

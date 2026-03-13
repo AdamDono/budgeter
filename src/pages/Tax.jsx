@@ -77,24 +77,27 @@ export default function Tax() {
   ]
 
   return (
-    <div className="tax-page">
-      <div className="page-header">
-        <div>
-          <h1>Tax Planning & Deductions</h1>
-          <p>Track deductible expenses and estimate your tax liability</p>
+    <div className="tax-page-v2">
+      <div className="bg-glow"></div>
+      
+      <header className="dash-header">
+        <div className="header-info">
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Tax Planning & Deductions</h1>
+          <p className="text-muted">Track deductible expenses and estimate your tax liability</p>
         </div>
         <button
-          className="btn primary"
+          className="btn primary extra-small"
+          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
           onClick={() => setShowAddForm(true)}
         >
           <Plus size={16} />
           Add Deduction
         </button>
-      </div>
+      </header>
 
       {/* Tax Year & Rate Selector */}
-      <div className="tax-controls">
-        <div className="control-group">
+      <div className="tax-controls-v2">
+        <div className="tax-control-group-v2">
           <label>Tax Year</label>
           <select value={taxYear} onChange={(e) => setTaxYear(parseInt(e.target.value))}>
             {[2026, 2025, 2024, 2023].map(year => (
@@ -103,7 +106,7 @@ export default function Tax() {
           </select>
         </div>
 
-        <div className="control-group">
+        <div className="tax-control-group-v2">
           <label>Estimated Tax Rate (%)</label>
           <input
             type="number"
@@ -116,62 +119,70 @@ export default function Tax() {
         </div>
       </div>
 
-      {/* Tax Summary Cards */}
-      <div className="tax-summary">
-        <div className="summary-card">
-          <DollarSign size={24} />
-          <div>
-            <h3>Total Deductions</h3>
-            <p className="amount">{formatCurrency(totalDeductions)}</p>
-            <span className="subtitle">{deductions.length} items</span>
+      {/* High-Fidelity Tax Intel Cards */}
+      <div className="analytics-summary-stats">
+        <div className="intel-block glass-panel highlight" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <DollarSign size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Total Deductions</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(totalDeductions)}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>{deductions.length} items</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <Calculator size={24} />
-          <div>
-            <h3>Estimated Tax Savings</h3>
-            <p className="amount positive">{formatCurrency(taxSavings)}</p>
-            <span className="subtitle">At {estimatedTaxRate}% rate</span>
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+          <div className="intel-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+            <Calculator size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Estimated Tax Savings</span>
+            <span className="intel-value" style={{ color: '#10b981', fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(taxSavings)}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>At {estimatedTaxRate}% rate</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <TrendingUp size={24} />
-          <div>
-            <h3>Taxable Income</h3>
-            <p className="amount">{formatCurrency(taxableIncome)}</p>
-            <span className="subtitle">After deductions</span>
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <TrendingUp size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Taxable Income</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(taxableIncome)}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>After deductions</span>
           </div>
         </div>
 
-        <div className="summary-card">
-          <FileText size={24} />
-          <div>
-            <h3>Estimated Tax</h3>
-            <p className="amount">{formatCurrency(estimatedTax)}</p>
-            <span className="subtitle">To be paid</span>
+        <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
+          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
+            <FileText size={20} />
+          </div>
+          <div className="intel-content">
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Estimated Tax</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(estimatedTax)}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>To be paid</span>
           </div>
         </div>
       </div>
 
-      {/* Deductions by Category */}
-      <div className="deductions-section">
-        <h2>Deductions by Category</h2>
-        <div className="categories-grid">
+      {/* Deductions by Category Grid */}
+      <div style={{ marginTop: '3rem' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '1.5rem' }}>Deductions by Category</h2>
+        <div className="tax-categories-grid-v2">
           {categories.map(cat => {
             const catDeductions = deductionsByCategory[cat.name] || []
             const catTotal = catDeductions.reduce((sum, d) => sum + parseFloat(d.amount), 0)
             return (
-              <div key={cat.name} className="category-card">
-                <div className="category-header">
-                  <span className="category-icon">{cat.icon}</span>
-                  <div>
+              <div key={cat.name} className="tax-category-card-v2 shadow-2xl">
+                <div className="tax-cat-header-v2">
+                  <span className="tax-cat-icon-v2">{cat.icon}</span>
+                  <div className="tax-cat-title-v2">
                     <h4>{cat.name}</h4>
-                    <p className="category-limit">{cat.limit}</p>
+                    <p>{cat.limit}</p>
                   </div>
                 </div>
-                <div className="category-amount">
+                <div className="tax-cat-amount-v2">
                   <p className="amount">{formatCurrency(catTotal)}</p>
                   <p className="count">{catDeductions.length} items</p>
                 </div>
@@ -181,12 +192,12 @@ export default function Tax() {
         </div>
       </div>
 
-      {/* Deductions List */}
-      <div className="deductions-list-section">
-        <h2>All Deductions</h2>
+      {/* Modern Deductions List */}
+      <div className="tax-list-section-v2 shadow-2xl">
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '1.5rem' }}>All Deductions</h2>
         {deductions.length > 0 ? (
-          <div className="deductions-table">
-            <div className="table-header">
+          <div className="deductions-table" style={{ background: 'transparent', border: 'none', padding: 0 }}>
+            <div className="table-header" style={{ background: 'rgba(255, 255, 255, 0.05)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
               <div className="col-date">Date</div>
               <div className="col-description">Description</div>
               <div className="col-category">Category</div>
@@ -194,31 +205,34 @@ export default function Tax() {
               <div className="col-action">Action</div>
             </div>
             {deductions.map(deduction => (
-              <div key={deduction.id} className="table-row">
-                <div className="col-date">
+              <div key={deduction.id} className="table-row" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div className="col-date" style={{ color: '#94a3b8' }}>
                   {new Date(deduction.date).toLocaleDateString()}
                 </div>
-                <div className="col-description">{deduction.description}</div>
+                <div className="col-description" style={{ color: '#e2e8f0', fontWeight: 500 }}>{deduction.description}</div>
                 <div className="col-category">
-                  <span className="category-badge">{deduction.category}</span>
+                  <span className="category-badge" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff', border: '1px solid rgba(79, 140, 255, 0.2)' }}>{deduction.category}</span>
                 </div>
-                <div className="col-amount">{formatCurrency(deduction.amount)}</div>
+                <div className="col-amount" style={{ fontFamily: 'JetBrains Mono', fontWeight: 700, color: '#f1f5f9' }}>{formatCurrency(deduction.amount)}</div>
                 <div className="col-action">
                   <button
-                    className="btn ghost small"
+                    className="btn ghost extra-small"
+                    style={{ padding: '0.4rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)' }}
                     onClick={() => handleDeleteDeduction(deduction.id)}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={14} color="#94a3b8" />
                   </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="empty-state">
-            <FileText size={48} />
-            <h3>No Deductions Tracked</h3>
-            <p>Add deductible expenses to reduce your tax liability</p>
+          <div className="savings-empty-state">
+            <div className="empty-pot-icon">
+              <FileText size={32} />
+            </div>
+            <h3 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 700 }}>No Deductions Tracked</h3>
+            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Add deductible expenses to reduce your tax liability</p>
             <button
               className="btn primary"
               onClick={() => setShowAddForm(true)}
@@ -229,28 +243,7 @@ export default function Tax() {
         )}
       </div>
 
-      {/* Tax Tips */}
-      <div className="tax-tips-section">
-        <h2>SA Tax Deduction Tips</h2>
-        <div className="tips-grid">
-          <div className="tip-card">
-            <h4>🏥 Medical</h4>
-            <p>Medical expenses and health insurance premiums may be deductible. Keep all receipts and medical aid statements.</p>
-          </div>
-          <div className="tip-card">
-            <h4>🏠 Home Office</h4>
-            <p>If you work from home, deduct a reasonable portion of rent, utilities, and internet costs.</p>
-          </div>
-          <div className="tip-card">
-            <h4>❤️ Charitable Donations</h4>
-            <p>Donations to registered NPOs are deductible up to 10% of your taxable income.</p>
-          </div>
-          <div className="tip-card">
-            <h4>💼 Business Expenses</h4>
-            <p>Professional courses, equipment, fees, and business vehicle use are deductible.</p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Add Deduction Modal */}
       {showAddForm && (
@@ -268,7 +261,7 @@ function DeductionForm({ onSubmit, onClose, loading }) {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    category: 'Other',
+    category: 'Medical',
     date: new Date().toISOString().split('T')[0],
     receipt: '',
   })
