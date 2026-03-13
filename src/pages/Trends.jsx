@@ -171,7 +171,12 @@ export default function Trends() {
               const expenseH = (expenseValue / (maxVal || 1)) * 100
 
               return (
-                <div key={i} className="premium-bar-group" style={{ flex: 1 }}>
+                <div 
+                  key={i} 
+                  className="premium-bar-group" 
+                  style={{ flex: 1 }}
+                  data-tooltip={`${new Date(day.date).toLocaleDateString()}\nSpent: ${formatCurrency(expenseValue)}`}
+                >
                   <div className="bar-stack" style={{ justifyContent: 'flex-end' }}>
                     <div 
                       className="bar-indicator premium-bar-hover" 
@@ -182,7 +187,6 @@ export default function Trends() {
                         boxShadow: `0 0 10px rgba(239, 68, 68, 0.2)`,
                         transition: 'all 0.3s ease',
                       }} 
-                      title={`${new Date(day.date).toLocaleDateString()}: ${formatCurrency(expenseValue)}`}
                     />
                   </div>
                   {i % 3 === 0 && (

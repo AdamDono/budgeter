@@ -1980,6 +1980,7 @@
   align-items: center;
   gap: 0.75rem;
   height: 100%;
+  position: relative;
 }
 
 .bar-stack {
@@ -1990,14 +1991,50 @@
   flex-direction: column-reverse;
   gap: 2px;
   position: relative;
+  cursor: pointer;
+}
+
+/* Premium Tooltip */
+.premium-bar-group::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  text-align: center;
+}
+
+.premium-bar-group:hover::after,
+.premium-bar-group:active::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .bar-indicator {
   width: 100%;
   border-radius: 4px;
   min-height: 4px;
-  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: height 1s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
   box-shadow: 0 0 15px currentColor;
+}
+
+.premium-bar-group:hover .bar-indicator {
+  opacity: 1 !important;
+  filter: brightness(1.2);
 }
 
 .insight-intel-grid {

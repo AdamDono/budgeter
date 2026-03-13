@@ -209,7 +209,12 @@ export default function Analytics() {
                 const expenseH = (item.expenses / (maxVal || 1)) * 100
 
                 return (
-                  <div key={i} className="premium-bar-group" style={{ flex: 1 }}>
+                  <div 
+                    key={i} 
+                    className="premium-bar-group" 
+                    style={{ flex: 1 }}
+                    data-tooltip={`${trendView === 'weekly' ? new Date(item.date).toLocaleDateString() : item.label}\nInflow: ${formatCurrency(item.income)}\nOutflow: ${formatCurrency(item.expenses)}`}
+                  >
                     <div className="bar-stack">
                       <div 
                         className="bar-indicator" 
