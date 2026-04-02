@@ -21,7 +21,7 @@ router.post('/chat', async (req, res, next) => {
     }
 
     // 1. Gather FULL Financial Context for the AI
-    let accounts, debts, recentTx, budget, goals, bills, recurring;
+    let accounts, debts, recentTx, budget, goals, bills, recurring, monthlySummary;
     try {
       const results = await Promise.all([
         // All active accounts
@@ -32,7 +32,7 @@ router.post('/chat', async (req, res, next) => {
           ORDER BY balance DESC
         `, [req.user.id]),
 
-        // All active debts (balance > 0 means not paid off)
+        // All active debts
         pool.query(`
           SELECT name, balance, interest_rate, monthly_payment, type
           FROM debts 
@@ -40,7 +40,7 @@ router.post('/chat', async (req, res, next) => {
           ORDER BY interest_rate DESC
         `, [req.user.id]),
 
-        // Last 20 transactions (not just 5)
+        // Last 200 transactions so the AI can answer historical questions
         pool.query(`
           SELECT t.description, t.amount, t.type, t.transaction_date,
                  c.name as category, a.name as account
@@ -49,7 +49,7 @@ router.post('/chat', async (req, res, next) => {
           LEFT JOIN accounts a ON t.account_id = a.id
           WHERE t.user_id = $1 
           ORDER BY t.transaction_date DESC 
-          LIMIT 20
+          LIMIT 200
         `, [req.user.id]),
 
         // Budget categories this month
@@ -65,7 +65,7 @@ router.post('/chat', async (req, res, next) => {
           ORDER BY spent DESC
         `, [req.user.id]),
 
-        // Financial Goals (the "pots")  
+        // Financial Goals
         pool.query(`
           SELECT name, description, target_amount, current_amount, target_date,
                  ROUND((current_amount / NULLIF(target_amount, 0)) * 100, 1) as progress_pct,
@@ -90,15 +90,31 @@ router.post('/chat', async (req, res, next) => {
           WHERE user_id = $1 AND is_active = true
           ORDER BY type, amount DESC
         `, [req.user.id]),
+
+        // Monthly income vs expense summary for the last 6 months
+        pool.query(`
+          SELECT 
+            TO_CHAR(DATE_TRUNC('month', transaction_date), 'Mon YYYY') as month,
+            DATE_TRUNC('month', transaction_date) as month_date,
+            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+            COUNT(*) as transaction_count
+          FROM transactions
+          WHERE user_id = $1 
+            AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '5 months')
+          GROUP BY DATE_TRUNC('month', transaction_date)
+          ORDER BY month_date DESC
+        `, [req.user.id]),
       ])
 
-      accounts  = results[0]
-      debts     = results[1]
-      recentTx  = results[2]
-      budget    = results[3]
-      goals     = results[4]
-      bills     = results[5]
-      recurring = results[6]
+      accounts       = results[0]
+      debts          = results[1]
+      recentTx       = results[2]
+      budget         = results[3]
+      goals          = results[4]
+      bills          = results[5]
+      recurring      = results[6]
+      monthlySummary = results[7]
     } catch (dbError) {
       console.error('--- DB CONTEXT ERROR ---')
       console.error(dbError)
@@ -149,7 +165,12 @@ ${recurring.rows.length > 0
   ? recurring.rows.map(r => `- ${r.type === 'income' ? 'INCOME' : 'EXPENSE'}: ${r.description} R${r.amount} | ${r.frequency} | Next: ${r.next_due_date}`).join('\n')
   : '- No recurring items set up'}
 
-** RECENT TRANSACTIONS (Last 20) **
+** MONTHLY SPENDING SUMMARY (Last 6 months) **
+${monthlySummary.rows.length > 0
+  ? monthlySummary.rows.map(m => `- ${m.month}: Income R${parseFloat(m.total_income).toFixed(2)} | Expenses R${parseFloat(m.total_expenses).toFixed(2)} | Net R${(parseFloat(m.total_income) - parseFloat(m.total_expenses)).toFixed(2)} | ${m.transaction_count} transactions`).join('\n')
+  : '- No monthly history available yet'}
+
+** FULL TRANSACTION HISTORY (Last 200 — use this to answer date-specific questions) **
 ${recentTx.rows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' : '-'}R${parseFloat(t.amount).toFixed(2)} | ${t.description}${t.category ? ` [${t.category}]` : ''}${t.account ? ` via ${t.account}` : ''}`).join('\n')}
 
 === COACHING INSTRUCTIONS ===
