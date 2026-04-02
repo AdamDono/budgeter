@@ -358,7 +358,7 @@ router.get('/analytics', async (req, res, next) => {
   }
 })
 
-// Bulk import transactions from CSV
+// Bulk import transactions from CSV/PDF
 router.post('/import', async (req, res, next) => {
   const client = await pool.connect()
   try {
@@ -379,48 +379,43 @@ router.post('/import', async (req, res, next) => {
     )
     const accountId = accountResult.rows[0]?.id || null
 
-    await client.query('BEGIN')
+    // Filter valid transactions first
+    const valid = transactions.filter(tx => tx.type && tx.amount && tx.description && tx.transactionDate)
+    const failed = transactions.length - valid.length
 
-    let imported = 0
-    let failed = 0
-
-    for (const tx of transactions) {
-      try {
-        const { type, amount, description, transactionDate, categoryId } = tx
-
-        if (!type || !amount || !description || !transactionDate) {
-          failed++
-          continue
-        }
-
-        await client.query(`
-          INSERT INTO transactions (user_id, account_id, type, amount, description, transaction_date, category_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7)
-        `, [
-          req.user.id,
-          accountId,
-          type,
-          parseFloat(amount),
-          description.substring(0, 500),
-          transactionDate,
-          categoryId || null
-        ])
-
-        imported++
-      } catch (rowErr) {
-        failed++
-      }
+    if (valid.length === 0) {
+      return res.json({ message: 'No valid transactions to import', imported: 0, failed })
     }
 
-    await client.query('COMMIT')
+    // Build a single batch INSERT instead of a loop — much faster on remote DBs
+    const values = []
+    const params = []
+    valid.forEach((tx, i) => {
+      const base = i * 7
+      values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`)
+      params.push(
+        req.user.id,
+        accountId,
+        tx.type,
+        parseFloat(tx.amount),
+        String(tx.description).substring(0, 500),
+        tx.transactionDate,
+        tx.categoryId || null
+      )
+    })
+
+    await client.query(
+      `INSERT INTO transactions (user_id, account_id, type, amount, description, transaction_date, category_id)
+       VALUES ${values.join(', ')}`,
+      params
+    )
 
     res.json({
-      message: `Import complete: ${imported} imported, ${failed} failed`,
-      imported,
+      message: `Import complete: ${valid.length} imported, ${failed} failed`,
+      imported: valid.length,
       failed
     })
   } catch (error) {
-    await client.query('ROLLBACK')
     next(error)
   } finally {
     client.release()
