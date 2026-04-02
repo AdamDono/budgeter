@@ -7,7 +7,160 @@ import toast from 'react-hot-toast'
 import { budgetsAPI, importAPI } from '../lib/api'
 
 // Set up PDF.js worker using local bundle
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+
+// ─── SA Smart Auto-Categorizer ───────────────────────────────────────────────
+// Matches transaction descriptions to budget categories using SA-specific keywords.
+// Returns the matching category ID string, or '' if no match found.
+function autoCategorize(description, categories) {
+  if (!description || !categories?.length) return ''
+  const d = description.toLowerCase()
+
+  const rules = [
+    {
+      name: 'Salary',
+      keywords: [
+        'salary', 'payroll', 'remuneration', 'wages', 'nett pay', 'net pay',
+        'monthly pay', 'employee pay', 'staff pay', 'pay credit', 'salaris',
+      ],
+    },
+    {
+      name: 'Groceries',
+      keywords: [
+        'woolworths', 'woolies', 'pick n pay', 'pnp', 'checkers', 'spar',
+        'shoprite', 'food lover', 'ok foods', 'makro', 'game store',
+        'grocery', 'groceries', 'supermarket', 'hyper', 'costco',
+      ],
+    },
+    {
+      name: 'Petrol',
+      keywords: [
+        'shell', 'engen', 'bp ', 'caltex', 'sasol', 'astron', 'total petrol',
+        'petrol', 'fuel', 'filling station', 'garage', 'forecourt',
+      ],
+    },
+    {
+      name: 'Restaurants',
+      keywords: [
+        "nando's", 'nandos', 'steers', 'kfc', 'mcdonalds', 'mc donalds',
+        'burger king', 'wimpy', 'spur', 'ocean basket', 'panarottis',
+        "roman's pizza", 'romans pizza', 'debonairs', "domino's", 'dominoes',
+        'pizza hut', 'fishaways', 'cappuccinos', 'mugg & bean', 'mugg and bean',
+        'vida e caffe', 'starbucks', 'uber eats', 'mr d food', 'mr delivery',
+        'bolt food', 'order in', 'restaurant', 'takeaway', 'take away', 'cafe',
+        'diner', 'grill', 'bistro', 'eatery',
+      ],
+    },
+    {
+      name: 'Transport',
+      keywords: [
+        'uber', 'bolt ride', 'taxify', 'indriver', 'myciti', 'metrorail',
+        'prasa', 'gautrain', 'bus ticket', 'transit', 'e-toll', 'etoll',
+        'highway toll', 'toll gate', 'sanral', 'intercape', 'greyhound',
+        'translux', 'taxi', 'cab ',
+      ],
+    },
+    {
+      name: 'Utilities',
+      keywords: [
+        'eskom', 'city power', 'electricity', 'prepaid elec', 'municipal',
+        'rates and taxes', 'water & sewer', 'refuse removal', 'telkom',
+        'openserve', 'fibre', 'internet', 'broadband', 'rain ',
+        'dstv', 'showmax', 'netflix', 'spotify', 'apple music',
+        'vodacom', 'mtn ', 'cell c', 'telkom mobile', 'airtime', 'data bundle',
+        'prepaid data',
+      ],
+    },
+    {
+      name: 'Rent/Bond',
+      keywords: [
+        'rent', 'bond payment', 'mortgage', 'lease', 'landlord',
+        'property rental', 'home loan', 'accommodation',
+      ],
+    },
+    {
+      name: 'Insurance',
+      keywords: [
+        'outsurance', 'old mutual', 'discovery insure', 'momentum insure',
+        '1life', 'sanlam', 'liberty life', 'hollard', 'miway', 'king price',
+        'auto and general', 'auto & general', 'mutual & federal',
+        'insurance', 'assurance', 'life cover', 'funeral cover',
+        'short term insur', 'medical aid',
+      ],
+    },
+    {
+      name: 'Medical',
+      keywords: [
+        'clicks ', 'dis-chem', 'dischem', 'pharmacy', 'chemist',
+        'netcare', 'life healthcare', 'mediclinic', 'intercare',
+        'doctor', 'hospital', 'dentist', 'optometrist', 'physiotherapy',
+        'medical', 'health ', 'chronic', 'prescription', 'script',
+      ],
+    },
+    {
+      name: 'Education',
+      keywords: [
+        'school fees', 'university', 'varsity', 'college fees', 'tuition',
+        'education', 'wits ', 'uct ', 'stellenbosch', 'unisa', 'uj ',
+        'tut ', 'nmu ', 'ukzn', 'dut ', 'cput ', 'vut ',
+        'student loan', 'nsfas', 'course fee', 'training',
+      ],
+    },
+    {
+      name: 'Clothing',
+      keywords: [
+        'mr price', 'mrp ', 'edgars', 'jet store', 'pep store', 'ackermans',
+        'h&m', 'zara', 'truworths', 'cape union mart', 'exact ', 'foschini',
+        'relay jeans', 'paul simon', 'markham', 'john craig',
+        'clothing', 'fashion', 'apparel', 'boutique',
+      ],
+    },
+    {
+      name: 'Entertainment',
+      keywords: [
+        'ster kinekor', 'nu metro', 'cinema', 'movies', 'event ticket',
+        'ticketpro', 'computicket', 'gaming', 'playstation', 'xbox', 'steam',
+        'planet fitness', 'virgin active', 'gymers', 'gym ', 'crossfit',
+        'netflix', 'showmax', 'spotify', 'apple tv',
+        'entertainment', 'concert', 'comedy',
+      ],
+    },
+    {
+      name: 'Investment',
+      keywords: [
+        'easy equities', 'etfsa', 'satrix', 'absa stockbrokers',
+        'fnb securities', 'nedbank invest', 'standard bank online share',
+        'tax free savings', 'tfsa', 'unit trust', 'etf ', 'shares purchase',
+        'investment transfer', 'invest ',
+      ],
+    },
+    {
+      name: 'Savings Contribution',
+      keywords: [
+        'savings transfer', 'savings account', 'fixed deposit', 'notice account',
+        'money market', '32 day', '60 day', 'savings pot',
+      ],
+    },
+    {
+      name: 'Debt Repayment',
+      keywords: [
+        'credit card payment', 'loan repayment', 'instalment', 'wesbank',
+        'vehicle finance', 'car payment', 'fnb vehicle', 'std bank vaf',
+        'debt ', 'store card', 'account payment', 'flexi reserve',
+        'personal loan', 'overdraft',
+      ],
+    },
+  ]
+
+  for (const rule of rules) {
+    if (rule.keywords.some(kw => d.includes(kw))) {
+      const cat = categories.find(c => c.name === rule.name)
+      if (cat) return cat.id.toString()
+    }
+  }
+
+  return '' // uncategorized — user picks manually
+}
 
 // Detect common SA bank CSV formats
 function detectBankFormat(headers) {
@@ -116,20 +269,22 @@ async function extractTransactionsFromPDF(file) {
   const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
   const allRows = []
 
-  // Bank-specific heuristic settings
+  // Date patterns: "01 Jan", "2024-01-15", "15/01/2024"
   const dateRegex = /(\d{1,2} [A-Z][a-z]{2}|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{4})/gi
-  // Money regex that supports: R 1,234.56, 1234.56, 1 234.56Cr, etc.
-  // It avoids matching long strings of digits like phone numbers or references by requiring standard grouping.
-  const moneyRegex = /(?:R\s?)?(-?\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})(?:[CcDd][Rr])?)/g
+  // Money regex — lenient. Decimals are OPTIONAL so amounts like "1 250" or "250" still match.
+  // Captures Cr/Dr suffix (FNB style). Requires at least 2 digits to avoid single-digit false positives.
+  // Stricter: must have R prefix, OR a decimal, OR thousands separator — NOT bare 2-digit numbers
+  const moneyRegex = /(?:R\s*\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})?|\d{1,3}(?:[\s,']\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?:\s*(?:CR|DR|Cr|Dr))?/g
 
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i)
     const content = await page.getTextContent()
     
-    // Group text items by Y coordinate to reconstruct lines
+    // Group text items by Y coordinate with 3px tolerance
+    // PDF.js sometimes places text on slightly different Y values on the same visual line
     const rowsMap = {}
     content.items.forEach(item => {
-      const y = Math.round(item.transform[5])
+      const y = Math.round(item.transform[5] / 3) * 3  // snap to nearest 3px bucket
       if (!rowsMap[y]) rowsMap[y] = []
       rowsMap[y].push(item)
     })
@@ -138,64 +293,70 @@ async function extractTransactionsFromPDF(file) {
     const sortedY = Object.keys(rowsMap).sort((a, b) => b - a)
     
     sortedY.forEach(y => {
-      // Sort items in the row from left to right
       const rowItems = rowsMap[y].sort((a, b) => a.transform[4] - b.transform[4])
-      const line = rowItems.map(item => item.str).join(" ").trim()
+      const line = rowItems.map(item => item.str).join(' ').trim()
+
+      if (line.length < 5) return // skip near-empty lines
       
-      // Basic check: line must have a date and at least one money amount
+      const lowerLine = line.toLowerCase()
+      // Skip statement summary lines
+      const skipKeywords = ['opening balance', 'closing balance', 'brought forward', 'carried forward', 'statement date', 'available balance', 'total']
+      if (skipKeywords.some(k => lowerLine.includes(k))) return
+
       const dateMatches = line.match(dateRegex)
-      const moneyMatches = line.match(moneyRegex)
+      if (!dateMatches) return
       
-      if (dateMatches && moneyMatches) {
-        const date = dateMatches[0]
-        
-        // Clean money matches (remove R, spaces, commas for parsing)
-        const parsedAmounts = moneyMatches.map(m => {
-          const clean = m.replace(/[R\s,']/g, "")
+      const date = dateMatches[0]
+
+      // REMOVE ALL possible dates from the line so they don't interfere with money detection
+      // Use the global flag and a regex that handles optional spaces in dates
+      const spaceyDateRegex = /(\d{1,2}\s*[A-Z][a-z]{2}|\d{4}\s*[\-\/\.]\s*\d{2}\s*[\-\/\.]\s*\d{2}|\d{2}\s*[\-\/\.]\s*\d{2}\s*[\-\/\.]\s*\d{4})/gi
+      const lineWithoutDates = line.replace(spaceyDateRegex, '')
+
+      moneyRegex.lastIndex = 0 
+      const moneyMatches = lineWithoutDates.match(moneyRegex)
+
+      if (!moneyMatches) return
+
+      const parsedAmounts = moneyMatches
+        .map(m => {
+          const clean = m.replace(/[R\s,']/gi, '').replace(/CR|DR/gi, '')
           return { original: m, value: parseFloat(clean) }
-        }).filter(m => !isNaN(m.value) && Math.abs(m.value) > 0)
+        })
+        .filter(m => !isNaN(m.value) && m.value > 0.5)
 
-          if (parsedAmounts.length > 0) {
-            // HEURISTIC: In most SA bank statements:
-            // Amount is usually the first column, Balance is the second.
-            const txAmount = parsedAmounts[0]
-            
-            let description = line
-              .replace(date, "")
-              .replace(txAmount.original, "")
-            
-            // Remove balance if detected (usually the second money match in the row)
-            if (parsedAmounts.length > 1) {
-              description = description.replace(parsedAmounts[1].original, "")
-            }
+      if (parsedAmounts.length === 0) return
 
-            // Determine type
-            let type = 'expense'
-            const rawValue = txAmount.original.toUpperCase()
-            const lowerLine = line.toLowerCase()
-
-            // FNB Special Case: 'Cr' means Income/Credit. 'Dr' or no suffix usually means Expense.
-            if (rawValue.includes('CR')) {
-              type = 'income'
-            } else if (rawValue.includes('DR')) {
-              type = 'expense'
-            } else {
-              // Heuristic for other formats: minus signs or 'dr' in text
-              if (txAmount.value < 0 || lowerLine.includes(' dr') || txAmount.original.includes('-')) {
-                type = 'expense'
-              } else if (lowerLine.includes(' cr')) {
-                type = 'income'
-              }
-            }
-
-            allRows.push({
-              date,
-              description: description.replace(/\s+/g, ' ').trim() || 'Imported Transaction',
-              amount: Math.abs(txAmount.value),
-              type: type
-            })
-          }
+      // First amount is usually the transaction, last is usually the balance
+      const txAmount = parsedAmounts[0]
+      let description = lineWithoutDates.replace(txAmount.original, '')
+      if (parsedAmounts.length > 1) {
+        description = description.replace(parsedAmounts[parsedAmounts.length - 1].original, '')
       }
+      description = description.replace(/\s+/g, ' ').trim() || 'Imported Transaction'
+
+      // Income vs expense detection
+      const rawUpper = txAmount.original.toUpperCase()
+      // Reuse lowerLine instead of redeclaring it
+      let type = 'expense'
+
+      if (rawUpper.includes('CR')) {
+        type = 'income'
+      } else if (rawUpper.includes('DR')) {
+        type = 'expense'
+      } else if (lowerLine.includes(' cr') || lowerLine.includes('credit')) {
+        type = 'income'
+      } else if (lowerLine.includes(' dr') || lowerLine.includes('debit')) {
+        type = 'expense'
+      } else if (txAmount.original.includes('-') || txAmount.value < 0) {
+        type = 'expense'
+      } else if (parsedAmounts.length > 0 && txAmount.value > 0) {
+        if (['salary', 'deposit', 'transfer from', 'inward', 'received', 'interest'].some(k => lowerLine.includes(k))) {
+            type = 'income'
+        }
+      }
+
+      allRows.push({ date, description, amount: Math.abs(txAmount.value), type })
     })
   }
   return allRows
@@ -266,7 +427,7 @@ export default function CSVImport({ onClose, onSuccess }) {
             toast.error('No valid transactions found in CSV.')
             return
           }
-          setEditedRows(parsed.map((r, i) => ({ ...r, _id: i, _include: true, categoryId: '' })))
+          setEditedRows(parsed.map((r, i) => ({ ...r, _id: i, _include: true, categoryId: autoCategorize(r.description, categories) })))
           setStep('preview')
         }
         reader.readAsText(file)
@@ -288,7 +449,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           amount: r.amount,
           type: r.type,
           transactionDate: parseNativeDate(r.date),
-          categoryId: ''
+          categoryId: autoCategorize(r.description, categories)
         }))
         
         setFormat('PDF Statement')
