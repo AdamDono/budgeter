@@ -73,3 +73,8 @@ CREATE TABLE IF NOT EXISTS tip_comments (
 
 CREATE INDEX idx_tip_comments_tip ON tip_comments(tip_id);
 CREATE INDEX idx_tip_comments_user ON tip_comments(user_id);
+
+-- PASSWORD RESET COLUMNS (add to users table if missing)
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS reset_password_expiry TIMESTAMP;
