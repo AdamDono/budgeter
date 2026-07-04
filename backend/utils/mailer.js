@@ -6,12 +6,11 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: process.env.BREVO_SMTP_USER,  // your Brevo login email
-    pass: process.env.BREVO_SMTP_KEY,   // your Brevo SMTP key (not your password)
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_KEY,
   },
 })
 
-// Verify connection on startup (optional but helpful)
 transporter.verify((error) => {
   if (error) {
     console.error('❌ Mailer connection failed:', error.message)
@@ -20,130 +19,168 @@ transporter.verify((error) => {
   }
 })
 
-/**
- * Send a password reset email
- */
+// ─── Shared email base template ────────────────────────────────────────────────
+function emailBase({ preheader = '', body = '' } = {}) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaceFinance</title>
+  <!--[if mso]><style>td,th,div,p,a,h1,h2,h3,h4,h5,h6{font-family:Arial,sans-serif!important}</style><![endif]-->
+</head>
+<body style="margin:0;padding:0;background-color:#06091a;font-family:'Helvetica Neue',Arial,sans-serif;-webkit-text-size-adjust:100%;">
+
+  <!-- Preheader (invisible preview text) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#06091a;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+
+        <!-- Card -->
+        <table role="presentation" width="100%" style="max-width:560px;background:#0d1530;border-radius:16px;border:1px solid #1a2545;overflow:hidden;">
+
+          <!-- Header stripe -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:32px 40px;text-align:center;">
+              <div style="display:inline-flex;align-items:center;gap:10px;">
+                <!-- Logo mark (P) -->
+                <div style="width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;display:inline-block;text-align:center;line-height:40px;">
+                  <span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-1px;">P</span>
+                </div>
+                <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">PaceFinance</span>
+              </div>
+              <p style="margin:10px 0 0;color:rgba(255,255,255,0.7);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;">Your AI Financial Strategist</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              ${body}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 40px;background:#070b1f;border-top:1px solid #1a2545;text-align:center;">
+              <p style="margin:0;color:#3d4f6e;font-size:12px;line-height:1.6;">
+                © ${new Date().getFullYear()} PaceFinance &nbsp;·&nbsp; Built for South Africa 🇿🇦<br/>
+                <span style="color:#2a3a5e;">You're receiving this because you have a PaceFinance account.</span>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!-- /Card -->
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
+// ─── Password Reset Email ───────────────────────────────────────────────────────
 export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
   const resetLink = `${frontendUrl}/reset-password/${resetToken}`
+
+  const html = emailBase({
+    preheader: 'Reset your PaceFinance password — link expires in 1 hour.',
+    body: `
+      <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Password Reset</h1>
+      <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
+        We received a request to reset the password for your PaceFinance account.
+        Click the button below — this link expires in <strong style="color:#e8edf5;">1 hour</strong>.
+      </p>
+
+      <!-- CTA Button -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center" style="padding:8px 0 32px;">
+            <a href="${resetLink}"
+               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(99,102,241,0.4);">
+              Reset My Password →
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <!-- Divider -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="border-top:1px solid #1a2545;padding-top:24px;">
+            <p style="margin:0 0 8px;color:#3d4f6e;font-size:13px;">Didn't request this? You can safely ignore this email — your password won't change.</p>
+            <p style="margin:0;color:#3d4f6e;font-size:12px;">
+              Or copy this link:<br/>
+              <a href="${resetLink}" style="color:#6366f1;word-break:break-all;font-size:12px;">${resetLink}</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    `
+  })
 
   await transporter.sendMail({
     from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
     to: toEmail,
-    subject: 'Reset your PaceFinance password',
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <body style="margin:0;padding:0;background:#0d1117;font-family:Arial,sans-serif;">
-          <div style="max-width:520px;margin:40px auto;background:#121a2c;border-radius:12px;border:1px solid #1f2942;overflow:hidden;">
-            
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:-0.5px;">PaceFinance</h1>
-              <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Your Financial Intelligence Platform</p>
-            </div>
-
-            <!-- Body -->
-            <div style="padding:32px;">
-              <h2 style="color:#e6ecf1;margin:0 0 12px;font-size:20px;">Password Reset Request</h2>
-              <p style="color:#8a9ab5;line-height:1.6;margin:0 0 24px;">
-                We received a request to reset your password. Click the button below to create a new one.
-                This link expires in <strong style="color:#e6ecf1;">1 hour</strong>.
-              </p>
-              
-              <div style="text-align:center;margin:32px 0;">
-                <a href="${resetLink}" 
-                   style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;letter-spacing:0.3px;">
-                  Reset My Password
-                </a>
-              </div>
-
-              <p style="color:#8a9ab5;font-size:13px;line-height:1.6;margin:0;">
-                If you didn't request this, you can safely ignore this email — your password won't change.
-              </p>
-
-              <hr style="border:none;border-top:1px solid #1f2942;margin:24px 0;" />
-
-              <p style="color:#4a5568;font-size:12px;margin:0;">
-                Or copy this link into your browser:<br/>
-                <span style="color:#6366f1;word-break:break-all;">${resetLink}</span>
-              </p>
-            </div>
-
-            <!-- Footer -->
-            <div style="padding:16px 32px;background:#0d1117;text-align:center;">
-              <p style="color:#4a5568;font-size:12px;margin:0;">
-                © ${new Date().getFullYear()} PaceFinance · South Africa
-              </p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+    subject: '🔐 Reset your PaceFinance password',
+    html,
   })
 }
 
-/**
- * Send a welcome email on registration
- */
+// ─── Welcome Email ──────────────────────────────────────────────────────────────
 export async function sendWelcomeEmail(toEmail, firstName) {
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/dashboard`
+
+  const html = emailBase({
+    preheader: `Welcome to PaceFinance, ${firstName}! Your financial journey starts now.`,
+    body: `
+      <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+        Welcome, ${firstName}! 🎉
+      </h1>
+      <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
+        Your PaceFinance account is live. You now have access to the full AI-driven financial intelligence platform — built specifically for South Africans.
+      </p>
+
+      <!-- Feature list -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#070b1f;border-radius:12px;margin-bottom:32px;">
+        <tr><td style="padding:24px 28px;">
+          ${[
+            ['📊', 'Track income & expenses in real time'],
+            ['🎯', 'Set and hit savings goals faster'],
+            ['🏦', 'Manage and eradicate debt strategically'],
+            ['🤖', 'Ask the AI Coach anything about your money'],
+            ['📥', 'Import your bank CSV in seconds'],
+          ].map(([icon, text]) => `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:14px;">
+            <tr>
+              <td width="32" style="vertical-align:top;padding-top:2px;font-size:18px;">${icon}</td>
+              <td style="color:#c5d0e0;font-size:14px;line-height:1.5;">${text}</td>
+            </tr>
+          </table>`).join('')}
+        </td></tr>
+      </table>
+
+      <!-- CTA -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="${dashboardUrl}"
+               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(99,102,241,0.4);">
+              Go to Dashboard →
+            </a>
+          </td>
+        </tr>
+      </table>
+    `
+  })
+
   await transporter.sendMail({
     from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
     to: toEmail,
     subject: `Welcome to PaceFinance, ${firstName}! 🚀`,
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <body style="margin:0;padding:0;background:#0d1117;font-family:Arial,sans-serif;">
-          <div style="max-width:520px;margin:40px auto;background:#121a2c;border-radius:12px;border:1px solid #1f2942;overflow:hidden;">
-            
-            <!-- Header -->
-            <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px;text-align:center;">
-              <h1 style="margin:0;color:#fff;font-size:24px;letter-spacing:-0.5px;">Welcome to PaceFinance 🎉</h1>
-            </div>
-
-            <!-- Body -->
-            <div style="padding:32px;">
-              <h2 style="color:#e6ecf1;margin:0 0 12px;font-size:20px;">Hey ${firstName}!</h2>
-              <p style="color:#8a9ab5;line-height:1.6;margin:0 0 24px;">
-                Your account is set up and ready to go. Here's what you can do right now:
-              </p>
-
-              <div style="background:#0d1117;border-radius:8px;padding:20px;margin-bottom:24px;">
-                <div style="margin-bottom:12px;">
-                  <span style="color:#6366f1;font-weight:700;">→</span>
-                  <span style="color:#e6ecf1;margin-left:8px;">Log your first transaction</span>
-                </div>
-                <div style="margin-bottom:12px;">
-                  <span style="color:#6366f1;font-weight:700;">→</span>
-                  <span style="color:#e6ecf1;margin-left:8px;">Set a savings goal</span>
-                </div>
-                <div style="margin-bottom:12px;">
-                  <span style="color:#6366f1;font-weight:700;">→</span>
-                  <span style="color:#e6ecf1;margin-left:8px;">Track your debt payoff</span>
-                </div>
-                <div>
-                  <span style="color:#6366f1;font-weight:700;">→</span>
-                  <span style="color:#e6ecf1;margin-left:8px;">Import your bank CSV</span>
-                </div>
-              </div>
-
-              <div style="text-align:center;">
-                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/dashboard"
-                   style="display:inline-block;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:600;font-size:15px;">
-                  Go to Dashboard
-                </a>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div style="padding:16px 32px;background:#0d1117;text-align:center;">
-              <p style="color:#4a5568;font-size:12px;margin:0;">
-                © ${new Date().getFullYear()} PaceFinance · South Africa
-              </p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `,
+    html,
   })
 }

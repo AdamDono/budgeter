@@ -1,22 +1,24 @@
+import { ArrowLeft, CheckCircle2, KeyRound, Mail, Moon, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { authAPI } from '../lib/api'
 import toast from 'react-hot-toast'
-import { KeyRound, ArrowLeft, Mail, CheckCircle2 } from 'lucide-react'
+import { authAPI } from '../lib/api'
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [theme, setTheme] = useState('dark')
+
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-
     try {
       await authAPI.forgotPassword({ email })
       setSubmitted(true)
-      toast.success('Reset link sent if account exists!')
+      toast.success('Reset link sent!')
     } catch (error) {
       toast.error(error.response?.data?.error || 'Something went wrong')
     } finally {
@@ -26,72 +28,111 @@ export default function ForgotPassword() {
 
   if (submitted) {
     return (
-      <div className="login-page">
-        <div className="login-container">
-          <div className="login-card" style={{ textAlign: 'center' }}>
-            <div className="auth-icon-container success">
-              <CheckCircle2 size={48} className="auth-icon" />
+      <div className={`auth-page ${theme}-mode`}>
+        <button className="theme-toggle-btn auth-theme-toggle" onClick={toggleTheme}>
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
+        <div className="auth-container">
+          <div className="auth-success-state">
+            <div className="auth-success-icon">
+              <CheckCircle2 size={52} />
             </div>
-            <h1>Check your email</h1>
-            <p style={{ color: '#8e97a4', marginBottom: '24px' }}>
-              If an account with <strong>{email}</strong> exists, we've sent instructions to reset your password.
+            <h1>Check your inbox</h1>
+            <p>
+              We sent a password reset link to <strong>{email}</strong>.
+              It expires in <strong>1 hour</strong>.
             </p>
-            <p style={{ fontSize: '14px', color: '#526071' }}>
-              Note: During development, please check the backend terminal console for the reset link!
+            <p className="auth-hint">
+              Don't see it? Check your spam folder.
             </p>
-            <div className="auth-footer" style={{ marginTop: '32px' }}>
-              <Link to="/login" className="back-to-login">
-                <ArrowLeft size={16} />
-                Back to Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="login-page">
-      <div className="login-container">
-        <div className="login-card">
-          <div className="auth-icon-container">
-            <KeyRound size={48} className="auth-icon" />
-          </div>
-          <h1>Reset Password</h1>
-          <p style={{ color: '#8e97a4', marginBottom: '32px' }}>
-            Enter your email and we'll send you a link to get back into your account.
-          </p>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-with-icon">
-                <Mail size={18} />
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="login-btn" disabled={loading}>
-              {loading ? 'Sending link...' : 'Send reset link'}
-            </button>
-          </form>
-
-          <div className="auth-footer">
-            <Link to="/login" className="back-to-login">
+            <Link to="/login" className="auth-submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px', textDecoration: 'none' }}>
               <ArrowLeft size={16} />
               Back to Sign In
             </Link>
           </div>
         </div>
+
+        <div className="auth-bg">
+          <div className="auth-bg-content">
+            <div className="auth-bg-logo">
+              <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-bg" />
+            </div>
+            <h2>Security First</h2>
+            <p>Your financial data is protected with bank-level encryption and secure authentication.</p>
+          </div>
+        </div>
+
+        <Link to="/landing" className="about-link">About Us</Link>
       </div>
+    )
+  }
+
+  return (
+    <div className={`auth-page ${theme}-mode`}>
+      <button className="theme-toggle-btn auth-theme-toggle" onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+      </button>
+
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="auth-icon-wrap">
+            <KeyRound size={28} />
+          </div>
+          <h1>Forgot Password?</h1>
+          <p>No worries — enter your email and we'll send you a reset link.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="email">Email Address</label>
+            <div className="input-with-icon-wrap">
+              <Mail size={16} className="input-icon" />
+              <input
+                type="email"
+                id="email"
+                placeholder="name@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? (
+              <div className="btn-loading">
+                <div className="spinner small"></div>
+                Sending link...
+              </div>
+            ) : (
+              <>
+                <Mail size={16} />
+                Send Reset Link
+              </>
+            )}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <p>
+            Remember your password?{' '}
+            <Link to="/login" className="auth-link">Sign in</Link>
+          </p>
+        </div>
+      </div>
+
+      <div className="auth-bg">
+        <div className="auth-bg-content">
+          <div className="auth-bg-logo">
+            <img src="/logo_pace_finance.svg" alt="Pace Finance" className="logo-image-bg" />
+          </div>
+          <h2>Your AI-Powered Financial Strategist</h2>
+          <p>Join thousands deploying autonomous cashflow and tactical debt eradication.</p>
+        </div>
+      </div>
+
+      <Link to="/landing" className="about-link">About Us</Link>
     </div>
   )
 }

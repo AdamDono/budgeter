@@ -926,6 +926,124 @@ body {
   text-decoration: underline
 }
 
+/* Auth icon wrap (for forgot/reset pages) */
+.auth-icon-wrap {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #6366f1;
+}
+
+/* Input with icon (used in forgot/reset) */
+.input-with-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon-wrap .input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-with-icon-wrap input {
+  width: 100%;
+  padding-left: 40px !important;
+}
+
+.input-with-icon-wrap .password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+}
+
+/* Password strength bar */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.strength-bar .strength-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.strength-bar.weak .strength-fill   { width: 33%; background: #ef4444; }
+.strength-bar.medium .strength-fill { width: 66%; background: #f59e0b; }
+.strength-bar.strong .strength-fill { width: 100%; background: #10b981; }
+
+.strength-label { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.strength-label.weak   { color: #ef4444; }
+.strength-label.medium { color: #f59e0b; }
+.strength-label.strong { color: #10b981; }
+
+/* Field inline error */
+.field-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 2px;
+}
+
+/* Auth hint text */
+.auth-hint {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: -8px;
+  margin-bottom: 8px;
+}
+
+/* Success state for forgot/reset */
+.auth-success-state {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.auth-success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.1));
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  margin-bottom: 8px;
+}
+
+.auth-success-state h1 { margin: 0; font-size: 28px; }
+.auth-success-state p  { color: var(--muted); margin: 0; line-height: 1.6; max-width: 320px; }
+
 .auth-bg {
   background: white;
   display: flex;
