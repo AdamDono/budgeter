@@ -4,6 +4,7 @@ import express from 'express'
 import Joi from 'joi'
 import { pool } from '../database/connection.js'
 import { authenticateToken, generateToken } from '../middleware/auth.js'
+import { sendPasswordResetEmail, sendWelcomeEmail } from '../utils/mailer.js'
 
 const router = express.Router()
 
@@ -65,6 +66,11 @@ router.post('/register', async (req, res, next) => {
       `INSERT INTO accounts (user_id, account_type_id, name, balance)
        VALUES ($1, 1, 'Main Account', 0.00)`,
       [user.id]
+    )
+
+    // Send welcome email (non-blocking — don't fail registration if email fails)
+    sendWelcomeEmail(user.email, firstName).catch((err) =>
+      console.error('Welcome email failed:', err.message)
     )
 
     // Generate token
@@ -190,11 +196,9 @@ router.post('/forgot-password', async (req, res, next) => {
       [token, expiry, userResult.rows[0].id]
     )
 
-    // LOCAL DEV: Log the reset link since we don't have a mailer yet
-    console.log('\n----------------------------------------')
-    console.log('🔗 PASSWORD RESET LINK (LOCAL DEV ONLY):')
-    console.log(`http://localhost:5173/reset-password/${token}`)
-    console.log('----------------------------------------\n')
+    // Send real password reset email via Brevo
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    await sendPasswordResetEmail(email, token, frontendUrl)
 
     res.json({ message: 'If that email exists in our system, a reset link has been sent!' })
   } catch (error) {
