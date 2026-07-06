@@ -42,7 +42,7 @@ pool.on('connect', () => {
   console.log('📊 Connected to PostgreSQL database')
 })
 
-// DON'T exit on connection drop — Aiven free tier drops idle connections.
+// DON'T exit on connection drop, Aiven free tier drops idle connections.
 // The pool will automatically reconnect on the next request.
 pool.on('error', (err) => {
   console.error('⚠️  DB pool error (will auto-reconnect):', err.message)

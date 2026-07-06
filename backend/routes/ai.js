@@ -170,15 +170,15 @@ ${monthlySummary.rows.length > 0
   ? monthlySummary.rows.map(m => `- ${m.month}: Income R${parseFloat(m.total_income).toFixed(2)} | Expenses R${parseFloat(m.total_expenses).toFixed(2)} | Net R${(parseFloat(m.total_income) - parseFloat(m.total_expenses)).toFixed(2)} | ${m.transaction_count} transactions`).join('\n')
   : '- No monthly history available yet'}
 
-** FULL TRANSACTION HISTORY (Last 200 — use this to answer date-specific questions) **
+** FULL TRANSACTION HISTORY (Last 200 - use this to answer date-specific questions) **
 ${recentTx.rows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' : '-'}R${parseFloat(t.amount).toFixed(2)} | ${t.description}${t.category ? ` [${t.category}]` : ''}${t.account ? ` via ${t.account}` : ''}`).join('\n')}
 
 === COACHING INSTRUCTIONS ===
-1. Always reference specific numbers from the data above — never be vague.
-2. If the user asks about their "pots", goals, or savings targets — use the FINANCIAL GOALS section above.
+1. Always reference specific numbers from the data above - never be vague.
+2. If the user asks about their "pots", goals, or savings targets - use the FINANCIAL GOALS section above.
 3. If they ask about affordability, check their total account balance AND remaining budget.
-4. Prioritise paying off high-interest debts (above 15% interest rate) — especially ${debts.rows.filter(d => parseFloat(d.interest_rate) >= 15).map(d => d.name).join(', ') || 'none currently'}.
-5. Be encouraging and direct — South African context applies (ZAR, local cost of living).
+4. Prioritise paying off high-interest debts (above 15% interest rate) - especially ${debts.rows.filter(d => parseFloat(d.interest_rate) >= 15).map(d => d.name).join(', ') || 'none currently'}.
+5. Be encouraging and direct - South African context applies (ZAR, local cost of living).
 6. If a goal is close to completion, celebrate it and motivate them to push through.
 7. Keep responses concise and well-formatted with bullet points or short paragraphs.
     `

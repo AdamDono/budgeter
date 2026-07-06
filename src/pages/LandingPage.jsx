@@ -233,7 +233,7 @@ export default function LandingPage() {
                 <Activity size={32} />
               </div>
               <h3>Actionable Credit Hub</h3>
-              <p>Don't just watch your score—manipulate it. Our advanced simulator shows you exactly how paying down an account impacts your credit profile.</p>
+              <p>Don't just watch your score - manipulate it. Our advanced simulator shows you exactly how paying down an account impacts your credit profile.</p>
             </div>
             <div className="feature-card glass">
               <div className="feature-icon">

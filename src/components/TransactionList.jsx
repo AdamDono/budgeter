@@ -10,7 +10,7 @@ export default function TransactionList({ transactions, onRemove }) {
         <li key={tx.id} className="tx-item">
           <div className="tx-main">
             <div className={`pill ${tx.type}`}>{tx.type}</div>
-            <div className="tx-note">{tx.note || '—'}</div>
+            <div className="tx-note">{tx.note || '-'}</div>
           </div>
           <div className="tx-meta">
             <div className={`tx-amount ${tx.type}`}>{formatCurrency(tx.amount)}</div>

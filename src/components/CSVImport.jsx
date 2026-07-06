@@ -159,7 +159,7 @@ function autoCategorize(description, categories) {
     }
   }
 
-  return '' // uncategorized — user picks manually
+  return '' // uncategorized - user picks manually
 }
 
 // Detect common SA bank CSV formats
@@ -271,9 +271,9 @@ async function extractTransactionsFromPDF(file) {
 
   // Date patterns: "01 Jan", "2024-01-15", "15/01/2024"
   const dateRegex = /(\d{1,2} [A-Z][a-z]{2}|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{4})/gi
-  // Money regex — lenient. Decimals are OPTIONAL so amounts like "1 250" or "250" still match.
+  // Money regex - lenient. Decimals are OPTIONAL so amounts like "1 250" or "250" still match.
   // Captures Cr/Dr suffix (FNB style). Requires at least 2 digits to avoid single-digit false positives.
-  // Stricter: must have R prefix, OR a decimal, OR thousands separator — NOT bare 2-digit numbers
+  // Stricter: must have R prefix, OR a decimal, OR thousands separator - NOT bare 2-digit numbers
   const moneyRegex = /(?:R\s*\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})?|\d{1,3}(?:[\s,']\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?:\s*(?:CR|DR|Cr|Dr))?/g
 
   for (let i = 1; i <= pdf.numPages; i++) {

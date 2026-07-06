@@ -154,7 +154,7 @@ router.post('/', async (req, res, next) => {
 
     await client.query('COMMIT')
 
-    // ② Budget exceeded alert — fire async, don't block the response
+    // ② Budget exceeded alert, fire async, don't block the response
     if (type === 'expense' && categoryId) {
       checkAndSendBudgetAlert(req.user.id, categoryId).catch(err =>
         console.error('Budget alert check failed:', err.message)
@@ -230,7 +230,7 @@ async function checkAndSendBudgetAlert(userId, categoryId) {
   `, [
     userId,
     `Budget exceeded: ${category_name}`,
-    `Spent R${spent.toFixed(2)} of R${limit.toFixed(2)} limit — R${overage.toFixed(2)} over budget`
+    `Spent R${spent.toFixed(2)} of R${limit.toFixed(2)} limit, R${overage.toFixed(2)} over budget`
   ])
 
   await sendBudgetAlertEmail(email, first_name, {
@@ -465,7 +465,7 @@ router.post('/import', async (req, res, next) => {
       return res.json({ message: 'No valid transactions to import', imported: 0, failed })
     }
 
-    // Build a single batch INSERT instead of a loop — much faster on remote DBs
+    // Build a single batch INSERT instead of a loop, much faster on remote DBs
     const values = []
     const params = []
     valid.forEach((tx, i) => {

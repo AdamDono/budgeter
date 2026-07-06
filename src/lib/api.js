@@ -132,7 +132,7 @@ export const importAPI = {
   importTransactions: (transactions) => api.post('/transactions/import', { transactions }),
 }
 
-// Forex — uses free frankfurter.app (no API key needed)
+// Forex - uses free frankfurter.app (no API key needed)
 export const forexAPI = {
   getRates: async (base = 'ZAR') => {
     const res = await fetch(`https://api.frankfurter.app/latest?from=${base}&to=USD,EUR,GBP,AED,CNY`)

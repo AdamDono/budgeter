@@ -68,7 +68,7 @@ router.post('/register', async (req, res, next) => {
       [user.id]
     )
 
-    // Send welcome email (non-blocking — don't fail registration if email fails)
+    // Send welcome email (non-blocking, don't fail registration if email fails)
     sendWelcomeEmail(user.email, firstName).catch((err) =>
       console.error('Welcome email failed:', err.message)
     )

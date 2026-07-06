@@ -2,7 +2,7 @@ import cron from 'node-cron'
 import { pool } from '../database/connection.js'
 import { sendBillReminderEmail, sendBudgetAlertEmail, sendMonthlySummaryEmail } from './mailer.js'
 
-// ─── ① Bill Due Reminders — runs daily at 8:00 AM ──────────────────────────────
+// ─── ① Bill Due Reminders - runs daily at 8:00 AM ──────────────────────────────
 // For each user, find unpaid bills that are due in exactly `reminder_days` days.
 // Groups multiple bills into a single email per user.
 export function startBillReminderCron() {
@@ -65,7 +65,7 @@ export function startBillReminderCron() {
   console.log('📅 Bill reminder cron scheduled (daily 08:00 SAST)')
 }
 
-// ─── ③ Monthly Summary — runs on 1st of every month at 9:00 AM ─────────────────
+// ─── ③ Monthly Summary - runs on 1st of every month at 9:00 AM ─────────────────
 // Sends previous month's income/expense/goal summary to all users with monthly_report = true
 export function startMonthlySummaryCron() {
   cron.schedule('0 9 1 * *', async () => {
@@ -127,7 +127,7 @@ export function startMonthlySummaryCron() {
 
           // Skip if no activity at all
           if (income === 0 && expenses === 0) {
-            console.log(`⏭  [CRON] Skipping monthly summary for ${user.email} — no transactions last month`)
+            console.log(`⏭  [CRON] Skipping monthly summary for ${user.email}, no transactions last month`)
             continue
           }
 
