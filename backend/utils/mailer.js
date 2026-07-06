@@ -1,23 +1,28 @@
-import nodemailer from 'nodemailer'
+import axios from 'axios'
 
-// Brevo SMTP transporter
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_KEY,
-  },
-})
+// ─── Brevo HTTP API sender (works on Render — no SMTP port blocking) ────────────
+async function sendViaBrevo({ to, subject, html }) {
+  await axios.post(
+    'https://api.brevo.com/v3/smtp/email',
+    {
+      sender: {
+        name: 'PaceFinance',
+        email: process.env.BREVO_FROM_EMAIL,
+      },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    },
+    {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+    }
+  )
+}
 
-transporter.verify((error) => {
-  if (error) {
-    console.error('❌ Mailer connection failed:', error.message)
-  } else {
-    console.log('✅ Mailer ready (Brevo SMTP)')
-  }
-})
+console.log('✅ Mailer ready (Brevo HTTP API)')
 
 // ─── Shared email base template ────────────────────────────────────────────────
 function emailBase({ preheader = '', body = '' } = {}) {
@@ -122,8 +127,7 @@ export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
     `
   })
 
-  await transporter.sendMail({
-    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+  await sendViaBrevo({
     to: toEmail,
     subject: '🔐 Reset your PaceFinance password',
     html,
@@ -177,8 +181,7 @@ export async function sendWelcomeEmail(toEmail, firstName) {
     `
   })
 
-  await transporter.sendMail({
-    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+  await sendViaBrevo({
     to: toEmail,
     subject: `Welcome to PaceFinance, ${firstName}! 🚀`,
     html,
@@ -239,8 +242,7 @@ export async function sendBillReminderEmail(toEmail, firstName, bills) {
     `
   })
 
-  await transporter.sendMail({
-    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+  await sendViaBrevo({
     to: toEmail,
     subject: `🔔 Bill reminder: ${bills.length === 1 ? bills[0].name : `${bills.length} bills coming up`}`,
     html,
@@ -308,8 +310,7 @@ export async function sendBudgetAlertEmail(toEmail, firstName, { categoryName, s
     `
   })
 
-  await transporter.sendMail({
-    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+  await sendViaBrevo({
     to: toEmail,
     subject: `⚠️ Budget exceeded: ${categoryName} is ${pct}% spent`,
     html,
@@ -392,8 +393,7 @@ export async function sendMonthlySummaryEmail(toEmail, firstName, { month, year,
     `
   })
 
-  await transporter.sendMail({
-    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+  await sendViaBrevo({
     to: toEmail,
     subject: `📊 Your ${monthName} ${year} financial summary`,
     html,
