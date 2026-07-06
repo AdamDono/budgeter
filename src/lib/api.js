@@ -65,6 +65,7 @@ export const recurringAPI = {
 export const analyticsAPI = {
   getDashboard: (period = '30d') => api.get(`/analytics/dashboard?period=${period}`),
   getInsights: () => api.get('/analytics/insights'),
+  getForecast: () => api.get('/analytics/forecast'),
 }
 
 // Debts API
@@ -130,6 +131,7 @@ export const aiAPI = {
   createConversation: (title) => api.post('/ai/conversations', { title }),
   getMessages: (id) => api.get(`/ai/conversations/${id}/messages`),
   deleteConversation: (id) => api.delete(`/ai/conversations/${id}`),
+  scanStatement: (data) => api.post('/ai/scan-statement', data),
 }
 
 // Accounts API

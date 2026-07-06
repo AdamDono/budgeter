@@ -4,7 +4,7 @@ import * as pdfjs from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { budgetsAPI, importAPI } from '../lib/api'
+import { budgetsAPI, importAPI, aiAPI } from '../lib/api'
 
 // Set up PDF.js worker using local bundle
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
@@ -22,6 +22,8 @@ function autoCategorize(description, categories) {
       keywords: [
         'salary', 'payroll', 'remuneration', 'wages', 'nett pay', 'net pay',
         'monthly pay', 'employee pay', 'staff pay', 'pay credit', 'salaris',
+        'payment received', 'inward transfer', 'inward eft', 'direct deposit',
+        'credit transfer', 'salary credit', 'net salary', 'sal/wages',
       ],
     },
     {
@@ -30,6 +32,7 @@ function autoCategorize(description, categories) {
         'woolworths', 'woolies', 'pick n pay', 'pnp', 'checkers', 'spar',
         'shoprite', 'food lover', 'ok foods', 'makro', 'game store',
         'grocery', 'groceries', 'supermarket', 'hyper', 'costco',
+        'boxer super', 'usave', 'soweto', 'kwaxuma',
       ],
     },
     {
@@ -37,6 +40,7 @@ function autoCategorize(description, categories) {
       keywords: [
         'shell', 'engen', 'bp ', 'caltex', 'sasol', 'astron', 'total petrol',
         'petrol', 'fuel', 'filling station', 'garage', 'forecourt',
+        'puma energy',
       ],
     },
     {
@@ -48,7 +52,7 @@ function autoCategorize(description, categories) {
         'pizza hut', 'fishaways', 'cappuccinos', 'mugg & bean', 'mugg and bean',
         'vida e caffe', 'starbucks', 'uber eats', 'mr d food', 'mr delivery',
         'bolt food', 'order in', 'restaurant', 'takeaway', 'take away', 'cafe',
-        'diner', 'grill', 'bistro', 'eatery',
+        'diner', 'grill', 'bistro', 'eatery', 'coffee',
       ],
     },
     {
@@ -68,7 +72,8 @@ function autoCategorize(description, categories) {
         'openserve', 'fibre', 'internet', 'broadband', 'rain ',
         'dstv', 'showmax', 'netflix', 'spotify', 'apple music',
         'vodacom', 'mtn ', 'cell c', 'telkom mobile', 'airtime', 'data bundle',
-        'prepaid data',
+        'prepaid data', 'admin fee', 'account fee', 'bank fee', 'service charge',
+        'monthly account', 'value added services', 'prepaid purchase',
       ],
     },
     {
@@ -122,7 +127,9 @@ function autoCategorize(description, categories) {
         'ticketpro', 'computicket', 'gaming', 'playstation', 'xbox', 'steam',
         'planet fitness', 'virgin active', 'gymers', 'gym ', 'crossfit',
         'netflix', 'showmax', 'spotify', 'apple tv',
-        'entertainment', 'concert', 'comedy',
+        'entertainment', 'concert', 'comedy', 'x corp', 'recurring card purchase',
+        'card purchase', 'atm cash', 'cash withdrawal', 'atm cash withdrawal',
+        'withdrawal atm',
       ],
     },
     {
@@ -400,6 +407,8 @@ export default function CSVImport({ onClose, onSuccess }) {
   })
   const categories = categoriesData?.categories || []
 
+  const [useAI, setUseAI] = useState(true)
+
   const handleFile = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -412,6 +421,54 @@ export default function CSVImport({ onClose, onSuccess }) {
       return
     }
 
+    try {
+      if (useAI) {
+        toast.loading('Pace AI is scanning statement details...')
+        let rawText = ''
+        if (isCSV) {
+          rawText = await new Promise((resolve) => {
+            const reader = new FileReader()
+            reader.onload = (ev) => resolve(ev.target.result)
+            reader.readAsText(file)
+          })
+        } else {
+          rawText = await extractRawTextFromPDF(file)
+        }
+
+        if (!rawText || rawText.trim().length === 0) {
+          throw new Error('No selectable text found in statement')
+        }
+
+        const scanRes = await aiAPI.scanStatement({ text: rawText, categories })
+        const transactions = scanRes.data.transactions || []
+        toast.dismiss()
+
+        if (transactions.length === 0) {
+          throw new Error('AI could not find any transactions')
+        }
+
+        const parsed = transactions.map((r, i) => ({
+          _id: i,
+          _include: true,
+          description: r.description,
+          amount: parseFloat(r.amount),
+          type: r.type,
+          transactionDate: r.date,
+          categoryId: r.categoryId || autoCategorize(r.description, categories)
+        }))
+
+        setFormat(isCSV ? 'CSV Statement (AI Scanned)' : 'PDF Statement (AI Scanned)')
+        setEditedRows(parsed)
+        setStep('preview')
+        toast.success(`AI successfully extracted ${parsed.length} transactions!`)
+        return
+      }
+    } catch (aiErr) {
+      console.warn('AI Scanner failed, falling back to standard parser:', aiErr.message)
+      toast.dismiss()
+    }
+
+    // Traditional Standard Parser Fallback
     try {
       if (isCSV) {
         const reader = new FileReader()
@@ -433,7 +490,7 @@ export default function CSVImport({ onClose, onSuccess }) {
         reader.readAsText(file)
       } else {
         // PDF Path
-        toast.loading('Analyzing PDF statement...')
+        toast.loading('Analyzing PDF statement (Standard Scan)...')
         const pdfRows = await extractTransactionsFromPDF(file)
         toast.dismiss()
         
@@ -452,7 +509,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           categoryId: autoCategorize(r.description, categories)
         }))
         
-        setFormat('PDF Statement')
+        setFormat('PDF Statement (Standard)')
         setEditedRows(parsed)
         setStep('preview')
         toast.success(`Extracted ${parsed.length} transactions from PDF`)
@@ -531,6 +588,16 @@ export default function CSVImport({ onClose, onSuccess }) {
               <div className="supported-banks">
                 <FileText size={16} /> <span>FNB / Standard / Nedbank / ABSA</span>
               </div>
+              
+              <div 
+                className="ai-toggle-pill" 
+                onClick={(e) => { e.stopPropagation(); setUseAI(!useAI); }}
+                style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px', background: useAI ? 'rgba(79, 140, 255, 0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${useAI ? 'rgba(79, 140, 255, 0.3)' : 'rgba(255,255,255,0.1)'}`, padding: '6px 16px', borderRadius: '100px', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.8rem', color: useAI ? '#fff' : '#94a3b8' }}
+              >
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: useAI ? '#10b981' : '#64748b', boxShadow: useAI ? '0 0 8px #10b981' : 'none' }}></div>
+                <strong>AI Smart Scan: {useAI ? 'ENABLED' : 'DISABLED'}</strong>
+              </div>
+
               <input
                 ref={fileInputRef}
                 type="file"

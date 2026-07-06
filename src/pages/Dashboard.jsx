@@ -66,9 +66,17 @@ export default function Dashboard() {
   const netIncome = summary.netIncome || 0
   const savingsRate = summary.savingsRate || 0
   
+  const isRateLimited = briefingError?.response?.status === 429;
+
   const aiBriefing = briefingResponse?.briefing || {
-    headline: briefingError ? "Strategic Intelligence Offline" : "Welcome to PaceFinance",
-    suggestion: briefingError ? "Configure your Gemini API key in the backend environment to unlock live briefings." : "Compiling initial balance indicators...",
+    headline: briefingError 
+      ? (isRateLimited ? "Strategic Intel Rate-Limited" : "Strategic Intelligence Offline") 
+      : "Welcome to PaceFinance",
+    suggestion: briefingError 
+      ? (isRateLimited 
+          ? "Your Gemini AI service is connected but temporarily rate-limited on the Free Tier. live briefings will return in a few moments." 
+          : "Configure your Gemini API key in the backend environment to unlock live briefings.") 
+      : "Compiling initial balance indicators...",
     action: "/app/transactions"
   }
 

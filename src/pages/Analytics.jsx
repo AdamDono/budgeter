@@ -21,6 +21,11 @@ export default function Analytics() {
     queryFn: async () => (await analyticsAPI.getInsights()).data,
   })
 
+  const { data: forecastData } = useQuery({
+    queryKey: ['forecast'],
+    queryFn: async () => (await analyticsAPI.getForecast()).data,
+  })
+
   if (isLoading) {
     return <LoadingSpinner text="Analyzing financial protocols..." />
   }
@@ -271,6 +276,21 @@ export default function Analytics() {
         </div>
       </div>
 
+      {/* 90-Day Predictive Cashflow Forecast */}
+      <div className="analytics-glass-card shadow-2xl animate-fade-in" style={{ marginTop: '2.5rem', padding: '1.75rem' }}>
+        <div className="card-v2-header" style={{ marginBottom: '1.5rem' }}>
+          <div>
+            <span className="card-v2-subtitle">Predictive Modeling</span>
+            <h2>90-Day Cashflow Forecast</h2>
+          </div>
+          <div className="pot-yield-badge" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#a855f7' }}>
+            <Sparkles size={14} /> AI Projection
+          </div>
+        </div>
+
+        <ForecastChart data={forecastData?.forecast || []} />
+      </div>
+
       {/* Financial Insights Section */}
       <section style={{ marginTop: '3rem', marginBottom: '4rem' }}>
         <div className="card-v2-header" style={{ marginBottom: '1.5rem' }}>
@@ -343,6 +363,122 @@ export default function Analytics() {
            </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+function ForecastChart({ data = [] }) {
+  if (data.length === 0) {
+    return (
+      <div style={{ height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}>
+        No projection points available. Add some accounts, goals, or recurring items to initialize.
+      </div>
+    )
+  }
+
+  const balances = data.map(d => d.balance)
+  const maxVal = Math.max(...balances, 1000)
+  const minVal = Math.min(...balances, 0)
+  const range = maxVal - minVal
+
+  const width = 600
+  const height = 200
+  const padding = 20
+
+  const getX = (index) => padding + (index / (data.length - 1)) * (width - padding * 2)
+  const getY = (val) => height - padding - ((val - minVal) / (range || 1)) * (height - padding * 2)
+
+  let pathD = ''
+  let areaD = ''
+
+  data.forEach((point, i) => {
+    const x = getX(i)
+    const y = getY(point.balance)
+    if (i === 0) {
+      pathD = `M ${x} ${y}`
+      areaD = `M ${x} ${height - padding} L ${x} ${y}`
+    } else {
+      pathD += ` L ${x} ${y}`
+      areaD += ` L ${x} ${y}`
+    }
+    if (i === data.length - 1) {
+      areaD += ` L ${x} ${height - padding} Z`
+    }
+  })
+
+  const firstDeficit = data.find(d => d.balance < 0)
+
+  return (
+    <div>
+      {firstDeficit && (
+        <div 
+          className="intel-block glass-panel" 
+          style={{ marginBottom: '1.5rem', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'center', borderRadius: '12px' }}
+        >
+          <div style={{ fontSize: '1.25rem' }}>🚨</div>
+          <div style={{ fontSize: '0.85rem', color: '#f8fafc', lineHeight: '1.4' }}>
+            <strong>Deficit Warning:</strong> Based on daily spending velocity and bills, you are projected to hit a deficit of <strong style={{ color: '#f87171' }}>{formatCurrency(firstDeficit.balance)}</strong> on <strong>{new Date(firstDeficit.date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</strong>. Adjust budget levels to compensate.
+          </div>
+        </div>
+      )}
+
+      <div style={{ position: 'relative', width: '100%', height: `${height}px` }}>
+        <svg viewBox={`0 0 ${width} ${height}`} width="100%" height="100%" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="glowGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4f8cff" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#4f8cff" stopOpacity="0.0" />
+            </linearGradient>
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#4f8cff" />
+              <stop offset="100%" stopColor="#a855f7" />
+            </linearGradient>
+          </defs>
+
+          {/* Area fill under path */}
+          <path d={areaD} fill="url(#glowGrad)" />
+
+          {/* Zero baseline */}
+          {minVal < 0 && (
+            <line 
+              x1={padding} 
+              y1={getY(0)} 
+              x2={width - padding} 
+              y2={getY(0)} 
+              stroke="rgba(239, 68, 68, 0.35)" 
+              strokeDasharray="4 4" 
+              strokeWidth="1.5" 
+            />
+          )}
+
+          {/* Stroke line path */}
+          <path d={pathD} fill="none" stroke="url(#lineGrad)" strokeWidth="3" />
+
+          {/* Deficit cross dots */}
+          {data.map((point, i) => {
+            if (point.balance < 0 && (i === 0 || data[i - 1].balance >= 0)) {
+              return (
+                <circle 
+                  key={i} 
+                  cx={getX(i)} 
+                  cy={getY(point.balance)} 
+                  r="6" 
+                  fill="#ef4444" 
+                  stroke="#fff" 
+                  strokeWidth="2" 
+                />
+              )
+            }
+            return null
+          })}
+        </svg>
+      </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b', marginTop: '0.75rem', fontWeight: '700' }}>
+        <span>TODAY</span>
+        <span>45 DAYS OUT</span>
+        <span>90 DAYS OUT</span>
+      </div>
     </div>
   )
 }

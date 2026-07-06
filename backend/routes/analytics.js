@@ -279,6 +279,99 @@ router.get('/insights', async (req, res, next) => {
   }
 })
 
+// Get 90-day cashflow forecast projection
+router.get('/forecast', async (req, res, next) => {
+  try {
+    // 1. Get current starting balance from user's active accounts
+    const accountBalRes = await pool.query(
+      'SELECT SUM(balance) as total FROM accounts WHERE user_id = $1 AND is_active = TRUE',
+      [req.user.id]
+    )
+    let startingBalance = parseFloat(accountBalRes.rows[0]?.total || 0)
+
+    // 2. Fetch all active recurring transactions
+    const recurringRes = await pool.query(`
+      SELECT type, amount, frequency, next_due_date, description 
+      FROM recurring_transactions 
+      WHERE user_id = $1 AND is_active = TRUE
+    `, [req.user.id])
+    const recurringList = recurringRes.rows.map(r => ({
+      type: r.type,
+      amount: parseFloat(r.amount),
+      frequency: r.frequency,
+      nextDueDate: new Date(r.next_due_date),
+      description: r.description
+    }))
+
+    // 3. Calculate average daily velocity from standard (non-recurring) transactions over last 60 days
+    const dailyVelocityRes = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0) / 60.0 as avg_spend
+      FROM transactions
+      WHERE user_id = $1 
+        AND type = 'expense'
+        AND transaction_date >= CURRENT_DATE - INTERVAL '60 days'
+        AND recurring_id IS NULL
+    `, [req.user.id])
+    const avgDailySpend = parseFloat(dailyVelocityRes.rows[0]?.avg_spend || 0)
+
+    // 4. Calculate day-by-day projection for next 90 days
+    const forecastPoints = []
+    let runningBalance = startingBalance
+    const today = new Date()
+
+    for (let day = 0; day <= 90; day++) {
+      const currentDate = new Date(today)
+      currentDate.setDate(today.getDate() + day)
+      const dateString = currentDate.toISOString().split('T')[0]
+
+      // Apply average daily spending
+      runningBalance -= avgDailySpend
+
+      // Process any recurring items due on this day
+      recurringList.forEach(item => {
+        const itemDue = item.nextDueDate
+        
+        // Match recurring day
+        if (
+          itemDue.getDate() === currentDate.getDate() &&
+          itemDue.getMonth() === currentDate.getMonth() &&
+          itemDue.getFullYear() === currentDate.getFullYear()
+        ) {
+          if (item.type === 'income') {
+            runningBalance += item.amount
+          } else {
+            runningBalance -= item.amount
+          }
+
+          // Advance next due date projections for successive occurrences
+          if (item.frequency === 'monthly') {
+            item.nextDueDate.setMonth(item.nextDueDate.getMonth() + 1)
+          } else if (item.frequency === 'weekly') {
+            item.nextDueDate.setDate(item.nextDueDate.getDate() + 7)
+          } else if (item.frequency === 'yearly') {
+            item.nextDueDate.setFullYear(item.nextDueDate.getFullYear() + 1)
+          } else if (item.frequency === 'bi-weekly') {
+            item.nextDueDate.setDate(item.nextDueDate.getDate() + 14)
+          } else {
+            // default single occurrence advance
+            item.nextDueDate.setDate(item.nextDueDate.getDate() + 30)
+          }
+        }
+      })
+
+      forecastPoints.push({
+        day,
+        date: dateString,
+        balance: Math.round(runningBalance * 100) / 100
+      })
+    }
+
+    res.json({ forecast: forecastPoints })
+  } catch (error) {
+    next(error)
+  }
+})
+
 // Helper function to generate insights
 function generateInsights(summaryData, budgetData, goalsData, savingsRate) {
   const insights = []
