@@ -13,16 +13,20 @@ import {
     TrendingDown,
     TrendingUp,
     Globe,
-    X
+    X,
+    Sparkles,
+    MoreHorizontal
 } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAI } from '../contexts/AIContext'
 import AICoach from './AICoach'
 
 // Triggers a rebuild to resolve ShieldCheck undefined issues.
 export default function Layout() {
   const { user, logout } = useAuth()
+  const { setIsOpen: setChatOpen } = useAI()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -122,6 +126,50 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="mobile-nav-bar">
+        <NavLink 
+          to="/app/dashboard" 
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <LayoutDashboard size={20} />
+          <span>Home</span>
+        </NavLink>
+
+        <NavLink 
+          to="/app/transactions" 
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <CreditCard size={20} />
+          <span>Transactions</span>
+        </NavLink>
+
+        <button 
+          className="mobile-nav-item"
+          onClick={() => setChatOpen(true)}
+        >
+          <Sparkles size={20} />
+          <span>Coach</span>
+        </button>
+
+        <NavLink 
+          to="/app/goals" 
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <Target size={20} />
+          <span>Goals</span>
+        </NavLink>
+
+        <NavLink 
+          to="/app/debt" 
+          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+        >
+          <TrendingDown size={20} />
+          <span>Debts</span>
+        </NavLink>
+      </nav>
+
       <AICoach />
     </div>
   )

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Calendar, FileText, Plus, Search, Trash2, TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -20,10 +20,21 @@ export default function Transactions() {
     startDate: '',
     endDate: ''
   })
+  const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   
   const queryClient = useQueryClient()
+
+  // Debounce search filter updates to prevent rapid API requests
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm }))
+      setPage(1)
+    }, 250)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchTerm])
 
   // Update filters when month changes
   useEffect(() => {
@@ -35,12 +46,13 @@ export default function Transactions() {
   }, [selectedMonth])
 
   // Queries
-  const { data: transactionsData, isLoading, error: txError } = useQuery({
+  const { data: transactionsData, isPending, isFetching, error: txError } = useQuery({
     queryKey: ['transactions', filters, page],
     queryFn: async () => {
       const response = await transactionsAPI.getAll({ ...filters, page, limit: 10 })
       return response.data
     },
+    placeholderData: keepPreviousData,
   })
 
   const { data: categories } = useQuery({
@@ -106,7 +118,7 @@ export default function Transactions() {
   const transactions = transactionsData?.transactions || []
   const pagination = transactionsData?.pagination || {}
 
-  if (isLoading) {
+  if (isPending && !transactionsData) {
     return (
       <div className="dashboard-v2 transactions-page-v2">
         <LoadingSpinner text="Retrieving Transaction History..." />
@@ -177,8 +189,8 @@ export default function Transactions() {
             <input
               type="text"
               placeholder="Search transactions..."
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="filter-input"
               style={{ paddingLeft: '36px' }}
             />

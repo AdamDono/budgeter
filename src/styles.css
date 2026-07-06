@@ -4317,3 +4317,69 @@ body {
   color: white;
   text-shadow: 0 0 8px rgba(79, 140, 255, 0.6);
 }
+
+/* Mobile Bottom Navigation Bar Styles */
+.mobile-nav-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(18, 26, 44, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 9998;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.65rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    height: 100%;
+    flex: 1;
+  }
+  
+  .mobile-nav-item:hover,
+  .mobile-nav-item.active {
+    color: var(--accent);
+  }
+
+  .mobile-nav-item svg {
+    transition: transform 0.2s;
+  }
+
+  .mobile-nav-item:active svg {
+    transform: scale(0.9);
+  }
+  
+  /* Pushes viewport content above bottom bar */
+  .page-content {
+    padding-bottom: 80px !important;
+  }
+
+  /* Adjust floating coach trigger position slightly above bottom nav bar */
+  .ai-coach-trigger {
+    bottom: 5.5rem !important;
+  }
+}
