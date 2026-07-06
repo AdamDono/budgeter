@@ -132,6 +132,12 @@ export const aiAPI = {
   deleteConversation: (id) => api.delete(`/ai/conversations/${id}`),
 }
 
+// Accounts API
+export const accountsAPI = {
+  getAll: () => api.get('/accounts'),
+  create: (data) => api.post('/accounts', data),
+}
+
 // CSV Import API (batch create transactions)
 export const importAPI = {
   importTransactions: (transactions) => api.post('/transactions/import', { transactions }),
