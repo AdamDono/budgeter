@@ -80,7 +80,7 @@ export default function ForgotPassword() {
             <KeyRound size={28} />
           </div>
           <h1>Forgot Password?</h1>
-          <p>No worries — enter your email and we'll send you a reset link.</p>
+          <p>No worries, enter your email and we'll send you a reset link.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

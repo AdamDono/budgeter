@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// ─── Brevo HTTP API sender (works on Render — no SMTP port blocking) ────────────
+// ─── Brevo HTTP API sender (works on Render: no SMTP port blocking) ────────────
 async function sendViaBrevo({ to, subject, html }) {
   await axios.post(
     'https://api.brevo.com/v3/smtp/email',
@@ -88,12 +88,12 @@ export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
   const resetLink = `${frontendUrl}/reset-password/${resetToken}`
 
   const html = emailBase({
-    preheader: 'Reset your PaceFinance password — link expires in 1 hour.',
+    preheader: 'Reset your PaceFinance password: link expires in 1 hour.',
     body: `
       <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">Password Reset</h1>
       <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
         We received a request to reset the password for your PaceFinance account.
-        Click the button below — this link expires in <strong style="color:#e8edf5;">1 hour</strong>.
+        Click the button below: this link expires in <strong style="color:#e8edf5;">1 hour</strong>.
       </p>
 
       <!-- CTA Button -->
@@ -112,7 +112,7 @@ export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr>
           <td style="border-top:1px solid #1a2545;padding-top:24px;">
-            <p style="margin:0 0 8px;color:#3d4f6e;font-size:13px;">Didn't request this? You can safely ignore this email — your password won't change.</p>
+            <p style="margin:0 0 8px;color:#3d4f6e;font-size:13px;">Didn't request this? You can safely ignore this email: your password won't change.</p>
             <p style="margin:0;color:#3d4f6e;font-size:12px;">
               Or copy this link:<br/>
               <a href="${resetLink}" style="color:#1e7fd4;word-break:break-all;font-size:12px;">${resetLink}</a>
@@ -141,7 +141,7 @@ export async function sendWelcomeEmail(toEmail, firstName) {
         Welcome, ${firstName}! 🎉
       </h1>
       <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
-        Your PaceFinance account is live. You now have access to the full AI-driven financial intelligence platform — built specifically for South Africans.
+        Your PaceFinance account is live. You now have access to the full AI-driven financial intelligence platform: built specifically for South Africans.
       </p>
 
       <!-- Feature list -->
