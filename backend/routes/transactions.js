@@ -58,9 +58,28 @@ router.get('/', async (req, res, next) => {
 
     const result = await pool.query(query, params)
 
-    // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) FROM transactions WHERE user_id = $1'
+    // Get total count for pagination with matching filters
+    let countQuery = 'SELECT COUNT(*) FROM transactions t WHERE t.user_id = $1'
     const countParams = [req.user.id]
+    let countParamCount = 1
+
+    if (type && type !== 'all') {
+      countQuery += ` AND t.type = $${++countParamCount}`
+      countParams.push(type)
+    }
+    if (categoryId && categoryId !== 'all') {
+      countQuery += ` AND t.category_id = $${++countParamCount}`
+      countParams.push(parseInt(categoryId))
+    }
+    if (startDate) {
+      countQuery += ` AND t.transaction_date >= $${++countParamCount}`
+      countParams.push(startDate)
+    }
+    if (endDate) {
+      countQuery += ` AND t.transaction_date <= $${++countParamCount}`
+      countParams.push(endDate)
+    }
+
     const countResult = await pool.query(countQuery, countParams)
 
     res.json({
