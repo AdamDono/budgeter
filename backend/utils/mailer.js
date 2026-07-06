@@ -184,3 +184,219 @@ export async function sendWelcomeEmail(toEmail, firstName) {
     html,
   })
 }
+
+// ─── Bill Due Reminder Email ────────────────────────────────────────────────────
+export async function sendBillReminderEmail(toEmail, firstName, bills) {
+  const billRows = bills.map(b => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+           style="background:#070b1f;border-radius:10px;margin-bottom:10px;">
+      <tr>
+        <td style="padding:16px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                <p style="margin:0;color:#e8edf5;font-size:15px;font-weight:600;">${b.name}</p>
+                <p style="margin:4px 0 0;color:#7a8fae;font-size:13px;">
+                  Due ${b.days_until_due === 0 ? '<strong style="color:#f59e0b;">TODAY</strong>'
+                       : b.days_until_due === 1 ? '<strong style="color:#f59e0b;">TOMORROW</strong>'
+                       : `in <strong style="color:#e8edf5;">${b.days_until_due} days</strong>`}
+                  ${b.due_date ? `· ${new Date(b.due_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long' })}` : ''}
+                </p>
+              </td>
+              <td style="text-align:right;white-space:nowrap;">
+                ${b.amount ? `<p style="margin:0;color:#e8edf5;font-size:17px;font-weight:700;">R ${parseFloat(b.amount).toFixed(2)}</p>` : ''}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  `).join('')
+
+  const html = emailBase({
+    preheader: `You have ${bills.length} bill${bills.length > 1 ? 's' : ''} coming up soon.`,
+    body: `
+      <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+        ${bills.length === 1 ? 'Bill Due Soon' : `${bills.length} Bills Due Soon`} 🔔
+      </h1>
+      <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
+        Hey ${firstName}, just a heads-up on your upcoming bills:
+      </p>
+      ${billRows}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;">
+        <tr>
+          <td align="center">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/bills"
+               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+              View Bills →
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:24px 0 0;color:#3d4f6e;font-size:13px;text-align:center;">
+        Mark a bill as paid in the app to stop receiving reminders for it.
+      </p>
+    `
+  })
+
+  await transporter.sendMail({
+    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+    to: toEmail,
+    subject: `🔔 Bill reminder: ${bills.length === 1 ? bills[0].name : `${bills.length} bills coming up`}`,
+    html,
+  })
+}
+
+// ─── Budget Exceeded Alert Email ────────────────────────────────────────────────
+export async function sendBudgetAlertEmail(toEmail, firstName, { categoryName, spent, limit, overage }) {
+  const pct = Math.round((spent / limit) * 100)
+
+  const html = emailBase({
+    preheader: `You've exceeded your ${categoryName} budget this month.`,
+    body: `
+      <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+        Budget Alert ⚠️
+      </h1>
+      <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
+        Hey ${firstName}, you've gone over your <strong style="color:#e8edf5;">${categoryName}</strong> budget this month.
+      </p>
+
+      <!-- Stats card -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:12px;margin-bottom:28px;">
+        <tr><td style="padding:24px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="text-align:center;padding:0 12px;">
+                <p style="margin:0;color:#7a8fae;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Budget</p>
+                <p style="margin:6px 0 0;color:#e8edf5;font-size:22px;font-weight:700;">R ${limit.toFixed(2)}</p>
+              </td>
+              <td style="text-align:center;padding:0 12px;border-left:1px solid #1a2545;border-right:1px solid #1a2545;">
+                <p style="margin:0;color:#7a8fae;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Spent</p>
+                <p style="margin:6px 0 0;color:#ef4444;font-size:22px;font-weight:700;">R ${spent.toFixed(2)}</p>
+              </td>
+              <td style="text-align:center;padding:0 12px;">
+                <p style="margin:0;color:#7a8fae;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Over by</p>
+                <p style="margin:6px 0 0;color:#f59e0b;font-size:22px;font-weight:700;">R ${overage.toFixed(2)}</p>
+              </td>
+            </tr>
+          </table>
+          <!-- Progress bar -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+            <tr>
+              <td>
+                <div style="background:#1a2545;border-radius:99px;height:8px;overflow:hidden;">
+                  <div style="background:linear-gradient(90deg,#ef4444,#f97316);border-radius:99px;height:8px;width:${Math.min(pct, 100)}%;"></div>
+                </div>
+                <p style="margin:8px 0 0;color:#7a8fae;font-size:12px;text-align:right;">${pct}% of budget used</p>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/transactions"
+               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+              Review Transactions →
+            </a>
+          </td>
+        </tr>
+      </table>
+    `
+  })
+
+  await transporter.sendMail({
+    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+    to: toEmail,
+    subject: `⚠️ Budget exceeded: ${categoryName} is ${pct}% spent`,
+    html,
+  })
+}
+
+// ─── Monthly Summary Email ──────────────────────────────────────────────────────
+export async function sendMonthlySummaryEmail(toEmail, firstName, { month, year, totalIncome, totalExpenses, netSavings, savingsRate, topCategories, goalsCount }) {
+  const monthName = new Date(year, month - 1).toLocaleString('en-ZA', { month: 'long' })
+  const isPositive = netSavings >= 0
+
+  const catRows = topCategories.slice(0, 5).map(c => `
+    <tr>
+      <td style="padding:10px 0;color:#c5d0e0;font-size:14px;border-bottom:1px solid #1a2545;">${c.category}</td>
+      <td style="padding:10px 0;color:#e8edf5;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #1a2545;">R ${parseFloat(c.total).toFixed(2)}</td>
+    </tr>
+  `).join('')
+
+  const html = emailBase({
+    preheader: `Your ${monthName} ${year} financial summary is ready.`,
+    body: `
+      <h1 style="margin:0 0 8px;color:#e8edf5;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+        ${monthName} Summary 📊
+      </h1>
+      <p style="margin:0 0 28px;color:#7a8fae;font-size:15px;line-height:1.7;">
+        Hey ${firstName}, here's how your finances looked last month.
+      </p>
+
+      <!-- Core stats -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:12px;margin-bottom:20px;">
+        <tr><td style="padding:24px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="text-align:center;padding:0 8px;">
+                <p style="margin:0;color:#7a8fae;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Income</p>
+                <p style="margin:6px 0 0;color:#10b981;font-size:20px;font-weight:700;">R ${totalIncome.toFixed(2)}</p>
+              </td>
+              <td style="text-align:center;padding:0 8px;border-left:1px solid #1a2545;border-right:1px solid #1a2545;">
+                <p style="margin:0;color:#7a8fae;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Expenses</p>
+                <p style="margin:6px 0 0;color:#ef4444;font-size:20px;font-weight:700;">R ${totalExpenses.toFixed(2)}</p>
+              </td>
+              <td style="text-align:center;padding:0 8px;">
+                <p style="margin:0;color:#7a8fae;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Net Saved</p>
+                <p style="margin:6px 0 0;color:${isPositive ? '#10b981' : '#ef4444'};font-size:20px;font-weight:700;">
+                  ${isPositive ? '+' : ''}R ${netSavings.toFixed(2)}
+                </p>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;color:#7a8fae;font-size:13px;text-align:center;">
+            Savings rate: <strong style="color:${isPositive ? '#10b981' : '#ef4444'};">${savingsRate}%</strong>
+            ${goalsCount > 0 ? ` · <strong style="color:#6366f1;">${goalsCount} active goal${goalsCount > 1 ? 's' : ''}</strong>` : ''}
+          </p>
+        </td></tr>
+      </table>
+
+      <!-- Top spending categories -->
+      ${topCategories.length > 0 ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:12px;margin-bottom:28px;">
+        <tr><td style="padding:20px 24px;">
+          <p style="margin:0 0 16px;color:#7a8fae;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Top Spending Categories</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${catRows}
+          </table>
+        </td></tr>
+      </table>` : ''}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/analytics"
+               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+              View Full Analytics →
+            </a>
+          </td>
+        </tr>
+      </table>
+    `
+  })
+
+  await transporter.sendMail({
+    from: `"PaceFinance" <${process.env.BREVO_FROM_EMAIL}>`,
+    to: toEmail,
+    subject: `📊 Your ${monthName} ${year} financial summary`,
+    html,
+  })
+}
+

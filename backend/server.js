@@ -25,6 +25,7 @@ import transactionRoutes from './routes/transactions.js'
 // Middleware
 import { authenticateToken } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { startAllCrons } from './utils/cron.js'
 
 dotenv.config()
 
@@ -104,4 +105,5 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
+  startAllCrons()
 })

@@ -1,6 +1,7 @@
 import express from 'express'
 import Joi from 'joi'
 import { pool } from '../database/connection.js'
+import { sendBudgetAlertEmail } from '../utils/mailer.js'
 
 const router = express.Router()
 
@@ -153,6 +154,13 @@ router.post('/', async (req, res, next) => {
 
     await client.query('COMMIT')
 
+    // ② Budget exceeded alert — fire async, don't block the response
+    if (type === 'expense' && categoryId) {
+      checkAndSendBudgetAlert(req.user.id, categoryId).catch(err =>
+        console.error('Budget alert check failed:', err.message)
+      )
+    }
+
     res.status(201).json({
       message: 'Transaction created successfully',
       transaction: result.rows[0]
@@ -164,6 +172,76 @@ router.post('/', async (req, res, next) => {
     client.release()
   }
 })
+
+// ─── Budget alert helper ────────────────────────────────────────────────────────
+async function checkAndSendBudgetAlert(userId, categoryId) {
+  // Get user, settings, category budget limit
+  const infoResult = await pool.query(`
+    SELECT
+      u.email, u.first_name,
+      s.budget_alerts, s.notifications_enabled,
+      bc.name AS category_name,
+      bc.monthly_limit
+    FROM users u
+    JOIN user_settings s ON u.id = s.user_id
+    JOIN budget_categories bc ON bc.id = $2
+    WHERE u.id = $1
+  `, [userId, categoryId])
+
+  if (!infoResult.rows.length) return
+  const { email, first_name, budget_alerts, notifications_enabled, category_name, monthly_limit } = infoResult.rows[0]
+
+  // Respect user toggles and only alert when a limit is actually set
+  if (!budget_alerts || !notifications_enabled || !monthly_limit) return
+
+  // Total spent this calendar month in this category
+  const spentResult = await pool.query(`
+    SELECT COALESCE(SUM(amount), 0) AS spent
+    FROM transactions
+    WHERE user_id = $1
+      AND category_id = $2
+      AND type = 'expense'
+      AND DATE_TRUNC('month', transaction_date) = DATE_TRUNC('month', CURRENT_DATE)
+  `, [userId, categoryId])
+
+  const spent = parseFloat(spentResult.rows[0].spent)
+  const limit = parseFloat(monthly_limit)
+
+  if (spent <= limit) return // Not over budget yet
+
+  const overage = spent - limit
+
+  // Guard: only send once per day per category to avoid spamming
+  const guardResult = await pool.query(`
+    SELECT id FROM notifications
+    WHERE user_id = $1
+      AND type = 'budget_alert'
+      AND message LIKE $2
+      AND created_at > NOW() - INTERVAL '24 hours'
+    LIMIT 1
+  `, [userId, `%${category_name}%`])
+
+  if (guardResult.rows.length > 0) return // Already sent today
+
+  // Log notification in DB
+  await pool.query(`
+    INSERT INTO notifications (user_id, title, message, type, action_url)
+    VALUES ($1, $2, $3, 'budget_alert', '/app/transactions')
+  `, [
+    userId,
+    `Budget exceeded: ${category_name}`,
+    `Spent R${spent.toFixed(2)} of R${limit.toFixed(2)} limit — R${overage.toFixed(2)} over budget`
+  ])
+
+  await sendBudgetAlertEmail(email, first_name, {
+    categoryName: category_name,
+    spent,
+    limit,
+    overage,
+  })
+
+  console.log(`✅ Budget alert sent to ${email} for category: ${category_name}`)
+}
 
 // Update transaction
 router.put('/:id', async (req, res, next) => {
