@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, Plus, Trash2, TrendingUp, Target, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Calendar, Plus, Target, Trash2, TrendingUp, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { goalsAPI, accountsAPI } from '../lib/api'
+import { accountsAPI, goalsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Goals() {
@@ -17,6 +17,11 @@ export default function Goals() {
   const { data: goalsData, isLoading, error: goalsError } = useQuery({
     queryKey: ['goals'],
     queryFn: async () => (await goalsAPI.getAll()).data,
+  })
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: async () => (await accountsAPI.getAll()).data,
   })
 
   const createMutation = useMutation({
@@ -107,6 +112,7 @@ export default function Goals() {
       {showContributeModal && (
         <ContributeModal
           goal={showContributeModal}
+          accounts={accountsData?.accounts || []}
           onSubmit={(data) => handleContribute(showContributeModal.id, data)}
           onClose={() => setShowContributeModal(null)}
           loading={contributeMutation.isPending}
@@ -306,16 +312,27 @@ function GoalForm({ onSubmit, onClose, loading }) {
   )
 }
 
-function ContributeModal({ goal, onSubmit, onClose, loading }) {
+function ContributeModal({ goal, accounts = [], onSubmit, onClose, loading }) {
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState(`Contribution to ${goal.name}`)
+  const [selectedAccountId, setSelectedAccountId] = useState(accounts[0]?.id || '')
+
+  useEffect(() => {
+    if (accounts.length > 0 && !selectedAccountId) {
+      setSelectedAccountId(accounts[0].id)
+    }
+  }, [accounts])
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (!selectedAccountId) {
+      toast.error('Please select an account to contribute from.')
+      return
+    }
     onSubmit({ 
       amount: parseFloat(amount), 
       description, 
-      accountId: null 
+      accountId: parseInt(selectedAccountId) 
     })
   }
 
@@ -336,7 +353,7 @@ function ContributeModal({ goal, onSubmit, onClose, loading }) {
             <span className="text-accent">{formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}</span>
           </div>
 
-          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1.25rem' }}>
             <label>Amount (ZAR)</label>
             <input
               type="number"
@@ -349,11 +366,31 @@ function ContributeModal({ goal, onSubmit, onClose, loading }) {
             />
           </div>
 
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Contribute From Account</label>
+            <select
+              value={selectedAccountId}
+              onChange={(e) => setSelectedAccountId(e.target.value)}
+              className="premium-input select"
+              required
+            >
+              {accounts.length === 0 ? (
+                <option value="">No active accounts found</option>
+              ) : (
+                accounts.map(acc => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} (Balance: {formatCurrency(acc.balance)})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button type="button" className="btn danger" style={{ flex: 1 }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading}>
+            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading || accounts.length === 0}>
               {loading ? 'Processing...' : 'Confirm Contribution'}
             </button>
           </div>

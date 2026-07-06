@@ -158,12 +158,6 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params
 
-    // Disassociate transactions referencing this goal
-    await pool.query(
-      'UPDATE transactions SET goal_id = NULL WHERE goal_id = $1 AND user_id = $2',
-      [id, req.user.id]
-    )
-
     const result = await pool.query(
       'DELETE FROM goals WHERE id = $1 AND user_id = $2 RETURNING *',
       [id, req.user.id]
