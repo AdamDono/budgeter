@@ -48,15 +48,11 @@ function emailBase({ preheader = '', body = '' } = {}) {
 
           <!-- Header stripe -->
           <tr>
-            <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:32px 40px;text-align:center;">
-              <div style="display:inline-flex;align-items:center;gap:10px;">
-                <!-- Logo mark (P) -->
-                <div style="width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;display:inline-block;text-align:center;line-height:40px;">
-                  <span style="color:#fff;font-size:22px;font-weight:800;letter-spacing:-1px;">P</span>
-                </div>
-                <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.5px;">PaceFinance</span>
+            <td style="background:#0b1220;padding:32px 40px;text-align:center;border-bottom:1px solid #1e293b;">
+              <div style="display:block;margin-bottom:8px;">
+                <img src="https://pacedebt.onrender.com/logo_pace_finance.svg" alt="PaceFinance Logo" style="height:36px;display:inline-block;border:0;outline:none;" />
               </div>
-              <p style="margin:10px 0 0;color:rgba(255,255,255,0.7);font-size:13px;letter-spacing:0.5px;text-transform:uppercase;">Your AI Financial Strategist</p>
+              <p style="margin:8px 0 0;color:#6ec6ff;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:700;font-family:Arial,sans-serif;">Your AI Financial Strategist</p>
             </td>
           </tr>
 
@@ -71,7 +67,7 @@ function emailBase({ preheader = '', body = '' } = {}) {
           <tr>
             <td style="padding:24px 40px;background:#070b1f;border-top:1px solid #1a2545;text-align:center;">
               <p style="margin:0;color:#3d4f6e;font-size:12px;line-height:1.6;">
-                © ${new Date().getFullYear()} PaceFinance &nbsp;·&nbsp; Built for South Africa 🇿🇦<br/>
+                © ${new Date().getFullYear()} PaceFinance<br/>
                 <span style="color:#2a3a5e;">You're receiving this because you have a PaceFinance account.</span>
               </p>
             </td>
@@ -105,7 +101,7 @@ export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
         <tr>
           <td align="center" style="padding:8px 0 32px;">
             <a href="${resetLink}"
-               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(99,102,241,0.4);">
+               style="display:inline-block;background:linear-gradient(135deg,#1e7fd4,#0a4fa8);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(30,127,212,0.4);">
               Reset My Password →
             </a>
           </td>
@@ -119,7 +115,7 @@ export async function sendPasswordResetEmail(toEmail, resetToken, frontendUrl) {
             <p style="margin:0 0 8px;color:#3d4f6e;font-size:13px;">Didn't request this? You can safely ignore this email — your password won't change.</p>
             <p style="margin:0;color:#3d4f6e;font-size:12px;">
               Or copy this link:<br/>
-              <a href="${resetLink}" style="color:#6366f1;word-break:break-all;font-size:12px;">${resetLink}</a>
+              <a href="${resetLink}" style="color:#1e7fd4;word-break:break-all;font-size:12px;">${resetLink}</a>
             </p>
           </td>
         </tr>
@@ -172,7 +168,7 @@ export async function sendWelcomeEmail(toEmail, firstName) {
         <tr>
           <td align="center">
             <a href="${dashboardUrl}"
-               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(99,102,241,0.4);">
+               style="display:inline-block;background:linear-gradient(135deg,#1e7fd4,#0a4fa8);color:#fff;text-decoration:none;padding:15px 36px;border-radius:10px;font-size:15px;font-weight:600;letter-spacing:0.3px;box-shadow:0 4px 24px rgba(30,127,212,0.4);">
               Go to Dashboard →
             </a>
           </td>
@@ -230,7 +226,7 @@ export async function sendBillReminderEmail(toEmail, firstName, bills) {
         <tr>
           <td align="center">
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/bills"
-               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+               style="display:inline-block;background:linear-gradient(135deg,#1e7fd4,#0a4fa8);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
               View Bills →
             </a>
           </td>
@@ -301,7 +297,7 @@ export async function sendBudgetAlertEmail(toEmail, firstName, { categoryName, s
         <tr>
           <td align="center">
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/transactions"
-               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+               style="display:inline-block;background:linear-gradient(135deg,#1e7fd4,#0a4fa8);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
               Review Transactions →
             </a>
           </td>
@@ -363,7 +359,7 @@ export async function sendMonthlySummaryEmail(toEmail, firstName, { month, year,
           </table>
           <p style="margin:16px 0 0;color:#7a8fae;font-size:13px;text-align:center;">
             Savings rate: <strong style="color:${isPositive ? '#10b981' : '#ef4444'};">${savingsRate}%</strong>
-            ${goalsCount > 0 ? ` · <strong style="color:#6366f1;">${goalsCount} active goal${goalsCount > 1 ? 's' : ''}</strong>` : ''}
+            ${goalsCount > 0 ? ` · <strong style="color:#1e7fd4;">${goalsCount} active goal${goalsCount > 1 ? 's' : ''}</strong>` : ''}
           </p>
         </td></tr>
       </table>
@@ -384,7 +380,7 @@ export async function sendMonthlySummaryEmail(toEmail, firstName, { month, year,
         <tr>
           <td align="center">
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/analytics"
-               style="display:inline-block;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
+               style="display:inline-block;background:linear-gradient(135deg,#1e7fd4,#0a4fa8);color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-size:14px;font-weight:600;">
               View Full Analytics →
             </a>
           </td>

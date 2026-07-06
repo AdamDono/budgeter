@@ -77,16 +77,8 @@ export default function App() {
                   <Register />
                 </PublicRoute>
               } />
-              <Route path="/forgot-password" element={
-                <PublicRoute>
-                  <ForgotPassword />
-                </PublicRoute>
-              } />
-              <Route path="/reset-password/:token" element={
-                <PublicRoute>
-                  <ResetPassword />
-                </PublicRoute>
-              } />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               
               {/* Protected Routes */}
               <Route path="/app" element={
