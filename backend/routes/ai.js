@@ -4,131 +4,105 @@ import { pool } from '../database/connection.js'
 
 const router = express.Router()
 
-// Endpoint for Financial Coach Chat
-router.post('/chat', async (req, res, next) => {
-  try {
-    const { message, history = [] } = req.body
-    const apiKey = process.env.GEMINI_API_KEY
+// Helper to compile user's financial details into a text context for Gemini
+async function compileFinancialContext(userId) {
+  const results = await Promise.all([
+    // All active accounts
+    pool.query(`
+      SELECT name, balance
+      FROM accounts
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY balance DESC
+    `, [userId]),
 
-    if (!apiKey) {
-      return res.status(500).json({ 
-        error: 'Gemini API Key is missing. Please add GEMINI_API_KEY to your backend .env file.' 
-      })
-    }
+    // All active debts
+    pool.query(`
+      SELECT name, balance, interest_rate, monthly_payment, type
+      FROM debts 
+      WHERE user_id = $1 AND balance > 0
+      ORDER BY interest_rate DESC
+    `, [userId]),
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' })
-    }
+    // Last 200 transactions
+    pool.query(`
+      SELECT t.description, t.amount, t.type, t.transaction_date,
+             c.name as category, a.name as account
+      FROM transactions t
+      LEFT JOIN budget_categories c ON t.category_id = c.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.user_id = $1 
+      ORDER BY t.transaction_date DESC 
+      LIMIT 200
+    `, [userId]),
 
-    // 1. Gather FULL Financial Context for the AI
-    let accounts, debts, recentTx, budget, goals, bills, recurring, monthlySummary;
-    try {
-      const results = await Promise.all([
-        // All active accounts
-        pool.query(`
-          SELECT name, balance
-          FROM accounts
-          WHERE user_id = $1 AND is_active = true
-          ORDER BY balance DESC
-        `, [req.user.id]),
+    // Budget categories this month
+    pool.query(`
+      SELECT c.name, c.monthly_limit, COALESCE(SUM(t.amount), 0) as spent,
+             c.monthly_limit - COALESCE(SUM(t.amount), 0) as remaining
+      FROM budget_categories c
+      LEFT JOIN transactions t ON c.id = t.category_id AND t.type = 'expense' 
+        AND t.transaction_date >= date_trunc('month', CURRENT_DATE)
+      WHERE c.user_id = $1 OR c.user_id IS NULL
+      GROUP BY c.id, c.name, c.monthly_limit
+      HAVING c.monthly_limit > 0
+      ORDER BY spent DESC
+    `, [userId]),
 
-        // All active debts
-        pool.query(`
-          SELECT name, balance, interest_rate, monthly_payment, type
-          FROM debts 
-          WHERE user_id = $1 AND balance > 0
-          ORDER BY interest_rate DESC
-        `, [req.user.id]),
+    // Financial Goals
+    pool.query(`
+      SELECT name, description, target_amount, current_amount, target_date,
+             ROUND((current_amount / NULLIF(target_amount, 0)) * 100, 1) as progress_pct,
+             is_achieved
+      FROM goals
+      WHERE user_id = $1 AND is_achieved = false
+      ORDER BY target_date ASC NULLS LAST
+    `, [userId]),
 
-        // Last 200 transactions so the AI can answer historical questions
-        pool.query(`
-          SELECT t.description, t.amount, t.type, t.transaction_date,
-                 c.name as category, a.name as account
-          FROM transactions t
-          LEFT JOIN budget_categories c ON t.category_id = c.id
-          LEFT JOIN accounts a ON t.account_id = a.id
-          WHERE t.user_id = $1 
-          ORDER BY t.transaction_date DESC 
-          LIMIT 200
-        `, [req.user.id]),
+    // Upcoming bills in next 30 days
+    pool.query(`
+      SELECT name, amount, due_date, is_paid, frequency
+      FROM bill_reminders
+      WHERE user_id = $1 AND due_date >= CURRENT_DATE AND due_date <= CURRENT_DATE + 30
+      ORDER BY due_date ASC
+    `, [userId]),
 
-        // Budget categories this month
-        pool.query(`
-          SELECT c.name, c.monthly_limit, COALESCE(SUM(t.amount), 0) as spent,
-                 c.monthly_limit - COALESCE(SUM(t.amount), 0) as remaining
-          FROM budget_categories c
-          LEFT JOIN transactions t ON c.id = t.category_id AND t.type = 'expense' 
-            AND t.transaction_date >= date_trunc('month', CURRENT_DATE)
-          WHERE c.user_id = $1 OR c.user_id IS NULL
-          GROUP BY c.id, c.name, c.monthly_limit
-          HAVING c.monthly_limit > 0
-          ORDER BY spent DESC
-        `, [req.user.id]),
+    // Recurring income/expenses
+    pool.query(`
+      SELECT description, amount, type, frequency, next_due_date
+      FROM recurring_transactions
+      WHERE user_id = $1 AND is_active = true
+      ORDER BY type, amount DESC
+    `, [userId]),
 
-        // Financial Goals
-        pool.query(`
-          SELECT name, description, target_amount, current_amount, target_date,
-                 ROUND((current_amount / NULLIF(target_amount, 0)) * 100, 1) as progress_pct,
-                 is_achieved
-          FROM goals
-          WHERE user_id = $1 AND is_achieved = false
-          ORDER BY target_date ASC NULLS LAST
-        `, [req.user.id]),
+    // Monthly income vs expense summary for the last 6 months
+    pool.query(`
+      SELECT 
+        TO_CHAR(DATE_TRUNC('month', transaction_date), 'Mon YYYY') as month,
+        DATE_TRUNC('month', transaction_date) as month_date,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+        COUNT(*) as transaction_count
+      FROM transactions
+      WHERE user_id = $1 
+        AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '5 months')
+      GROUP BY DATE_TRUNC('month', transaction_date)
+      ORDER BY month_date DESC
+    `, [userId]),
+  ])
 
-        // Upcoming bills in next 30 days
-        pool.query(`
-          SELECT name, amount, due_date, is_paid, frequency
-          FROM bill_reminders
-          WHERE user_id = $1 AND due_date >= CURRENT_DATE AND due_date <= CURRENT_DATE + 30
-          ORDER BY due_date ASC
-        `, [req.user.id]),
+  const accounts       = results[0]
+  const debts          = results[1]
+  const recentTx       = results[2]
+  const budget         = results[3]
+  const goals          = results[4]
+  const bills          = results[5]
+  const recurring      = results[6]
+  const monthlySummary = results[7]
 
-        // Recurring income/expenses
-        pool.query(`
-          SELECT description, amount, type, frequency, next_due_date
-          FROM recurring_transactions
-          WHERE user_id = $1 AND is_active = true
-          ORDER BY type, amount DESC
-        `, [req.user.id]),
+  const totalDebt = debts.rows.reduce((sum, d) => sum + parseFloat(d.balance || 0), 0)
+  const totalBalance = accounts.rows.reduce((sum, a) => sum + parseFloat(a.balance || 0), 0)
 
-        // Monthly income vs expense summary for the last 6 months
-        pool.query(`
-          SELECT 
-            TO_CHAR(DATE_TRUNC('month', transaction_date), 'Mon YYYY') as month,
-            DATE_TRUNC('month', transaction_date) as month_date,
-            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
-            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
-            COUNT(*) as transaction_count
-          FROM transactions
-          WHERE user_id = $1 
-            AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '5 months')
-          GROUP BY DATE_TRUNC('month', transaction_date)
-          ORDER BY month_date DESC
-        `, [req.user.id]),
-      ])
-
-      accounts       = results[0]
-      debts          = results[1]
-      recentTx       = results[2]
-      budget         = results[3]
-      goals          = results[4]
-      bills          = results[5]
-      recurring      = results[6]
-      monthlySummary = results[7]
-    } catch (dbError) {
-      console.error('--- DB CONTEXT ERROR ---')
-      console.error(dbError)
-      return res.status(500).json({ error: 'Database error while gathering context: ' + dbError.message })
-    }
-
-    // 2. Build a rich, structured context string
-    const totalDebt = debts.rows.reduce((sum, d) => sum + parseFloat(d.balance || 0), 0)
-    const totalBalance = accounts.rows.reduce((sum, a) => sum + parseFloat(a.balance || 0), 0)
-    const income = recentTx.rows.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0)
-
-    const context = `
-You are the "Pace AI Financial Coach", a helpful, elite financial advisor for a South African user.
-Your goal is to provide proactive, smart, and encouraging financial advice based on THEIR SPECIFIC data.
+  return `
 Use South African Rand (R) for all currency mentions. Today's date is ${new Date().toLocaleDateString('en-ZA')}.
 
 === USER'S COMPLETE FINANCIAL PICTURE ===
@@ -172,25 +146,48 @@ ${monthlySummary.rows.length > 0
 
 ** FULL TRANSACTION HISTORY (Last 200 - use this to answer date-specific questions) **
 ${recentTx.rows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' : '-'}R${parseFloat(t.amount).toFixed(2)} | ${t.description}${t.category ? ` [${t.category}]` : ''}${t.account ? ` via ${t.account}` : ''}`).join('\n')}
+`
+}
+
+// ─── Financial Coach Chat Endpoint ─────────────────────────────────────────────
+router.post('/chat', async (req, res, next) => {
+  try {
+    const { message, history = [] } = req.body
+    const apiKey = process.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ 
+        error: 'Gemini API Key is missing. Please add GEMINI_API_KEY to your backend .env file.' 
+      })
+    }
+
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' })
+    }
+
+    const context = await compileFinancialContext(req.user.id)
+    const systemPrompt = `
+You are the "Pace AI Financial Coach", a helpful, elite financial advisor for a South African user.
+Your goal is to provide proactive, smart, and encouraging financial advice based on THEIR SPECIFIC data.
 
 === COACHING INSTRUCTIONS ===
-1. Always reference specific numbers from the data above - never be vague.
-2. If the user asks about their "pots", goals, or savings targets - use the FINANCIAL GOALS section above.
+1. Always reference specific numbers from the user context data - never be vague.
+2. If the user asks about their "pots", goals, or savings targets - use the FINANCIAL GOALS section.
 3. If they ask about affordability, check their total account balance AND remaining budget.
-4. Prioritise paying off high-interest debts (above 15% interest rate) - especially ${debts.rows.filter(d => parseFloat(d.interest_rate) >= 15).map(d => d.name).join(', ') || 'none currently'}.
+4. Prioritise paying off high-interest debts (above 15% interest rate).
 5. Be encouraging and direct - South African context applies (ZAR, local cost of living).
 6. If a goal is close to completion, celebrate it and motivate them to push through.
 7. Keep responses concise and well-formatted with bullet points or short paragraphs.
-    `
 
-    // 3. Initialize Gemini 2.5 Flash
+${context}
+`
+
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
-      systemInstruction: context
+      systemInstruction: systemPrompt
     })
 
-    // 4. Format history for Gemini (must start with 'user' role)
     let formattedHistory = history.map(h => ({
       role: h.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: h.content }]
@@ -201,7 +198,6 @@ ${recentTx.rows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' :
     }
 
     const chat = model.startChat({ history: formattedHistory })
-
     const result = await chat.sendMessage(message)
     const responseText = result.response.text()
 
@@ -209,20 +205,56 @@ ${recentTx.rows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' :
 
   } catch (error) {
     console.error('--- AI BACKEND ERROR ---')
-    console.error('Error Type:', error.constructor.name)
-    console.error('Error Message:', error.message)
-    
-    if (error.message?.includes('API_KEY_INVALID')) {
-      return res.status(401).json({ error: 'Invalid Gemini API Key. Please check your .env file.' })
-    }
-    if (error.message?.includes('404') && error.message?.includes('model')) {
-      return res.status(404).json({ error: 'Gemini model not found. Check your model name or API access.' })
+    console.error(error)
+    res.status(500).json({ error: 'AI Coach is having a moment: ' + error.message })
+  }
+})
+
+// ─── AI Strategic Briefing Endpoint (Dashboard) ────────────────────────────────
+router.get('/briefing', async (req, res, next) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Gemini API Key missing' })
     }
 
-    res.status(500).json({ 
-      error: 'AI Coach is having a moment. ' + (error.message || 'Unknown error'),
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    const context = await compileFinancialContext(req.user.id)
+    const systemPrompt = `
+You are the "Pace AI Financial Coach". Your task is to analyze the user's financial context and write a customized, highly tactical "Strategic Briefing" for their dashboard.
+
+You must respond with raw JSON in the following format:
+{
+  "headline": "A short, engaging surplus or deficit status sentence (max 12 words). Include a relevant emoji.",
+  "suggestion": "An actionable, tactical financial recommendation referencing real numbers from their context (max 20 words). Must relate to their goals, debts, or budgets.",
+  "action": "A redirect route path string. Must be exactly one of: '/app/debt' (if suggesting debt snowball/payoff), '/app/savings' (if suggesting goal savings), '/app/transactions' (if suggesting budget cuts/expense review), '/app/bills' (if warning about upcoming bills)."
+}
+
+Do not include any markdown styling, code blocks, or triple backticks in the response. Return raw JSON text only.
+
+=== COACHING INSTRUCTIONS ===
+1. Use real numbers and specific references from the user data (like Woolworths, FNB, Standard Bank credit card, target savings pot).
+2. Prioritize high-interest debt paydown or budget deficits.
+3. Be direct, encouraging, and South African context aware.
+
+${context}
+`
+
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     })
+
+    const result = await model.generateContent(systemPrompt)
+    const responseText = result.response.text().trim()
+    const parsed = JSON.parse(responseText)
+
+    res.json({ briefing: parsed })
+
+  } catch (error) {
+    console.error('--- AI BRIEFING ERROR ---')
+    console.error(error)
+    res.status(500).json({ error: 'Briefing generation failed: ' + error.message })
   }
 })
 

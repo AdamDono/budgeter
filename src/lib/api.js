@@ -125,6 +125,7 @@ export const creditAPI = {
 // AI API
 export const aiAPI = {
   chat: (data) => api.post('/ai/chat', data),
+  getBriefing: () => api.get('/ai/briefing'),
 }
 
 // CSV Import API (batch create transactions)

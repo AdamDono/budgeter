@@ -16,7 +16,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import ForexWidget from '../components/ForexWidget'
 import { SkeletonDashboard } from '../components/Skeleton'
-import { analyticsAPI, billsAPI, goalsAPI, transactionsAPI, debtsAPI } from '../lib/api'
+import { analyticsAPI, billsAPI, goalsAPI, transactionsAPI, debtsAPI, aiAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Dashboard() {
@@ -42,6 +42,14 @@ export default function Dashboard() {
     queryFn: async () => (await debtsAPI.getAll()).data,
   })
 
+  // Real Gemini Briefing Query
+  const { data: briefingResponse, isLoading: isBriefingLoading, error: briefingError } = useQuery({
+    queryKey: ['ai-briefing'],
+    queryFn: async () => (await aiAPI.getBriefing()).data,
+    retry: false,
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+  })
+
   if (isLoading) return <SkeletonDashboard />
 
   const summary = dashboardData?.summary || {}
@@ -58,26 +66,10 @@ export default function Dashboard() {
   const netIncome = summary.netIncome || 0
   const savingsRate = summary.savingsRate || 0
   
-  // AI Strategic Insights - Now based on real data
-  let aiBriefing = {}
-  if (summary.totalIncome === 0 && summary.totalExpenses === 0) {
-    aiBriefing = {
-      headline: "Welcome to PaceFinance.",
-      suggestion: "Initiate your financial tracking by logging your first transaction or setting up a savings target.",
-      action: "/app/transactions"
-    }
-  } else if (netIncome >= 0) {
-    aiBriefing = {
-      headline: `You've generated ${formatCurrency(netIncome)} in surplus capital this month!`,
-      suggestion: `I recommend allocating ${formatCurrency(netIncome * 0.4)} towards your '${goals?.goals?.[0]?.name || 'Savings'}' to maintain your ${savingsRate}% velocity.`,
-      action: "/app/savings"
-    }
-  } else {
-    aiBriefing = {
-      headline: `Notice: You are currently running a ${formatCurrency(Math.abs(netIncome))} deficit.`,
-      suggestion: `I suggest reviewing your Outflow items to identify at least ${formatCurrency(Math.abs(netIncome))} in potential optimizations.`,
-      action: "/app/transactions"
-    }
+  const aiBriefing = briefingResponse?.briefing || {
+    headline: briefingError ? "Strategic Intelligence Offline" : "Welcome to PaceFinance",
+    suggestion: briefingError ? "Configure your Gemini API key in the backend environment to unlock live briefings." : "Compiling initial balance indicators...",
+    action: "/app/transactions"
   }
 
   return (
@@ -105,14 +97,24 @@ export default function Dashboard() {
 
       {/* AI Strategic Briefing - The "Hero" of the Dash */}
       <section className="ai-briefing-card glass-panel">
-        <div className="ai-briefing-content">
-          <div className="ai-badge">AI STRATEGIC BRIEFING</div>
-          <h2>{aiBriefing.headline}</h2>
-          <p>{aiBriefing.suggestion}</p>
-        </div>
-        <Link to={aiBriefing.action} className="ai-action-btn">
-          Optimize <ArrowRight size={16} />
-        </Link>
+        {isBriefingLoading ? (
+          <div className="ai-briefing-shimmer" style={{ width: '100%' }}>
+            <div className="shimmer-badge"></div>
+            <div className="shimmer-line headline"></div>
+            <div className="shimmer-line suggestion"></div>
+          </div>
+        ) : (
+          <>
+            <div className="ai-briefing-content">
+              <div className="ai-badge">AI STRATEGIC BRIEFING</div>
+              <h2>{aiBriefing.headline}</h2>
+              <p>{aiBriefing.suggestion}</p>
+            </div>
+            <Link to={aiBriefing.action} className="ai-action-btn">
+              Optimize <ArrowRight size={16} />
+            </Link>
+          </>
+        )}
       </section>
 
       {/* The Bento Grid Layout */}

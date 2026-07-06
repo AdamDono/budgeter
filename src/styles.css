@@ -1044,6 +1044,44 @@ body {
 .auth-success-state h1 { margin: 0; font-size: 28px; }
 .auth-success-state p  { color: var(--muted); margin: 0; line-height: 1.6; max-width: 320px; }
 
+/* AI Briefing Shimmer Loader */
+.ai-briefing-shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.ai-briefing-shimmer .shimmer-badge {
+  width: 120px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  animation: pulse-shimmer 1.5s infinite ease-in-out;
+}
+
+.ai-briefing-shimmer .shimmer-line.headline {
+  width: 60%;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  animation: pulse-shimmer 1.5s infinite ease-in-out 0.2s;
+}
+
+.ai-briefing-shimmer .shimmer-line.suggestion {
+  width: 80%;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  animation: pulse-shimmer 1.5s infinite ease-in-out 0.4s;
+}
+
+@keyframes pulse-shimmer {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.3; }
+}
+
 .auth-bg {
   background: white;
   display: flex;
