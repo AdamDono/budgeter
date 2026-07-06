@@ -6,6 +6,29 @@ import ConfirmModal from '../components/ConfirmModal'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { debtsAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
+import { Line } from 'react-chartjs-2'
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 export default function Debt() {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -70,6 +93,130 @@ export default function Debt() {
   const payoffPlan = payoffPlanData
   const totalDebt = debts.reduce((sum, d) => sum + parseFloat(d.balance), 0)
   const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment || 0), 0)
+
+  // Rollover payoff timeline simulation for client-side visual comparison
+  const simulatePayoff = (debtsList, strategy) => {
+    if (debtsList.length === 0) return []
+    const debts = debtsList.map(d => ({
+      name: d.name,
+      balance: parseFloat(d.balance),
+      rate: (parseFloat(d.interest_rate) || 0) / 100 / 12,
+      minPayment: parseFloat(d.monthly_payment) || 10 // avoid zero
+    }))
+
+    const totalMinPayment = debts.reduce((sum, d) => sum + d.minPayment, 0)
+    // Rollover budget is the total minimums plus R500 speed rollover
+    const monthlyBudget = totalMinPayment + 500
+
+    let month = 0
+    const history = [debts.reduce((sum, d) => sum + d.balance, 0)]
+
+    while (month < 120) {
+      let activeDebts = debts.filter(d => d.balance > 0)
+      if (activeDebts.length === 0) break
+
+      if (strategy === 'snowball') {
+        activeDebts.sort((a, b) => a.balance - b.balance)
+      } else {
+        activeDebts.sort((a, b) => b.rate - a.rate)
+      }
+
+      let remainingBudget = monthlyBudget
+
+      // Apply interest and pay minimums
+      for (let d of activeDebts) {
+        const interest = d.balance * d.rate
+        d.balance += interest
+
+        const payment = Math.min(d.balance, d.minPayment)
+        d.balance -= payment
+        remainingBudget -= payment
+      }
+
+      // Funnel any extra budget into target debt
+      if (remainingBudget > 0 && activeDebts.length > 0) {
+        const target = activeDebts[0]
+        const extraPayment = Math.min(target.balance, remainingBudget)
+        target.balance -= extraPayment
+      }
+
+      const currentTotal = debts.reduce((sum, d) => sum + d.balance, 0)
+      history.push(currentTotal)
+      if (currentTotal <= 0) break
+      month++
+    }
+
+    // Pad if timeline finishes early to compare visually
+    return history
+  }
+
+  const snowballTimeline = simulatePayoff(debts, 'snowball')
+  const avalancheTimeline = simulatePayoff(debts, 'avalanche')
+
+  const chartData = {
+    labels: Array.from(
+      { length: Math.max(snowballTimeline.length, avalancheTimeline.length) },
+      (_, i) => `Month ${i}`
+    ),
+    datasets: [
+      {
+        label: 'Snowball Method',
+        data: snowballTimeline,
+        borderColor: '#4f8cff',
+        backgroundColor: 'rgba(79, 140, 255, 0.05)',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 0,
+        fill: true,
+      },
+      {
+        label: 'Avalanche Method',
+        data: avalancheTimeline,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 0,
+        fill: true,
+      }
+    ]
+  }
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: {
+          color: '#94a3b8',
+          font: { family: 'Inter, sans-serif', size: 12, weight: '500' }
+        }
+      },
+      tooltip: {
+        backgroundColor: '#121a2c',
+        titleColor: '#fff',
+        bodyColor: '#94a3b8',
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 1,
+        callbacks: {
+          label: (context) => `Remaining: R ${context.raw.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255, 255, 255, 0.03)' },
+        ticks: { color: '#64748b' }
+      },
+      y: {
+        grid: { color: 'rgba(255, 255, 255, 0.03)' },
+        ticks: {
+          color: '#64748b',
+          callback: (value) => `R ${value.toLocaleString()}`
+        }
+      }
+    }
+  }
 
   return (
     <div className="debt-page-v2">
@@ -142,10 +289,11 @@ export default function Debt() {
         <div className="payoff-plan-v2">
           <div className="card-v2-header">
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em' }}>Payoff Strategy</h2>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Payoff Strategy</h2>
+              <p className="text-muted" style={{ fontSize: '0.85rem' }}>Rollover projection assumes R500 extra contribution monthly</p>
             </div>
           </div>
-          <div className="strategy-row-v2">
+          <div className="strategy-row-v2" style={{ marginBottom: '1.5rem' }}>
             <div
               className={`strategy-btn-v2 ${payoffStrategy === 'snowball' ? 'active' : ''}`}
               onClick={() => setPayoffStrategy('snowball')}
@@ -159,6 +307,14 @@ export default function Debt() {
             >
               <h4>Avalanche Method</h4>
               <p>Pay highest interest first to save money</p>
+            </div>
+          </div>
+          
+          {/* Visual Timelines Comparison Chart */}
+          <div className="visual-payoff-chart-container" style={{ height: '300px', width: '100%', marginTop: '2rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <h3 style={{ fontSize: '1rem', color: 'white', marginBottom: '1rem', fontWeight: 700 }}>Eradication Velocity Comparison</h3>
+            <div style={{ height: '240px', position: 'relative' }}>
+              <Line data={chartData} options={chartOptions} />
             </div>
           </div>
         </div>

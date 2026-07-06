@@ -258,4 +258,190 @@ ${context}
   }
 })
 
+// ─── GET User Conversations ────────────────────────────────────────────────────
+router.get('/conversations', async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, title, created_at FROM chat_conversations WHERE user_id = $1 ORDER BY updated_at DESC',
+      [req.user.id]
+    )
+    res.json({ conversations: result.rows })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// ─── POST Create Conversation ──────────────────────────────────────────────────
+router.post('/conversations', async (req, res, next) => {
+  try {
+    const { title = 'New Chat' } = req.body
+    const result = await pool.query(
+      'INSERT INTO chat_conversations (user_id, title) VALUES ($1, $2) RETURNING *',
+      [req.user.id, title]
+    )
+    res.status(201).json({ conversation: result.rows[0] })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// ─── GET Conversation Messages ─────────────────────────────────────────────────
+router.get('/conversations/:id/messages', async (req, res, next) => {
+  try {
+    const { id } = req.params
+    // Verify ownership
+    const ownership = await pool.query(
+      'SELECT id FROM chat_conversations WHERE id = $1 AND user_id = $2',
+      [id, req.user.id]
+    )
+    if (ownership.rows.length === 0) {
+      return res.status(404).json({ error: 'Conversation not found' })
+    }
+
+    const messages = await pool.query(
+      'SELECT role, content, created_at FROM chat_messages WHERE conversation_id = $1 ORDER BY id ASC',
+      [id]
+    )
+    res.json({ messages: messages.rows })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// ─── DELETE Conversation ───────────────────────────────────────────────────────
+router.delete('/conversations/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const result = await pool.query(
+      'DELETE FROM chat_conversations WHERE id = $1 AND user_id = $2 RETURNING id',
+      [id, req.user.id]
+    )
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Conversation not found' })
+    }
+    res.json({ message: 'Conversation deleted successfully' })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// ─── Refactored Coach Chat Endpoint (Persisted to DB) ──────────────────────────
+router.post('/chat', async (req, res, next) => {
+  try {
+    const { message, conversationId } = req.body
+    const apiKey = process.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Gemini API Key missing' })
+    }
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' })
+    }
+
+    let activeConvId = conversationId
+
+    // 1. If no conversationId provided, create a new conversation
+    if (!activeConvId) {
+      const convResult = await pool.query(
+        'INSERT INTO chat_conversations (user_id, title) VALUES ($1, $2) RETURNING id',
+        [req.user.id, 'New Chat']
+      )
+      activeConvId = convResult.rows[0].id
+    } else {
+      // Verify ownership
+      const check = await pool.query(
+        'SELECT id FROM chat_conversations WHERE id = $1 AND user_id = $2',
+        [activeConvId, req.user.id]
+      )
+      if (check.rows.length === 0) {
+        return res.status(404).json({ error: 'Conversation not found' })
+      }
+    }
+
+    // 2. Load previous messages from DB to build Gemini chat history
+    const prevMessagesResult = await pool.query(
+      'SELECT role, content FROM chat_messages WHERE conversation_id = $1 ORDER BY id ASC',
+      [activeConvId]
+    )
+
+    // Save user message to database
+    await pool.query(
+      'INSERT INTO chat_messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+      [activeConvId, 'user', message]
+    )
+
+    // 3. Format history for Gemini
+    const history = prevMessagesResult.rows.map(h => ({
+      role: h.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: h.content }]
+    }))
+
+    const context = await compileFinancialContext(req.user.id)
+    const systemPrompt = `
+You are the "Pace AI Financial Coach", a helpful, elite financial advisor for a South African user.
+Your goal is to provide proactive, smart, and encouraging financial advice based on THEIR SPECIFIC data.
+
+=== COACHING INSTRUCTIONS ===
+1. Always reference specific numbers from the user context data - never be vague.
+2. If the user asks about their "pots", goals, or savings targets - use the FINANCIAL GOALS section.
+3. If they ask about affordability, check their total account balance AND remaining budget.
+4. Prioritise paying off high-interest debts (above 15% interest rate).
+5. Be encouraging and direct - South African context applies (ZAR, local cost of living).
+6. If a goal is close to completion, celebrate it and motivate them to push through.
+7. Keep responses concise and well-formatted with bullet points or short paragraphs.
+
+${context}
+`
+
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash",
+      systemInstruction: systemPrompt
+    })
+
+    const chat = model.startChat({ history })
+    const result = await chat.sendMessage(message)
+    const responseText = result.response.text()
+
+    // Save assistant message to database
+    await pool.query(
+      'INSERT INTO chat_messages (conversation_id, role, content) VALUES ($1, $2, $3)',
+      [activeConvId, 'assistant', responseText]
+    )
+
+    // Update conversation timestamp
+    await pool.query(
+      'UPDATE chat_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = $1',
+      [activeConvId]
+    )
+
+    // 4. Auto-generate a beautiful summary title if this is the first user query
+    if (prevMessagesResult.rows.length === 0) {
+      try {
+        const titleModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" })
+        const titlePrompt = `Generate a very short title (max 4 words) describing the following user query: "${message}". Return only the plain title text.`
+        const titleResult = await titleModel.generateContent(titlePrompt)
+        const cleanTitle = titleResult.response.text().trim().replace(/['"]/g, '')
+        
+        await pool.query(
+          'UPDATE chat_conversations SET title = $1 WHERE id = $2',
+          [cleanTitle || 'Financial Chat', activeConvId]
+        )
+      } catch (err) {
+        console.error('Failed to auto-generate title:', err.message)
+      }
+    }
+
+    res.json({ 
+      response: responseText, 
+      conversationId: activeConvId 
+    })
+
+  } catch (error) {
+    console.error('--- AI BACKEND ERROR ---')
+    console.error(error)
+    res.status(500).json({ error: 'AI Coach error: ' + error.message })
+  }
+})
+
 export default router

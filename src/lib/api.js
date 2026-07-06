@@ -126,6 +126,10 @@ export const creditAPI = {
 export const aiAPI = {
   chat: (data) => api.post('/ai/chat', data),
   getBriefing: () => api.get('/ai/briefing'),
+  getConversations: () => api.get('/ai/conversations'),
+  createConversation: (title) => api.post('/ai/conversations', { title }),
+  getMessages: (id) => api.get(`/ai/conversations/${id}/messages`),
+  deleteConversation: (id) => api.delete(`/ai/conversations/${id}`),
 }
 
 // CSV Import API (batch create transactions)

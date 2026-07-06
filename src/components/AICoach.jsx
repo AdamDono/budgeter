@@ -1,4 +1,4 @@
-import { AlertCircle, Bot, MinusCircle, Send, Sparkles, TrendingDown, X } from 'lucide-react'
+import { AlertCircle, Bot, MinusCircle, Send, Sparkles, TrendingDown, X, MessageSquare, Plus, Trash2, Menu } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
@@ -8,11 +8,15 @@ import { aiAPI } from '../lib/api'
 export default function AICoach() {
   const { isOpen, setIsOpen, initialPrompt, setInitialPrompt } = useAI()
   const [isMinimized, setIsMinimized] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
   const [userInput, setUserInput] = useState('')
   const [chatHistory, setChatHistory] = useState([
     { role: 'assistant', content: "Hi! I'm your Pace AI Coach. Ask me anything about your spending, debts, or if you can afford that R1,000 treat today! 🇿🇦" }
   ])
+  const [conversations, setConversations] = useState([])
+  const [activeConvId, setActiveConvId] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
   const [healthStatus, setHealthStatus] = useState('good') // good, warning, danger
   
   const chatEndRef = useRef(null)
@@ -28,6 +32,13 @@ export default function AICoach() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Load conversations list on mount/open
+  useEffect(() => {
+    if (isOpen) {
+      fetchConversations()
+    }
+  }, [isOpen])
+
   useEffect(() => {
     if (isOpen && !isMinimized) {
       scrollToBottom()
@@ -41,6 +52,69 @@ export default function AICoach() {
     }
   }, [isOpen, initialPrompt])
 
+  const fetchConversations = async () => {
+    try {
+      const res = await aiAPI.getConversations()
+      setConversations(res.data.conversations)
+      // Auto-select latest conversation if none is active
+      if (res.data.conversations.length > 0 && !activeConvId) {
+        loadConversation(res.data.conversations[0].id)
+      }
+    } catch (err) {
+      console.error('Failed to load conversations:', err)
+    }
+  }
+
+  const loadConversation = async (convId) => {
+    setHistoryLoading(true)
+    setActiveConvId(convId)
+    try {
+      const res = await aiAPI.getMessages(convId)
+      if (res.data.messages.length > 0) {
+        setChatHistory(res.data.messages)
+      } else {
+        setChatHistory([
+          { role: 'assistant', content: "New conversation initiated. Ask me anything!" }
+        ])
+      }
+    } catch (err) {
+      toast.error('Failed to load messages')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const handleCreateNewChat = async () => {
+    try {
+      const res = await aiAPI.createConversation('New Chat')
+      setConversations(prev => [res.data.conversation, ...prev])
+      setActiveConvId(res.data.conversation.id)
+      setChatHistory([
+        { role: 'assistant', content: "New conversation initiated. Ask me anything!" }
+      ])
+      setShowHistory(false)
+    } catch (err) {
+      toast.error('Failed to start a new chat')
+    }
+  }
+
+  const handleDeleteChat = async (e, convId) => {
+    e.stopPropagation()
+    try {
+      await aiAPI.deleteConversation(convId)
+      setConversations(prev => prev.filter(c => c.id !== convId))
+      toast.success('Chat deleted')
+      if (activeConvId === convId) {
+        setActiveConvId(null)
+        setChatHistory([
+          { role: 'assistant', content: "Hi! I'm your Pace AI Coach. Ask me anything about your spending, debts, or if you can afford that R1,000 treat today! 🇿🇦" }
+        ])
+      }
+    } catch (err) {
+      toast.error('Failed to delete chat')
+    }
+  }
+
   const handleSendMessage = async (text) => {
     const messageToSend = typeof text === 'string' ? text : userInput
     if (!messageToSend.trim()) return
@@ -53,13 +127,19 @@ export default function AICoach() {
     try {
       const response = await aiAPI.chat({ 
         message: messageToSend,
-        history: chatHistory 
+        conversationId: activeConvId 
       })
 
       const botContent = response.data.response
       const botMessage = { role: 'assistant', content: botContent }
       
-      // Dynamic Vibe logic: Update status based on keywords (simple heuristic)
+      // Auto-set the active conversation if we just initialized a new one in the backend
+      if (!activeConvId && response.data.conversationId) {
+        setActiveConvId(response.data.conversationId)
+        fetchConversations()
+      }
+
+      // Dynamic Vibe logic
       if (botContent.toLowerCase().includes('danger') || botContent.toLowerCase().includes('over budget')) {
         setHealthStatus('danger')
       } else if (botContent.toLowerCase().includes('caution') || botContent.toLowerCase().includes('warning')) {
@@ -69,6 +149,11 @@ export default function AICoach() {
       }
 
       setChatHistory(prev => [...prev, botMessage])
+      
+      // Refresh list to update titles/sorting order
+      if (activeConvId) {
+        fetchConversations()
+      }
     } catch (error) {
       console.error('AI Error:', error)
       const errorMsg = error.response?.data?.error || 'Oops! My brain is a bit laggy. Check your Gemini API Key in the backend!'
@@ -97,9 +182,14 @@ export default function AICoach() {
   }
 
   return (
-    <div className={`ai-coach-panel ${isMinimized ? 'minimized' : ''} health-${healthStatus}`}>
+    <div className={`ai-coach-panel ${isMinimized ? 'minimized' : ''} health-${healthStatus} ${showHistory ? 'history-open' : ''}`}>
+      
+      {/* Drawer Header */}
       <div className="ai-coach-header">
         <div className="header-info">
+          <button onClick={() => setShowHistory(!showHistory)} className="icon-btn history-toggle" title="Chat History">
+            <Menu size={18} />
+          </button>
           <div className={`bot-avatar status-${healthStatus}`}>
             {healthStatus === 'danger' ? <AlertCircle size={20} /> : 
              healthStatus === 'warning' ? <TrendingDown size={20} /> : 
@@ -125,48 +215,96 @@ export default function AICoach() {
       </div>
 
       {!isMinimized && (
-        <>
-          <div className="ai-coach-messages">
-            {chatHistory.map((msg, idx) => (
-              <div key={idx} className={`message-bubble ${msg.role} fade-in`}>
-                <div className="bubble-content">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+        <div className="ai-coach-body">
+          
+          {/* History Sidebar Panel */}
+          {showHistory && (
+            <div className="ai-history-sidebar">
+              <div className="history-header">
+                <h4>Past Chats</h4>
+                <button onClick={handleCreateNewChat} className="new-chat-btn" title="New Chat">
+                  <Plus size={16} />
+                </button>
+              </div>
+              <div className="conversations-list">
+                {conversations.length === 0 ? (
+                  <p className="no-chats-msg">No chats saved yet.</p>
+                ) : (
+                  conversations.map(c => (
+                    <div 
+                      key={c.id} 
+                      className={`conv-item ${activeConvId === c.id ? 'active' : ''}`}
+                      onClick={() => { loadConversation(c.id); setShowHistory(false); }}
+                    >
+                      <MessageSquare size={14} className="conv-icon" />
+                      <span className="conv-title">{c.title}</span>
+                      <button onClick={(e) => handleDeleteChat(e, c.id)} className="delete-conv-btn" title="Delete Chat">
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Main Chat Interface */}
+          <div className="ai-chat-main">
+            {historyLoading ? (
+              <div className="ai-coach-messages loading">
+                <div className="message-bubble assistant">
+                  <div className="bubble-content typing">
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                    <span className="dot"></span>
+                  </div>
                 </div>
               </div>
-            ))}
-            {loading && (
-              <div className="message-bubble assistant fade-in">
-                <div className="bubble-content typing">
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                  <span className="dot"></span>
-                </div>
+            ) : (
+              <div className="ai-coach-messages">
+                {chatHistory.map((msg, idx) => (
+                  <div key={idx} className={`message-bubble ${msg.role} fade-in`}>
+                    <div className="bubble-content">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="message-bubble assistant fade-in">
+                    <div className="bubble-content typing">
+                      <span className="dot"></span>
+                      <span className="dot"></span>
+                      <span className="dot"></span>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
             )}
-            <div ref={chatEndRef} />
-          </div>
 
-          <div className="suggestions-container">
-            {suggestions.map((s, i) => (
-              <button key={i} className="suggestion-chip" onClick={() => handleSendMessage(s.prompt)}>
-                {s.label}
+            <div className="suggestions-container">
+              {suggestions.map((s, i) => (
+                <button key={i} className="suggestion-chip" onClick={() => handleSendMessage(s.prompt)}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+
+            <form className="ai-coach-input" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
+              <input 
+                type="text" 
+                placeholder="Ask about your finances..." 
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                disabled={loading}
+              />
+              <button type="submit" disabled={loading || !userInput.trim()}>
+                <Send size={18} />
               </button>
-            ))}
+            </form>
           </div>
 
-          <form className="ai-coach-input" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
-            <input 
-              type="text" 
-              placeholder="Ask about your finances..." 
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              disabled={loading}
-            />
-            <button type="submit" disabled={loading || !userInput.trim()}>
-              <Send size={18} />
-            </button>
-          </form>
-        </>
+        </div>
       )}
 
       {isMinimized && (

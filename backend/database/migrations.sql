@@ -78,3 +78,23 @@ CREATE INDEX idx_tip_comments_user ON tip_comments(user_id);
 ALTER TABLE users
   ADD COLUMN IF NOT EXISTS reset_password_token VARCHAR(255),
   ADD COLUMN IF NOT EXISTS reset_password_expiry TIMESTAMP;
+
+-- CHAT HISTORY TABLES
+CREATE TABLE IF NOT EXISTS chat_conversations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL DEFAULT 'New Chat',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  conversation_id INTEGER REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  role VARCHAR(50) NOT NULL CHECK (role IN ('user', 'assistant')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_conversations_user ON chat_conversations(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id);
