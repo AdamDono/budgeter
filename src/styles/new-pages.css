@@ -1391,22 +1391,106 @@
   box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.1);
 }
 
+/* Search Row & Collapsible Desktop Layout */
+.filters-search-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1.5;
+  width: 100%;
+}
+
+.search-item {
+  flex: 1;
+  min-width: 0;
+  margin: 0 !important;
+}
+
+.btn-filter-toggle {
+  display: none !important; /* Hide toggle on desktop since all filters are visible */
+}
+
+.filters-collapsible {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  flex: 3;
+}
+
+/* Mobile Layout Overrides */
 @media (max-width: 768px) {
   .filters-glass {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 1.25rem !important;
+    gap: 1rem !important;
     padding: 1.25rem !important;
   }
+  
+  .filters-search-row {
+    flex: none !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+  
+  .btn-filter-toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #f8fafc !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    white-space: nowrap !important;
+    height: 42px !important;
+    box-sizing: border-box !important;
+  }
+  
+  .btn-filter-toggle:hover, .btn-filter-toggle.active {
+    background: rgba(79, 140, 255, 0.1) !important;
+    border-color: rgba(79, 140, 255, 0.3) !important;
+    color: #4f8cff !important;
+  }
+  
+  .filters-collapsible {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out !important;
+    opacity: 0 !important;
+  }
+  
+  .filters-collapsible.show {
+    max-height: 400px !important;
+    opacity: 1 !important;
+    margin-top: 0.5rem !important;
+  }
+
   .filters-glass .filter-item {
     width: 100% !important;
     min-width: 0 !important;
     flex: 1 1 auto !important;
   }
+  
   .filters-glass .month-picker-pill {
     width: 100% !important;
     justify-content: center !important;
     box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    height: 42px !important;
   }
 }
 

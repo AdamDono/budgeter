@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Calendar, FileText, Plus, Search, Trash2, TrendingUp, TrendingDown, ArrowRight, X } from 'lucide-react'
+import { Calendar, FileText, Plus, Search, Trash2, TrendingUp, TrendingDown, ArrowRight, X, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
@@ -23,6 +23,7 @@ export default function Transactions() {
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
   
   const queryClient = useQueryClient()
 
@@ -155,59 +156,72 @@ export default function Transactions() {
 
       {/* Filters Glass Panel */}
       <div className="filters-glass glass-panel shadow-lg">
-        <div className="filter-item">
-          <label>Transaction Type</label>
-          <select 
-            className="filter-input"
-            value={filters.type} 
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-          >
-            <option value="all">All Transactions</option>
-            <option value="income">Income Only</option>
-            <option value="expense">Expenses Only</option>
-          </select>
-        </div>
-
-        <div className="filter-item">
-          <label>Category</label>
-          <select 
-            className="filter-input"
-            value={filters.categoryId} 
-            onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-          >
-            <option value="all">All Categories</option>
-            {categories?.categories?.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-item">
-          <label>Search</label>
-          <div style={{ position: 'relative' }}>
-            <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
-            <input
-              type="text"
-              placeholder="Search transactions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="filter-input"
-              style={{ paddingLeft: '36px' }}
-            />
-          </div>
-        </div>
-
-        <div className="filter-item" style={{ flex: '0 0 auto', minWidth: 'auto' }}>
-           <label>Period</label>
-           <div className="month-picker-pill" style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.05)' }}>
-             <Calendar size={14} />
-             <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                style={{ fontSize: '0.85rem' }}
+        {/* Search & Mobile Toggle Row */}
+        <div className="filters-search-row">
+          <div className="filter-item search-item">
+            <div style={{ position: 'relative' }}>
+              <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="filter-input"
+                style={{ paddingLeft: '36px' }}
               />
-           </div>
+            </div>
+          </div>
+          <button 
+            className={`btn-filter-toggle ${showMobileFilters ? 'active' : ''}`}
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            title="Toggle Filters"
+          >
+            <SlidersHorizontal size={14} />
+            <span>Filters</span>
+          </button>
+        </div>
+
+        {/* Collapsible Panel */}
+        <div className={`filters-collapsible ${showMobileFilters ? 'show' : ''}`}>
+          <div className="filter-item">
+            <label>Transaction Type</label>
+            <select 
+              className="filter-input"
+              value={filters.type} 
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+            >
+              <option value="all">All Transactions</option>
+              <option value="income">Income Only</option>
+              <option value="expense">Expenses Only</option>
+            </select>
+          </div>
+
+          <div className="filter-item">
+            <label>Category</label>
+            <select 
+              className="filter-input"
+              value={filters.categoryId} 
+              onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+            >
+              <option value="all">All Categories</option>
+              {categories?.categories?.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="filter-item period-item">
+             <label>Period</label>
+             <div className="month-picker-pill">
+               <Calendar size={14} />
+               <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  style={{ fontSize: '0.85rem' }}
+                />
+             </div>
+          </div>
         </div>
       </div>
 
