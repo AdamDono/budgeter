@@ -68,13 +68,15 @@ export default function Goals() {
       <div className="bg-glow"></div>
       
       <header className="dash-header">
-        <div className="header-info">
+        <div className="header-info dashboard-header-info">
           <h1>Financial Goals</h1>
-          <p className="text-muted">Track your savings and long-term targets</p>
+          <p className="text-muted dash-subtitle">Track your savings and long-term targets</p>
         </div>
-        <button className="btn primary" onClick={() => setShowAddForm(true)}>
-          <Plus size={18} /> New Goal
-        </button>
+        <div className="header-actions">
+          <button className="btn primary" onClick={() => setShowAddForm(true)}>
+            <Plus size={18} /> New Goal
+          </button>
+        </div>
       </header>
 
       <div className="goals-glass-grid">
