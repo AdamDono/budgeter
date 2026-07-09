@@ -96,7 +96,6 @@ export default function App() {
                 <Route path="trends" element={<Trends />} />
                 <Route path="debt" element={<Debt />} />
                 <Route path="tax" element={<Tax />} />
-                <Route path="forex" element={<Forex />} />
                 <Route path="credit-hub" element={<CreditHub />} />
                 <Route path="settings" element={<Settings />} />
               </Route>

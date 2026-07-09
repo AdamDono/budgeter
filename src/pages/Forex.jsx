@@ -15,9 +15,9 @@ export default function Forex() {
   return (
     <div className="forex-page-container dashboard-v2">
       <header className="dash-header">
-        <div className="header-info">
+        <div className="header-info dashboard-header-info">
           <h1>Forex Analytics</h1>
-          <p className="text-muted">Global Market Intelligence & Exchange Data</p>
+          <p className="text-muted forex-subtitle">Global Market Intelligence & Exchange Data</p>
         </div>
         <div className="header-actions">
            <div className="month-picker-pill">

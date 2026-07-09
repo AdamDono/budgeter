@@ -2291,6 +2291,21 @@
   }
 }
 
+/* Forex Subtitle responsive styling */
+.forex-subtitle {
+  display: inline-block !important;
+  font-size: 0.85rem !important;
+  color: #94a3b8 !important;
+  margin: 0 0 0 12px !important;
+  vertical-align: middle !important;
+}
+
+@media (max-width: 768px) {
+  .forex-subtitle {
+    display: none !important;
+  }
+}
+
 /* Analytics Page V2 - Premium UI */
 .analytics-page-v2 {
   min-height: 100vh;
