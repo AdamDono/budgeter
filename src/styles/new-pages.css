@@ -2012,6 +2012,58 @@
   }
 }
 
+/* Modal Header Layout */
+.modal-header-v2 {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  margin-bottom: 1.5rem !important;
+  padding: 1.5rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  position: relative !important;
+}
+
+.modal-header-v2 .header-info {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  padding-right: 48px !important;
+}
+
+.modal-header-v2 h2 {
+  margin: 0 !important;
+  text-align: left !important;
+}
+
+.modal-header-v2 button.btn.ghost.small {
+  position: absolute !important;
+  right: 1.5rem !important;
+  top: 1.15rem !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  height: 36px !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(239, 68, 68, 0.7) !important;
+  background: rgba(239, 68, 68, 0.05) !important;
+  border: 1px solid rgba(239, 68, 68, 0.15) !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-header-v2 button.btn.ghost.small:hover {
+  color: #ffffff !important;
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
+}
+
 /* Savings Page V2 - Premium UI */
 .savings-page-v2 {
   min-height: 100vh;

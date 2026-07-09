@@ -237,7 +237,7 @@ function GoalForm({ onSubmit, onClose, loading }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
-        <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="modal-header-v2">
           <div className="header-info">
             <h2 style={{ fontSize: '1.5rem', color: 'white' }}>New Goal</h2>
             <p className="text-muted">Define a new financial objective</p>
@@ -336,9 +336,9 @@ function ContributeModal({ goal, accounts = [], onSubmit, onClose, loading }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-modal shadow-2xl small" style={{ maxWidth: '450px' }} onClick={(e) => e.stopPropagation()}>
-         <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+         <div className="modal-header-v2">
           <div className="header-info">
-            <h2 style={{ fontSize: '1.3rem', color: 'white' }}>Increase Stake</h2>
+            <h2 style={{ fontSize: '1.3rem', color: 'white' }}>Increase Contribution</h2>
             <p className="text-muted">{goal.name}</p>
           </div>
           <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
