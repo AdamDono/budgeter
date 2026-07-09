@@ -326,14 +326,10 @@ function ContributeModal({ goal, accounts = [], onSubmit, onClose, loading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!selectedAccountId) {
-      toast.error('Please select an account to contribute from.')
-      return
-    }
     onSubmit({ 
       amount: parseFloat(amount), 
       description, 
-      accountId: parseInt(selectedAccountId) 
+      accountId: selectedAccountId ? parseInt(selectedAccountId) : null 
     })
   }
 
@@ -367,31 +363,29 @@ function ContributeModal({ goal, accounts = [], onSubmit, onClose, loading }) {
             />
           </div>
 
-          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
-            <label>Contribute From Account</label>
-            <select
-              value={selectedAccountId}
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              className="premium-input select"
-              required
-            >
-              {accounts.length === 0 ? (
-                <option value="">No active accounts found</option>
-              ) : (
-                accounts.map(acc => (
+          {accounts.length > 0 && (
+            <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+              <label>Contribute From Account</label>
+              <select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="premium-input select"
+                required
+              >
+                {accounts.map(acc => (
                   <option key={acc.id} value={acc.id}>
                     {acc.name} (Balance: {formatCurrency(acc.balance)})
                   </option>
-                ))
-              )}
-            </select>
-          </div>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
             <button type="button" className="btn danger" style={{ flex: 1 }} onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading || accounts.length === 0}>
+            <button type="submit" className="btn primary" style={{ flex: 2 }} disabled={loading}>
               {loading ? 'Processing...' : 'Confirm Contribution'}
             </button>
           </div>

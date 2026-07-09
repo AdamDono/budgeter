@@ -114,12 +114,37 @@ router.post('/:id/contribute', async (req, res, next) => {
 
     const goal = goalResult.rows[0]
 
+    // Resolve account ID (find or create default if not provided)
+    let finalAccountId = accountId
+    if (!finalAccountId) {
+      const accountResult = await pool.query(
+        'SELECT id FROM accounts WHERE user_id = $1 LIMIT 1',
+        [req.user.id]
+      )
+      if (accountResult.rows.length > 0) {
+        finalAccountId = accountResult.rows[0].id
+      } else {
+        const accountTypeResult = await pool.query(
+          "SELECT id FROM account_types WHERE name = 'Checking' LIMIT 1"
+        )
+        const accountTypeId = accountTypeResult.rows[0]?.id || 1
+        
+        const newAccountResult = await pool.query(
+          `INSERT INTO accounts (user_id, account_type_id, name, bank_name, balance, currency)
+           VALUES ($1, $2, 'My Account', 'Default Bank', 0.00, 'ZAR')
+           RETURNING id`,
+          [req.user.id, accountTypeId]
+        )
+        finalAccountId = newAccountResult.rows[0].id
+      }
+    }
+
     // Create transaction for the contribution
     await pool.query(`
       INSERT INTO transactions 
       (user_id, account_id, goal_id, category_id, type, amount, description, transaction_date)
       VALUES ($1, $2, $3, (SELECT id FROM budget_categories WHERE name = 'Savings' LIMIT 1), 'expense', $4, $5, CURRENT_DATE)
-    `, [req.user.id, accountId, id, amount, description || `Contribution to ${goal.name}`])
+    `, [req.user.id, finalAccountId, id, amount, description || `Contribution to ${goal.name}`])
 
     // Update goal progress
     const updatedGoal = await pool.query(`
