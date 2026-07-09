@@ -1613,6 +1613,7 @@
 }
 
 .premium-form-group label {
+  display: block;
   font-size: 0.85rem;
   font-weight: 600;
   color: #94a3b8;
