@@ -210,7 +210,7 @@ function AddPotModal({ onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
-        <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="modal-header-v2">
           <div className="header-info">
             <h2 style={{ fontSize: '1.5rem', color: 'white' }}>New Savings Pot</h2>
             <p className="text-muted">Initialize a strategic capital bucket</p>
@@ -231,29 +231,16 @@ function AddPotModal({ onClose }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="premium-form-group">
-              <label>Starting Capital (ZAR)</label>
-              <input 
-                type="number" 
-                step="0.01"
-                className="premium-input"
-                placeholder="0.00"
-                value={formData.balance}
-                onChange={e => setFormData({...formData, balance: e.target.value})}
-              />
-            </div>
-            <div className="premium-form-group">
-              <label>Target Threshold (Optional)</label>
-              <input 
-                type="number" 
-                step="0.01"
-                className="premium-input"
-                placeholder="0.00"
-                value={formData.targetAmount}
-                onChange={e => setFormData({...formData, targetAmount: e.target.value})}
-              />
-            </div>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+            <label>Starting Capital (ZAR)</label>
+            <input 
+              type="number" 
+              step="0.01"
+              className="premium-input"
+              placeholder="0.00"
+              value={formData.balance}
+              onChange={e => setFormData({...formData, balance: e.target.value})}
+            />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -321,7 +308,7 @@ function AddFundsModal({ pot, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
-        <div className="dash-header" style={{ marginBottom: '1.5rem', padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="modal-header-v2">
           <div className="header-info">
             <h2 style={{ fontSize: '1.25rem', color: 'white' }}>Add Funds</h2>
             <p className="text-muted">To: {pot.name}</p>
