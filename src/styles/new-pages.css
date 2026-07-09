@@ -2207,7 +2207,46 @@
 
 @media (max-width: 768px) {
   .savings-summary-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .savings-summary-row .intel-block {
+    padding: 0.65rem 0.5rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 6px !important;
+    border-radius: 14px !important;
+  }
+
+  .savings-summary-row .intel-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .savings-summary-row .intel-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .savings-summary-row .intel-content {
+    align-items: center !important;
+  }
+
+  .savings-summary-row .intel-label {
+    font-size: 0.6rem !important;
+    letter-spacing: 0 !important;
+    text-transform: uppercase !important;
+  }
+
+  .savings-summary-row .intel-value {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
   }
 }
 
