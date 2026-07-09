@@ -888,6 +888,10 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-header-info {
+    width: 100%;
+    justify-content: space-between;
+  }
   .dash-subtitle {
     display: inline-block !important; /* Show on mobile next to Dashboard text */
     font-size: 0.8rem;
@@ -1050,6 +1054,16 @@
   color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title-with-icon h3 {
+  margin: 0 !important;
 }
 
 /* Cashflow Box Styling */
