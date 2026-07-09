@@ -872,6 +872,33 @@
   margin-bottom: 4px;
 }
 
+.dashboard-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-header-info h1 {
+  margin: 0 !important;
+  line-height: 1.1 !important;
+}
+
+.dash-subtitle {
+  display: none !important; /* Hide on desktop */
+}
+
+@media (max-width: 768px) {
+  .dash-subtitle {
+    display: inline-block !important; /* Show on mobile next to Dashboard text */
+    font-size: 0.8rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    margin: 0 !important;
+    line-height: 1.1 !important;
+    align-self: center;
+  }
+}
+
 .text-muted {
   color: #94a3b8;
   font-size: 0.875rem;

@@ -87,9 +87,9 @@ export default function Dashboard() {
       <div className="bg-glow-2"></div>
 
       <header className="dash-header">
-        <div className="header-info">
+        <div className="header-info dashboard-header-info">
           <h1>Dashboard</h1>
-          <p className="text-muted">Strategic Intel for {new Date(selectedMonth + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}</p>
+          <p className="text-muted dash-subtitle">Strategic Intel for {new Date(selectedMonth + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}</p>
         </div>
         <div className="header-actions">
           <div className="month-picker-pill">
