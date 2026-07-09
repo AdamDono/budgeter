@@ -40,13 +40,15 @@ export default function Savings() {
       <div className="bg-glow"></div>
       
       <header className="dash-header">
-        <div className="header-info">
+        <div className="header-info dashboard-header-info">
           <h1>Savings Pots</h1>
-          <p className="text-muted">Organize your capital into dedicated growth buckets</p>
+          <p className="text-muted dash-subtitle">Organize your capital into dedicated growth buckets</p>
         </div>
-        <button className="btn primary" onClick={() => setShowAddModal(true)}>
-          <Plus size={18} /> New Pot
-        </button>
+        <div className="header-actions">
+          <button className="btn primary" onClick={() => setShowAddModal(true)}>
+            <Plus size={18} /> New Pot
+          </button>
+        </div>
       </header>
 
       <div className="savings-summary-row">
