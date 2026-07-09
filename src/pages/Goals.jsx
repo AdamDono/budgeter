@@ -206,8 +206,7 @@ function GoalCard({ goal, onDelete, onContribute }) {
 
       {!isAchieved && (
         <button 
-          className="btn primary" 
-          style={{ width: 'fit-content', alignSelf: 'center', marginTop: 'auto' }} 
+          className="btn primary goal-action-btn" 
           onClick={onContribute}
         >
           Increase Contribution
