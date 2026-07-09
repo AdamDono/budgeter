@@ -2081,13 +2081,14 @@
 }
 
 .pot-glass-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: radial-gradient(circle at top right, rgba(79, 140, 255, 0.05), transparent 60%),
+              rgba(18, 26, 44, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 1.75rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 0.9rem 1.25rem 1.25rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -2096,15 +2097,34 @@
 }
 
 .pot-glass-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: radial-gradient(circle at top right, rgba(79, 140, 255, 0.08), transparent 60%),
+              rgba(22, 32, 54, 0.75);
+  border-color: rgba(79, 140, 255, 0.25);
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 
+              0 0 20px -5px rgba(79, 140, 255, 0.15);
 }
 
 .pot-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.pot-card-header .tx-action-btn {
+  color: rgba(239, 68, 68, 0.7) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 8px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+.pot-card-header .tx-action-btn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3) !important;
 }
 
 .pot-brand-icon {
@@ -2167,6 +2187,27 @@
   border-radius: 8px;
   transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+/* Redesigned Premium Glass Action Button for Pots */
+.pot-action-btn {
+  width: 100% !important;
+  align-self: stretch !important;
+  margin-top: auto !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  font-weight: 600 !important;
+  font-size: 0.9rem !important;
+  background: linear-gradient(135deg, #4f8cff 0%, #3b82f6 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 15px rgba(79, 140, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+.pot-action-btn:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+  box-shadow: 0 8px 25px rgba(79, 140, 255, 0.45) !important;
+  transform: translateY(-1.5px);
 }
 
 .pot-intel-footer {

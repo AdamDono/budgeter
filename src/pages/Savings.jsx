@@ -130,15 +130,12 @@ export default function Savings() {
                 </div>
               )}
 
-              <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center' }}>
-                <button 
-                  onClick={() => setShowAddFundsModal(pot)}
-                  className="btn primary" 
-                  style={{ width: 'fit-content', padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}
-                >
-                  Add Funds <ChevronRight size={14} style={{ marginLeft: '4px' }} />
-                </button>
-              </div>
+              <button 
+                onClick={() => setShowAddFundsModal(pot)}
+                className="btn primary pot-action-btn" 
+              >
+                Add Funds <ChevronRight size={14} style={{ marginLeft: '4px' }} />
+              </button>
             </div>
           )
         })}
