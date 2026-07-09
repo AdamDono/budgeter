@@ -1786,7 +1786,7 @@
 }
 
 .goal-card-header .tx-action-btn {
-  color: #64748b;
+  color: rgba(239, 68, 68, 0.7);
   background: transparent;
   border: none;
   padding: 8px;
@@ -1797,8 +1797,8 @@
 
 .goal-card-header .tx-action-btn:hover {
   color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.12);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
 }
 
 .goal-progress-section {
