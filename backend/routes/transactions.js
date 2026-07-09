@@ -21,7 +21,7 @@ const transactionSchema = Joi.object({
 // Get all transactions for user
 router.get('/', async (req, res, next) => {
   try {
-    const { page = 1, limit = 50, type, categoryId, accountId, startDate, endDate } = req.query
+    const { page = 1, limit = 50, type, categoryId, accountId, startDate, endDate, search } = req.query
     const offset = (page - 1) * limit
 
     let query = `
@@ -52,6 +52,10 @@ router.get('/', async (req, res, next) => {
       query += ` AND t.transaction_date <= $${++paramCount}`
       params.push(endDate)
     }
+    if (search && search.trim() !== '') {
+      query += ` AND t.description ILIKE $${++paramCount}`
+      params.push(`%${search.trim()}%`)
+    }
 
     query += ` ORDER BY t.transaction_date DESC, t.created_at DESC LIMIT $${++paramCount} OFFSET $${++paramCount}`
     params.push(limit, offset)
@@ -78,6 +82,10 @@ router.get('/', async (req, res, next) => {
     if (endDate) {
       countQuery += ` AND t.transaction_date <= $${++countParamCount}`
       countParams.push(endDate)
+    }
+    if (search && search.trim() !== '') {
+      countQuery += ` AND t.description ILIKE $${++countParamCount}`
+      countParams.push(`%${search.trim()}%`)
     }
 
     const countResult = await pool.query(countQuery, countParams)
