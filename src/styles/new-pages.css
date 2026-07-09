@@ -1366,6 +1366,8 @@
 }
 
 .filter-input {
+  width: 100%;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -1380,6 +1382,25 @@
   border-color: #4f8cff;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 0 0 4px rgba(79, 140, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .filters-glass {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1.25rem !important;
+    padding: 1.25rem !important;
+  }
+  .filters-glass .filter-item {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+  .filters-glass .month-picker-pill {
+    width: 100% !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
 }
 
 .tx-table-container {
