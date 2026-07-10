@@ -116,18 +116,18 @@ export default function CreditHub() {
       <div className="bg-glow"></div>
       
       <header className="dash-header">
-        <div className="header-info">
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Credit Excellence Hub</h1>
-          <p className="text-muted">Track, simulate, and boost your financial reputation</p>
+        <div className="header-info dashboard-header-info">
+          <h1>Credit Excellence Hub</h1>
+          <p className="text-muted dash-subtitle">Track, simulate, and boost your financial reputation</p>
         </div>
-        <button
-          className="btn primary extra-small"
-          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
-          onClick={() => setShowUpdateModal(true)}
-        >
-          <Plus size={16} />
-          Update Score
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn primary"
+            onClick={() => setShowUpdateModal(true)}
+          >
+            <Plus size={16} /> Update Score
+          </button>
+        </div>
       </header>
 
       <div className="credit-grid-v2">
