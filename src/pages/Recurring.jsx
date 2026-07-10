@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, DollarSign, Play, Plus, Trash2 } from 'lucide-react'
+import { Calendar, DollarSign, Play, Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -94,20 +94,20 @@ export default function Recurring() {
     <div className="recurring-page-v2">
       <div className="bg-glow"></div>
       
-      <div className="page-header">
-        <div>
+      <header className="dash-header">
+        <div className="header-info dashboard-header-info">
           <h1>Recurring Transactions</h1>
-          <p>Set up automatic income and expenses like salary, rent, subscriptions</p>
+          <p className="text-muted dash-subtitle">Set up automatic income and expenses like salary, rent, subscriptions</p>
         </div>
-        <button 
-          className="btn primary"
-          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
-          onClick={() => setShowAddForm(true)}
-        >
-          <Plus size={16} />
-          Add Recurring
-        </button>
-      </div>
+        <div className="header-actions">
+          <button 
+            className="btn primary"
+            onClick={() => setShowAddForm(true)}
+          >
+            <Plus size={16} /> Add Recurring
+          </button>
+        </div>
+      </header>
 
       <div className="recurring-grid-v2">
         {recurring.length > 0 ? (
@@ -204,7 +204,6 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     categoryId: '',
-    accountId: 1,
     autoCreate: true
   })
 
@@ -214,7 +213,6 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
       ...formData,
       amount: parseFloat(formData.amount),
       categoryId: formData.categoryId ? parseInt(formData.categoryId) : null,
-      accountId: parseInt(formData.accountId),
       autoCreate: formData.autoCreate
     })
   }
@@ -229,18 +227,22 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Add Recurring Transaction</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+      <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-v2">
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.5rem', color: 'white' }}>Add Recurring Transaction</h2>
+            <p className="text-muted">Set up automatic income or expenses</p>
+          </div>
+          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="recurring-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
             <label>Description</label>
             <input
               type="text"
               name="description"
+              className="premium-input"
               value={formData.description}
               onChange={handleChange}
               placeholder="e.g., Monthly Salary, Rent, Netflix"
@@ -248,12 +250,13 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
               <label>Amount (ZAR)</label>
               <input
                 type="number"
                 name="amount"
+                className="premium-input"
                 value={formData.amount}
                 onChange={handleChange}
                 step="0.01"
@@ -263,19 +266,19 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
               />
             </div>
 
-            <div className="form-group">
+            <div className="premium-form-group">
               <label>Type</label>
-              <select name="type" value={formData.type} onChange={handleChange}>
+              <select name="type" className="premium-input" value={formData.type} onChange={handleChange}>
                 <option value="income">Income</option>
                 <option value="expense">Expense</option>
               </select>
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
               <label>Frequency</label>
-              <select name="frequency" value={formData.frequency} onChange={handleChange}>
+              <select name="frequency" className="premium-input" value={formData.frequency} onChange={handleChange}>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
@@ -283,9 +286,9 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
               </select>
             </div>
 
-            <div className="form-group">
+            <div className="premium-form-group">
               <label>Category</label>
-              <select name="categoryId" value={formData.categoryId} onChange={handleChange}>
+              <select name="categoryId" className="premium-input" value={formData.categoryId} onChange={handleChange}>
                 <option value="">Select Category</option>
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -294,42 +297,45 @@ function RecurringForm({ onSubmit, onClose, loading, categories }) {
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
               <label>Start Date</label>
               <input
                 type="date"
                 name="startDate"
+                className="premium-input"
                 value={formData.startDate}
                 onChange={handleChange}
                 required
               />
             </div>
 
-            <div className="form-group">
+            <div className="premium-form-group">
               <label>End Date (Optional)</label>
               <input
                 type="date"
                 name="endDate"
+                className="premium-input"
                 value={formData.endDate}
                 onChange={handleChange}
               />
             </div>
           </div>
 
-          <div className="form-group checkbox">
-            <label>
+          <div className="premium-form-group checkbox" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
                 name="autoCreate"
                 checked={formData.autoCreate}
                 onChange={handleChange}
+                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
-              <span>Auto-create transactions (don't ask me each time)</span>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Auto-create transactions (don't ask me each time)</span>
             </label>
           </div>
 
-          <div className="form-actions">
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
             <button type="button" className="btn ghost" onClick={onClose}>
               Cancel
             </button>

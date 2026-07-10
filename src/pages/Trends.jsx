@@ -84,22 +84,24 @@ export default function Trends() {
       <div className="bg-glow"></div>
       
       <header className="dash-header">
-        <div className="header-info">
+        <div className="header-info dashboard-header-info">
           <h1>Spending Trends & Forecasts</h1>
-          <p className="text-muted">High-fidelity analysis of your financial trajectories</p>
+          <p className="text-muted dash-subtitle">High-fidelity analysis of your financial trajectories</p>
         </div>
         
-        <div className="period-selector glass-panel" style={{ padding: '0.25rem', borderRadius: '12px', display: 'flex', gap: '0.25rem' }}>
-          {Object.entries(periodLabels).map(([key, label]) => (
-            <button
-              key={key}
-              className={`btn ${period === key ? 'primary' : 'ghost'} extra-small`}
-              style={{ padding: '0.5rem 1rem', borderRadius: '8px' }}
-              onClick={() => setPeriod(key)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="header-actions">
+          <div className="period-selector glass-panel" style={{ padding: '0.25rem', borderRadius: '12px', display: 'flex', gap: '0.25rem' }}>
+            {Object.entries(periodLabels).map(([key, label]) => (
+              <button
+                key={key}
+                className={`btn ${period === key ? 'primary' : 'ghost'} extra-small`}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px' }}
+                onClick={() => setPeriod(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 

@@ -7,14 +7,14 @@ const router = express.Router()
 
 // Validation schemas
 const recurringSchema = Joi.object({
-  accountId: Joi.number().integer().required(),
-  categoryId: Joi.number().integer().optional(),
+  accountId: Joi.number().integer().optional(),
+  categoryId: Joi.number().integer().allow(null).optional(),
   type: Joi.string().valid('income', 'expense').required(),
   amount: Joi.number().positive().required(),
   description: Joi.string().min(2).max(500).required(),
   frequency: Joi.string().valid('daily', 'weekly', 'monthly', 'yearly').required(),
   startDate: Joi.date().required(),
-  endDate: Joi.date().optional(),
+  endDate: Joi.date().allow(null, '').optional(),
   autoCreate: Joi.boolean().default(false)
 })
 
@@ -51,6 +51,30 @@ router.post('/', async (req, res, next) => {
       frequency, startDate, endDate, autoCreate
     } = value
 
+    // Resolve or create default account
+    let resolvedAccountId = accountId
+    if (!resolvedAccountId) {
+      const accountResult = await pool.query(
+        'SELECT id FROM accounts WHERE user_id = $1 LIMIT 1',
+        [req.user.id]
+      )
+      if (accountResult.rows.length > 0) {
+        resolvedAccountId = accountResult.rows[0].id
+      } else {
+        const accountTypeResult = await pool.query(
+          "SELECT id FROM account_types WHERE name = 'Checking' LIMIT 1"
+        )
+        const accountTypeId = accountTypeResult.rows[0]?.id || 1
+        const newAccountResult = await pool.query(
+          `INSERT INTO accounts (user_id, account_type_id, name, bank_name, balance, currency)
+           VALUES ($1, $2, 'My Account', 'Default Bank', 0.00, 'ZAR')
+           RETURNING id`,
+          [req.user.id, accountTypeId]
+        )
+        resolvedAccountId = newAccountResult.rows[0].id
+      }
+    }
+
     // Calculate next due date
     const nextDueDate = calculateNextDueDate(startDate, frequency)
 
@@ -60,8 +84,8 @@ router.post('/', async (req, res, next) => {
        frequency, start_date, end_date, next_due_date, auto_create)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
-    `, [req.user.id, accountId, categoryId, type, amount, description,
-        frequency, startDate, endDate, nextDueDate, autoCreate])
+    `, [req.user.id, resolvedAccountId, categoryId, type, amount, description,
+        frequency, startDate, endDate || null, nextDueDate, autoCreate])
 
     const recurring = result.rows[0]
 
@@ -78,13 +102,13 @@ router.post('/', async (req, res, next) => {
         (user_id, account_id, category_id, type, amount, description, 
          transaction_date, is_recurring, recurring_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8)
-      `, [req.user.id, accountId, categoryId, type, amount, description, startDate, recurring.id])
+      `, [req.user.id, resolvedAccountId, categoryId, type, amount, description, startDate, recurring.id])
 
       // Update account balance
       const balanceChange = type === 'income' ? amount : -amount
       await pool.query(
         'UPDATE accounts SET balance = balance + $1 WHERE id = $2',
-        [balanceChange, accountId]
+        [balanceChange, resolvedAccountId]
       )
     }
 
@@ -109,6 +133,30 @@ router.put('/:id', async (req, res, next) => {
       frequency, startDate, endDate, autoCreate
     } = value
 
+    // Resolve or create default account
+    let resolvedAccountId = accountId
+    if (!resolvedAccountId) {
+      const accountResult = await pool.query(
+        'SELECT id FROM accounts WHERE user_id = $1 LIMIT 1',
+        [req.user.id]
+      )
+      if (accountResult.rows.length > 0) {
+        resolvedAccountId = accountResult.rows[0].id
+      } else {
+        const accountTypeResult = await pool.query(
+          "SELECT id FROM account_types WHERE name = 'Checking' LIMIT 1"
+        )
+        const accountTypeId = accountTypeResult.rows[0]?.id || 1
+        const newAccountResult = await pool.query(
+          `INSERT INTO accounts (user_id, account_type_id, name, bank_name, balance, currency)
+           VALUES ($1, $2, 'My Account', 'Default Bank', 0.00, 'ZAR')
+           RETURNING id`,
+          [req.user.id, accountTypeId]
+        )
+        resolvedAccountId = newAccountResult.rows[0].id
+      }
+    }
+
     // Recalculate next due date
     const nextDueDate = calculateNextDueDate(startDate, frequency)
 
@@ -119,8 +167,8 @@ router.put('/:id', async (req, res, next) => {
           next_due_date = $9, auto_create = $10
       WHERE id = $11 AND user_id = $12
       RETURNING *
-    `, [accountId, categoryId, type, amount, description, frequency,
-        startDate, endDate, nextDueDate, autoCreate, id, req.user.id])
+    `, [resolvedAccountId, categoryId, type, amount, description, frequency,
+        startDate, endDate || null, nextDueDate, autoCreate, id, req.user.id])
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Recurring transaction not found' })

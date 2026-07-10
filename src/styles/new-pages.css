@@ -2537,6 +2537,10 @@
     align-items: center !important;
   }
 
+  .analytics-summary-stats .intel-content span:last-of-type {
+    display: none !important;
+  }
+
   .analytics-summary-stats .intel-label {
     font-size: 0.55rem !important;
     letter-spacing: 0 !important;
