@@ -2506,8 +2506,48 @@
   }
 
   .analytics-summary-stats {
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.4rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .analytics-summary-stats .intel-block {
+    padding: 0.65rem 0.4rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 6px !important;
+    border-radius: 14px !important;
+  }
+
+  .analytics-summary-stats .intel-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+  }
+
+  .analytics-summary-stats .intel-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .analytics-summary-stats .intel-content {
+    align-items: center !important;
+  }
+
+  .analytics-summary-stats .intel-label {
+    font-size: 0.55rem !important;
+    letter-spacing: 0 !important;
+    text-transform: uppercase !important;
+    white-space: nowrap !important;
+  }
+
+  .analytics-summary-stats .intel-value {
+    font-size: 0.80rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
   }
 
   .goals-glass-grid {
@@ -2530,9 +2570,6 @@
 }
 
 @media (max-width: 640px) {
-  .analytics-summary-stats {
-    grid-template-columns: 1fr;
-  }
 
   .analytics-page-v2 h1 {
     font-size: 1.75rem;
