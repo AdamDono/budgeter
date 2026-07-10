@@ -8,7 +8,8 @@ import {
     ShieldCheck,
     TrendingDown,
     TrendingUp,
-    Zap
+    Zap,
+    X
 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'

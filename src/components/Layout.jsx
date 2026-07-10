@@ -40,7 +40,6 @@ export default function Layout() {
     { name: 'Spending Trends', href: '/app/trends', icon: TrendingDown },
     { name: 'Debt Tracker', href: '/app/debt', icon: DollarSign },
     { name: 'Credit Hub', href: '/app/credit-hub', icon: ShieldCheck },
-    { name: 'Tax Deductions', href: '/app/tax', icon: Calendar },
     { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
