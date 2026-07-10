@@ -287,33 +287,43 @@ export default function CreditHub() {
       {/* Update Score Modal */}
       {showUpdateModal && (
         <div className="modal-overlay" onClick={() => setShowUpdateModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Update Credit Score</h2>
-              <button className="modal-close" onClick={() => setShowUpdateModal(false)}>×</button>
+          <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '450px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header-v2">
+              <div className="header-info">
+                <h2 style={{ fontSize: '1.5rem', color: 'white' }}>Update Credit Score</h2>
+                <p className="text-muted">Keep your credit reputation accurate</p>
+              </div>
+              <button className="btn ghost small" onClick={() => setShowUpdateModal(false)}><X size={20} /></button>
             </div>
-            <div className="form-group">
-              <label>Enter your current score (from ClearScore/TransUnion)</label>
-              <input 
-                type="number" 
-                className="form-input" 
-                placeholder="e.g. 720"
-                value={newScore}
-                onChange={e => setNewScore(e.target.value)}
-                min="300"
-                max="850"
-              />
-              <p className="form-help">Valid South African scores range from 300 to 850.</p>
-            </div>
-            <div className="modal-actions">
-              <button className="btn ghost" onClick={() => setShowUpdateModal(false)}>Cancel</button>
-              <button 
-                className="btn primary" 
-                onClick={() => updateScoreMutation.mutate(newScore)}
-                disabled={!newScore || updateScoreMutation.isLoading}
-              >
-                Save Score
-              </button>
+
+            <div style={{ padding: '0 1.5rem 1.5rem' }}>
+              <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Enter your current score (from ClearScore/TransUnion)</label>
+                <input 
+                  type="number" 
+                  className="premium-input" 
+                  placeholder="e.g. 720"
+                  value={newScore}
+                  onChange={e => setNewScore(e.target.value)}
+                  min="300"
+                  max="850"
+                />
+              </div>
+              
+              <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-1rem', marginBottom: '2rem', display: 'block' }}>
+                Valid South African scores range from 300 to 850.
+              </p>
+
+              <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button className="btn ghost" onClick={() => setShowUpdateModal(false)}>Cancel</button>
+                <button 
+                  className="btn primary" 
+                  onClick={() => updateScoreMutation.mutate(newScore)}
+                  disabled={!newScore || updateScoreMutation.isPending}
+                >
+                  {updateScoreMutation.isPending ? 'Saving...' : 'Save Score'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
