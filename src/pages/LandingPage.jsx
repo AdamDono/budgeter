@@ -44,7 +44,7 @@ export default function LandingPage() {
       name: "Lindiwe Ndlovu",
       role: "Entrepreneur, Durban",
       image: "👩🏿‍💼",
-      quote: "The tax deduction tracker saved me R8,000 on my tax return. This app pays for itself!"
+      quote: "The AI Coach helped me identify R8,000 in unnecessary monthly spending. This app pays for itself!"
     },
     {
       name: "Michael Chen",
@@ -312,7 +312,7 @@ export default function LandingPage() {
                 <li><CheckCircle size={16} /> Unlimited AI Consultations</li>
                 <li><CheckCircle size={16} /> Advanced Credit Simulator</li>
                 <li><CheckCircle size={16} /> Auto-Pilot Debt Eradication</li>
-                <li><CheckCircle size={16} /> Tax Deduction Discovery (S11F)</li>
+                <li><CheckCircle size={16} /> Advanced Cash Flow Projections</li>
                 <li><CheckCircle size={16} /> Priority Support</li>
               </ul>
               <Link to="/register" className="btn primary full-width">
