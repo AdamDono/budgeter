@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, CheckCircle, DollarSign, Plus, Trash2, TrendingDown } from 'lucide-react'
+import { Calendar, CheckCircle, DollarSign, Plus, Trash2, TrendingDown, X } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -496,18 +496,22 @@ function DebtForm({ onSubmit, onClose, loading }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Add Debt</h2>
-          <button className="modal-close" onClick={onClose}>×</button>
+      <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-v2">
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.5rem', color: 'white' }}>Add Debt</h2>
+            <p className="text-muted">Track and pay off your debts strategically</p>
+          </div>
+          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="debt-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
             <label>Debt Name</label>
             <input
               type="text"
               name="name"
+              className="premium-input"
               value={formData.name}
               onChange={handleChange}
               placeholder="e.g., Credit Card, Car Loan"
@@ -515,12 +519,13 @@ function DebtForm({ onSubmit, onClose, loading }) {
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
               <label>Current Balance (ZAR)</label>
               <input
                 type="number"
                 name="balance"
+                className="premium-input"
                 value={formData.balance}
                 onChange={handleChange}
                 step="0.01"
@@ -530,11 +535,12 @@ function DebtForm({ onSubmit, onClose, loading }) {
               />
             </div>
 
-            <div className="form-group">
+            <div className="premium-form-group">
               <label>Interest Rate (%)</label>
               <input
                 type="number"
                 name="interestRate"
+                className="premium-input"
                 value={formData.interestRate}
                 onChange={handleChange}
                 step="0.01"
@@ -545,37 +551,44 @@ function DebtForm({ onSubmit, onClose, loading }) {
             </div>
           </div>
 
-          <div className="form-group">
-            <label>Monthly Payment (ZAR)</label>
-            <input
-              type="number"
-              name="monthlyPayment"
-              value={formData.monthlyPayment}
-              onChange={handleChange}
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              required
-            />
-          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="premium-form-group">
+              <label>Monthly Payment (ZAR)</label>
+              <input
+                type="number"
+                name="monthlyPayment"
+                className="premium-input"
+                value={formData.monthlyPayment}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                required
+              />
+            </div>
 
-          <div className="form-group">
-            <label>Credit Limit (ZAR) - Optional</label>
-            <input
-              type="number"
-              name="creditLimit"
-              value={formData.creditLimit}
-              onChange={handleChange}
-              step="0.01"
-              min="0"
-              placeholder="e.g. 50000.00"
-            />
-            <p className="form-help">Essential for accurate credit utilization boost.</p>
+            <div className="premium-form-group">
+              <label>Credit Limit (ZAR) - Optional</label>
+              <input
+                type="number"
+                name="creditLimit"
+                className="premium-input"
+                value={formData.creditLimit}
+                onChange={handleChange}
+                step="0.01"
+                min="0"
+                placeholder="e.g. 50000.00"
+              />
+            </div>
           </div>
+          
+          <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-1rem', marginBottom: '1.5rem', display: 'block' }}>
+            Essential for accurate credit utilization boost.
+          </p>
 
-          <div className="form-group">
+          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
             <label>Debt Type</label>
-            <select name="type" value={formData.type} onChange={handleChange}>
+            <select name="type" className="premium-input" value={formData.type} onChange={handleChange}>
               <option value="credit-card">Credit Card</option>
               <option value="personal-loan">Personal Loan</option>
               <option value="student-loan">Student Loan</option>
@@ -584,7 +597,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
             </select>
           </div>
 
-          <div className="form-actions">
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
             <button type="button" className="btn ghost" onClick={onClose}>
               Cancel
             </button>
