@@ -274,6 +274,10 @@ body {
     background: var(--card);
   }
 
+  .sidebar-footer {
+    padding-bottom: 84px !important;
+  }
+
   .sidebar.sidebar-open {
     transform: translateX(0) !important;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);

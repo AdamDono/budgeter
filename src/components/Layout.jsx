@@ -102,7 +102,7 @@ export default function Layout() {
           </div>
           
           <button className="logout-btn" onClick={handleLogout}>
-            <LogOut size={16} />
+            <LogOut size={16} style={{ color: '#ef4444' }} />
             <span>Logout</span>
           </button>
         </div>
