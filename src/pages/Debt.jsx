@@ -223,18 +223,18 @@ export default function Debt() {
       <div className="bg-glow"></div>
       
       <header className="dash-header">
-        <div className="header-info">
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.03em', marginBottom: '0.25rem' }}>Debt Management</h1>
-          <p className="text-muted">Track and pay off your debts strategically</p>
+        <div className="header-info dashboard-header-info">
+          <h1>Debt Management</h1>
+          <p className="text-muted dash-subtitle">Track and pay off your debts strategically</p>
         </div>
-        <button
-          className="btn primary extra-small"
-          style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}
-          onClick={() => setShowAddForm(true)}
-        >
-          <Plus size={16} />
-          Add Debt
-        </button>
+        <div className="header-actions">
+          <button
+            className="btn primary"
+            onClick={() => setShowAddForm(true)}
+          >
+            <Plus size={16} /> Add Debt
+          </button>
+        </div>
       </header>
 
       {/* High-Fidelity Intel Row */}
