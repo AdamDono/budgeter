@@ -434,7 +434,13 @@ export default function LandingPage() {
               <div className="footer-logo">
                 <img src="/logo_pace_finance.svg" alt="Pace Finance" className="footer-logo-image" />
               </div>
-              <p className="footer-tagline">Your AI-powered financial strategist.<br/>Built for the ambitious.</p>
+              <p className="footer-tagline">
+                The AI-driven wealth-builder that turns every Rand into a mission. Master your debt and build lasting freedom.
+              </p>
+              <div className="footer-sa-badge">
+                <span className="sa-flag">🇿🇦</span>
+                <span>Proudly Built in South Africa</span>
+              </div>
               <div className="footer-social">
                 <a href="#" className="social-link" aria-label="X (Twitter)"><Twitter size={18} /></a>
                 <a href="#" className="social-link" aria-label="LinkedIn"><Linkedin size={18} /></a>
@@ -442,30 +448,45 @@ export default function LandingPage() {
                 <a href="#" className="social-link" aria-label="TikTok"><Video size={18} /></a>
               </div>
             </div>
+
             <div className="footer-section">
               <h4>Platform</h4>
-              <a href="#features">Features</a>
-              <a href="#pricing">Pricing</a>
+              <a href="#services-cards">Tactical Debt Tracker</a>
+              <a href="#services-cards">Actionable Credit Hub</a>
+              <a href="#services-cards">Autonomous Cashflow</a>
+              <a href="#ai-coach">24/7 AI Coach</a>
               <Link to="/register">Get Started</Link>
-              <Link to="/login">Sign In</Link>
             </div>
+
             <div className="footer-section">
-              <h4>Company</h4>
-              <a href="#about">About Pace</a>
-              <a href="#contact">Contact Us</a>
-              <a href="#privacy">Privacy Policy</a>
-              <a href="#terms">Terms of Use</a>
-            </div>
-            <div className="footer-section">
-              <h4>Tools</h4>
-              <a href="#debt">Debt Calculator</a>
-              <a href="#credit">Credit Simulator</a>
-              <a href="#faq">FAQ</a>
+              <h4>Calculators & Tools</h4>
+              <a href="#services-cards">Debt Snowball Engine</a>
+              <a href="#services-cards">Interest Saved Tracker</a>
+              <a href="#services-cards">Credit Score Simulator</a>
+              <Link to="/login">Client Portal</Link>
               <Link to="/login">Help Center</Link>
             </div>
+
+            <div className="footer-section">
+              <h4>Security & Legal</h4>
+              <a href="#security">Privacy First Architecture</a>
+              <a href="#security">Bank-Level 256-Bit SSL</a>
+              <a href="#terms">Terms of Service</a>
+              <a href="#privacy">Privacy Policy</a>
+              <a href="#contact">Contact Support</a>
+            </div>
           </div>
+
           <div className="footer-bottom">
-            <p>© 2026 Pace Finance. All rights reserved.</p>
+            <div className="footer-bottom-left">
+              <p>© 2026 Pace Finance (Pty) Ltd. All rights reserved.</p>
+            </div>
+            <div className="footer-bottom-right">
+              <div className="footer-status-pill">
+                <span className="status-dot"></span>
+                <span>All Systems Operational</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
