@@ -96,28 +96,29 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="hero">
-        <div className="container">
-          <div className="hero-banner">
+      <section className="hero full-screen-hero">
+        <div className="hero-fullscreen-inner">
+          <div className="container hero-container-fullscreen">
             <div className="hero-banner-content">
               <h1 className="hero-banner-title">
-                Take Control of<br />
-                Your Money.
+                Master your <span>Rand.</span><br />
+                Retire your Debt.
               </h1>
               <p className="hero-banner-subtitle">
-                Safe, simple, and smart digital wealth-building all in one place.
+                Pace Finance is the AI-driven wealth-builder that turns every Rand into a mission.
               </p>
               <div className="hero-banner-cta">
                 <Link to="/register" className="hero-btn-dark">
                   Start Your Journey
+                  <ArrowRight size={20} style={{ marginLeft: '8px' }} />
                 </Link>
                 <Link to="/login" className="hero-btn-light">
                   Sign In
                 </Link>
               </div>
               <div className="hero-banner-trust">
-                <Shield size={16} className="text-emerald-400" />
-                <span>No Bank Passwords Required • Bank-Level Encryption</span>
+                <Shield size={18} className="text-emerald-400" />
+                <span>No Bank Passwords Required</span>
               </div>
             </div>
 
