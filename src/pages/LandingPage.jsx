@@ -133,6 +133,55 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Two-Column Intro Header */}
+      <section className="services-intro">
+        <div className="container">
+          <div className="services-intro-grid">
+            <div className="services-intro-left">
+              <p className="services-tagline">Pace Finance is the smart way to manage your wealth.</p>
+            </div>
+            <div className="services-intro-right">
+              <h2 className="services-intro-title">Built Around You. Smart, Secure, and Effortless.</h2>
+              <p className="services-intro-subtitle">AI-powered tools designed for real South African financial transformation — all in one place.</p>
+              <a href="#services-cards" className="services-view-btn">View All Services</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3-Column Service Cards */}
+      <section className="services-cards" id="services-cards">
+        <div className="container">
+          <div className="services-grid">
+
+            {/* Card 1: Debt Tracker — Photo Background */}
+            <div className="service-card service-card-photo">
+              <div className="service-card-overlay">
+                <div className="service-card-emoji">⚔️</div>
+                <h3>Tactical Debt Eradication</h3>
+                <p>Deploy Snowball or Avalanche methods to crush your loans. We calculate your exact timeline and interest saved.</p>
+                <Link to="/register" className="service-card-btn">Get Started</Link>
+              </div>
+            </div>
+
+            {/* Card 2: Credit Hub — Lavender */}
+            <div className="service-card service-card-lavender">
+              <div className="service-card-icon">📊</div>
+              <h3>Actionable Credit Hub</h3>
+              <p>Don't just watch your score — manipulate it. See exactly how paying down an account impacts your credit profile.</p>
+            </div>
+
+            {/* Card 3: Cashflow — Yellow-Green */}
+            <div className="service-card service-card-lime">
+              <div className="service-card-icon">💰</div>
+              <h3>Autonomous Cashflow</h3>
+              <p>Allocate every Rand with precision. Dynamic "pots" that intelligently fund your goals and protect your emergency reserves.</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* Secret Sauce AI Section */}
       <section className="ai-reveal-section">
         <div className="container">
