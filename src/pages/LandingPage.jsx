@@ -391,82 +391,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social Proof */}
-      <section className="social-proof">
-        <div className="container">
-          <div className="stats-grid">
-            <div className="stat">
-              <div className="stat-number">1k+</div>
-              <div className="stat-label">Active Users</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">R200k+</div>
-              <div className="stat-label">Debt Paid Off</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">4.9/5</div>
-              <div className="stat-label">User Rating</div>
-            </div>
-            <div className="stat">
-              <div className="stat-number">95%</div>
-              <div className="stat-label">Goal Success Rate</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Carousel */}
-      <section className="testimonials">
-        <div className="container">
-          <div className="section-header">
-            <h2>Loved by People Who Take Money Seriously</h2>
-            <p>Real users. Real results. Real financial freedom.</p>
-          </div>
-          
-          <div className="testimonial-carousel">
-            <button className="carousel-btn prev" onClick={prevTestimonial}>
-              <ChevronLeft size={24} />
-            </button>
-            
-            <div className="testimonial-card">
-              <Quote className="quote-icon" size={48} />
-              <p className="testimonial-quote">"{testimonials[currentTestimonial].quote}"</p>
-              <div className="testimonial-author">
-                <div className="author-image">{testimonials[currentTestimonial].image}</div>
-                <div className="author-info">
-                  <p className="author-name">{testimonials[currentTestimonial].name}</p>
-                  <p className="author-role">{testimonials[currentTestimonial].role}</p>
-                </div>
-              </div>
-            </div>
-            
-            <button className="carousel-btn next" onClick={nextTestimonial}>
-              <ChevronRight size={24} />
-            </button>
-          </div>
-          
-          <div className="carousel-dots">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                className={`dot ${index === currentTestimonial ? 'active' : ''}`}
-                onClick={() => setCurrentTestimonial(index)}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Final CTA */}
       <section className="final-cta">
         <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Transform Your Finances?</h2>
-            <Link to="/register" className="btn primary large">
-              Start Your Free Trial
-              <ArrowRight size={20} />
-            </Link>
-            <p className="cta-note">No credit card required • Cancel anytime</p>
+          <div className="final-cta-banner">
+            <div className="final-cta-content">
+              <h2 className="final-cta-title">
+                Ready to Transform<br />
+                Your Finances?
+              </h2>
+              <p className="final-cta-subtitle">
+                Join thousands of South Africans building wealth, crushing debt, and mastering their Rand.
+              </p>
+              <div className="final-cta-actions">
+                <Link to="/register" className="hero-btn-dark">
+                  Start Your Free Trial
+                  <ArrowRight size={20} style={{ marginLeft: '8px' }} />
+                </Link>
+              </div>
+              <p className="final-cta-note">
+                <Shield size={16} className="text-emerald-400" />
+                <span>No credit card required • Cancel anytime</span>
+              </p>
+            </div>
+
+            <div className="final-cta-image-wrap">
+              <img 
+                src="/woman_transparent.png" 
+                alt="Ready to Transform Your Finances" 
+                className="final-cta-woman"
+              />
+            </div>
           </div>
         </div>
       </section>
