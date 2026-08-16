@@ -98,32 +98,35 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="hero">
         <div className="container">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1 className="hero-title">
-                Master your <span>Rand.</span><br />
-                Retire your Debt.<br />
-                <span><span className="hero-accent">Experience</span> Financial <span className="hero-accent">Peace.</span></span>
+          <div className="hero-banner">
+            <div className="hero-banner-content">
+              <h1 className="hero-banner-title">
+                Take Control of<br />
+                Your Money.
               </h1>
-              <p className="hero-subtitle">
-                Pace Finance is the AI-driven wealth-builder that turns every Rand into a mission. 
-                Beyond simple tracking, we provide the strategic intelligence you need to retire your debt and master your financial journey.
+              <p className="hero-banner-subtitle">
+                Safe, simple, and smart digital wealth-building all in one place.
               </p>
-              <div className="hero-cta">
-                <Link to="/register" className="btn primary large pulse-btn">
+              <div className="hero-banner-cta">
+                <Link to="/register" className="hero-btn-dark">
                   Start Your Journey
-                  <ArrowRight size={20} />
                 </Link>
-                <Link to="/login" className="btn glass large">
+                <Link to="/login" className="hero-btn-light">
                   Sign In
                 </Link>
               </div>
-              <div className="trust-badges">
-                <div className="badge-item">
-                  <Shield size={16} className="text-emerald-400" />
-                  <span>No Bank Passwords Required</span>
-                </div>
+              <div className="hero-banner-trust">
+                <Shield size={16} className="text-emerald-400" />
+                <span>No Bank Passwords Required • Bank-Level Encryption</span>
               </div>
+            </div>
+
+            <div className="hero-banner-image-wrap">
+              <img 
+                src="/hero_man.png" 
+                alt="Take Control of Your Money" 
+                className="hero-banner-man"
+              />
             </div>
           </div>
         </div>
