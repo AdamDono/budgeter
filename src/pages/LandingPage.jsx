@@ -142,7 +142,7 @@ export default function LandingPage() {
             </div>
             <div className="services-intro-right">
               <h2 className="services-intro-title">Built Around You. Smart, Secure, and Effortless.</h2>
-              <p className="services-intro-subtitle">AI-powered tools designed for real South African financial transformation — all in one place.</p>
+              <p className="services-intro-subtitle">AI-powered tools designed for real South African financial transformation, all in one place.</p>
               <a href="#services-cards" className="services-view-btn">View All Services</a>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function LandingPage() {
             <div className="service-card service-card-lavender">
               <div className="service-card-icon">📊</div>
               <h3>Actionable Credit Hub</h3>
-              <p>Don't just watch your score — manipulate it. See exactly how paying down an account impacts your credit profile.</p>
+              <p>Don't just watch your score. Manipulate it. See exactly how paying down an account impacts your credit profile.</p>
             </div>
 
             {/* Card 3: Cashflow — Yellow-Green */}
@@ -237,6 +237,26 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Lifestyle Feature Section */}
+      <section className="lifestyle-feature-section">
+        <div className="container">
+          <div className="lifestyle-intro-centered">
+            <h2 className="lifestyle-intro-title">
+              Build Wealth. Eradicate Debt.<br />
+              Everything you need for financial independence.
+            </h2>
+          </div>
+
+          <div className="lifestyle-image-card">
+            <img 
+              src="/lifestyle_friends.jpg" 
+              alt="South African friends managing their finances together" 
+              className="lifestyle-banner-img"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Security Section */}
       <section className="security-section">
         <div className="container">
@@ -266,39 +286,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="features">
-        <div className="container">
-          <div className="section-header">
-            <h2>Everything You Need to Master Your Money</h2>
-            <p>Powerful features designed for real financial transformation</p>
-          </div>
-          <div className="features-grid">
-            <div className="feature-card glass">
-              <div className="feature-icon">
-                <Crosshair size={32} />
-              </div>
-              <h3>Tactical Debt Eradication</h3>
-              <p>Deploy Snowball or Avalanche methods to algorithmically crush your loans. We calculate your exact timeline and the interest you'll save.</p>
-            </div>
-            <div className="feature-card glass">
-              <div className="feature-icon">
-                <Activity size={32} />
-              </div>
-              <h3>Actionable Credit Hub</h3>
-              <p>Don't just watch your score - manipulate it. Our advanced simulator shows you exactly how paying down an account impacts your credit profile.</p>
-            </div>
-            <div className="feature-card glass">
-              <div className="feature-icon">
-                <Wallet size={32} />
-              </div>
-              <h3>Autonomous Cashflow</h3>
-              <p>Allocate every Rand with precision. Set up dynamic "pots" that intelligently fund your long-term goals and protect your emergency reserves.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works */}
       <section className="how-it-works">
         <div className="container">
@@ -306,19 +293,28 @@ export default function LandingPage() {
             <h2>Get Started in 3 Simple Steps</h2>
             <p>From signup to financial clarity in minutes</p>
           </div>
-          <div className="steps-grid">
-            <div className="step">
-              <div className="step-number">1</div>
-              <h3>Establish Your Baseline</h3>
-              <p>Input your income, fixed expenses, and debt. Our engine calculates your true disposable Rand instantly.</p>
+
+          <div className="steps-cards-grid">
+            {/* Card 1: Photo Background */}
+            <div className="step-card step-card-photo">
+              <div className="step-card-overlay">
+                <div className="step-badge-num photo-num">01</div>
+                <h3>Establish Your Baseline</h3>
+                <p>Input your income, fixed expenses, and debt. Our engine calculates your true disposable Rand instantly.</p>
+                <Link to="/register" className="step-card-btn">Get Started</Link>
+              </div>
             </div>
-            <div className="step">
-              <div className="step-number">2</div>
+
+            {/* Card 2: Lavender Card */}
+            <div className="step-card step-card-lavender">
+              <div className="step-badge-num lavender-num">02</div>
               <h3>Deploy the Strategy</h3>
               <p>Activate your debt snowball or avalanche. Let Pace blueprint your fastest, mathematically proven path to freedom.</p>
             </div>
-            <div className="step">
-              <div className="step-number">3</div>
+
+            {/* Card 3: Lime Card */}
+            <div className="step-card step-card-lime">
+              <div className="step-badge-num lime-num">03</div>
               <h3>Engage the AI</h3>
               <p>Consult your personal 24/7 financial strategist for insights, course corrections, and growth tactics.</p>
             </div>
