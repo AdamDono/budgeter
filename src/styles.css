@@ -1129,41 +1129,62 @@ body {
 }
 
 .auth-bg {
-  background: white;
+  position: relative;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.88) 100%), 
+              url('/hero_background.png') center center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  padding: 60px 40px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.auth-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.25) 0%, transparent 65%);
+  pointer-events: none;
 }
 
 .auth-bg-content {
   text-align: center;
-  color: #1a1a1a;
-  max-width: 440px;
+  color: #ffffff;
+  max-width: 480px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 2;
 }
 
 .auth-bg-logo {
-  margin-bottom: 40px;
+  margin-bottom: 36px;
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.35));
 }
 
 .logo-image-bg {
   height: 64px;
+  width: auto;
 }
 
 .auth-bg-content h2 {
   margin: 0 0 16px;
   font-size: 32px;
+  font-weight: 850;
   line-height: 1.2;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .auth-bg-content p {
-  margin: 0 0 32px;
-  opacity: 0.9;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
   font-size: 18px;
+  line-height: 1.6;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
 }
 
 /* Auth Page Light Mode Reversals */
@@ -1198,19 +1219,18 @@ body {
 }
 
 .auth-page.light-mode .auth-bg {
-  background: #0b1220;
-  /* Reverses to dark */
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.88) 100%), 
+              url('/hero_background.png') center center / cover no-repeat;
 }
 
 .auth-page.light-mode .auth-bg-content {
-  color: #e6ecf1;
-  /* Reverses text to light */
+  color: #ffffff;
 }
 
 .auth-page.light-mode .auth-theme-toggle {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #e6ecf1;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 .auth-page.light-mode .auth-theme-toggle:hover {

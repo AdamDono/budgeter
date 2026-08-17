@@ -10,18 +10,22 @@ import Bills from './pages/Bills'
 import CreditHub from './pages/CreditHub'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
+import Contact from './pages/Contact'
 import Forex from './pages/Forex'
 import ForgotPassword from './pages/ForgotPassword'
 import Goals from './pages/Goals'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import Privacy from './pages/Privacy'
 import Recurring from './pages/Recurring'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import Savings from './pages/Savings'
+import Security from './pages/Security'
 import Settings from './pages/Settings'
 import Tax from './pages/Tax'
+import Terms from './pages/Terms'
 import Transactions from './pages/Transactions'
 import Trends from './pages/Trends'
 
@@ -67,6 +71,10 @@ export default function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/landing" element={<LandingPage />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={
                 <PublicRoute>
                   <Login />

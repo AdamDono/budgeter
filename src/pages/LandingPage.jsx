@@ -82,13 +82,6 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="nav-links">
-              <button 
-                onClick={toggleTheme} 
-                className="theme-toggle-btn"
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-              </button>
               <Link to="/register" className="btn primary nav-cta">Get Started Free</Link>
             </div>
           </div>
@@ -437,10 +430,6 @@ export default function LandingPage() {
               <p className="footer-tagline">
                 The AI-driven wealth-builder that turns every Rand into a mission. Master your debt and build lasting freedom.
               </p>
-              <div className="footer-sa-badge">
-                <span className="sa-flag">🇿🇦</span>
-                <span>Proudly Built in South Africa</span>
-              </div>
               <div className="footer-social">
                 <a href="#" className="social-link" aria-label="X (Twitter)"><Twitter size={18} /></a>
                 <a href="#" className="social-link" aria-label="LinkedIn"><Linkedin size={18} /></a>
@@ -469,24 +458,16 @@ export default function LandingPage() {
 
             <div className="footer-section">
               <h4>Security & Legal</h4>
-              <a href="#security">Privacy First Architecture</a>
-              <a href="#security">Bank-Level 256-Bit SSL</a>
-              <a href="#terms">Terms of Service</a>
-              <a href="#privacy">Privacy Policy</a>
-              <a href="#contact">Contact Support</a>
+              <Link to="/security">Privacy First Architecture</Link>
+              <Link to="/security">Bank-Level 256-Bit SSL</Link>
+              <Link to="/terms">Terms of Service</Link>
+              <Link to="/privacy">Privacy Policy</Link>
+              <Link to="/contact">Contact Support</Link>
             </div>
           </div>
 
           <div className="footer-bottom">
-            <div className="footer-bottom-left">
-              <p>© 2026 Pace Finance (Pty) Ltd. All rights reserved.</p>
-            </div>
-            <div className="footer-bottom-right">
-              <div className="footer-status-pill">
-                <span className="status-dot"></span>
-                <span>All Systems Operational</span>
-              </div>
-            </div>
+            <p>© 2026 Pace Finance (Pty) Ltd. All rights reserved.</p>
           </div>
         </div>
       </footer>
