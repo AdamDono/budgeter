@@ -1617,25 +1617,39 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(4, 7, 18, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100
+  z-index: 100000 !important;
+  padding: 1.25rem;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2rem);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2.5rem);
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modal-content {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  width: 90%;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  width: 100%;
   max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto
+  max-height: calc(100vh - 4.5rem);
+  overflow-y: auto;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9);
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 100001 !important;
 }
 
 .modal-content.small {
-  max-width: 400px
+  max-width: 400px;
 }
 
 .modal-header {
@@ -4514,9 +4528,10 @@ body {
     padding-bottom: 80px !important;
   }
 
-  /* Adjust floating coach trigger position slightly above bottom nav bar */
+  /* Adjust floating coach trigger position above bottom nav bar */
   .ai-coach-trigger {
-    bottom: 5.5rem !important;
+    bottom: 6.25rem !important;
+    right: 1.25rem !important;
   }
 }
 

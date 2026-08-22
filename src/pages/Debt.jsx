@@ -496,17 +496,23 @@ function DebtForm({ onSubmit, onClose, loading }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content glass-modal shadow-2xl" style={{ maxWidth: '500px' }} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header-v2">
+      <div 
+        className="modal-content glass-modal shadow-2xl" 
+        style={{ maxWidth: '500px', margin: 'auto' }} 
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header-v2" style={{ padding: '1.5rem 1.5rem 1rem' }}>
           <div className="header-info">
-            <h2 style={{ fontSize: '1.5rem', color: 'white' }}>Add Debt</h2>
-            <p className="text-muted">Track and pay off your debts strategically</p>
+            <h2 style={{ fontSize: '1.4rem', color: 'white', fontWeight: 700, margin: '0 0 4px' }}>Add Debt</h2>
+            <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>Track and pay off your debts strategically</p>
           </div>
-          <button className="btn ghost small" onClick={onClose}><X size={20} /></button>
+          <button className="btn ghost small" onClick={onClose} aria-label="Close modal">
+            <X size={20} />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.5rem' }}>
-          <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 2rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1.25rem' }}>
             <label>Debt Name</label>
             <input
               type="text"
@@ -519,7 +525,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
             <div className="premium-form-group">
               <label>Current Balance (ZAR)</label>
               <input
@@ -551,7 +557,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
             <div className="premium-form-group">
               <label>Monthly Payment (ZAR)</label>
               <input
@@ -582,7 +588,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
             </div>
           </div>
           
-          <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-1rem', marginBottom: '1.5rem', display: 'block' }}>
+          <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-0.75rem', marginBottom: '1.25rem', display: 'block' }}>
             Essential for accurate credit utilization boost.
           </p>
 
@@ -597,11 +603,11 @@ function DebtForm({ onSubmit, onClose, loading }) {
             </select>
           </div>
 
-          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <button type="button" className="btn ghost" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="btn primary" disabled={loading}>
+            <button type="submit" className="btn primary" disabled={loading} style={{ minWidth: '110px' }}>
               {loading ? 'Adding...' : 'Add Debt'}
             </button>
           </div>

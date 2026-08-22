@@ -1598,18 +1598,20 @@
   color: #ef4444;
 }
 
-/* Modal Premium Overrides */
-/* Note: These classes are likely already in styles.css but we'll add more premium touches here */
 .modal-overlay {
   background: rgba(7, 11, 20, 0.85);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100000 !important;
 }
 
 .modal-content.glass-modal {
   background: #0f172a;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85);
+  border-radius: 20px;
+  position: relative;
+  z-index: 100001 !important;
 }
 
 .premium-form-group label {
