@@ -340,6 +340,17 @@
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
+@keyframes heroManSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .hero-banner-image-wrap {
   position: absolute;
   right: -2.5rem;
@@ -351,6 +362,8 @@
   align-items: flex-end;
   pointer-events: none;
   z-index: 5;
+  animation: heroManSlideIn 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  will-change: transform, opacity;
 }
 
 .hero-banner-man {
@@ -358,6 +371,32 @@
   width: auto;
   object-fit: contain;
   object-position: bottom right;
+}
+
+/* Scroll Fade In Animation (Triggered Only Once) */
+.scroll-fade-in {
+  opacity: 0;
+  transform: translateY(35px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-fade-in.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-fade-in.delay-1 {
+  transition-delay: 0.12s;
+}
+
+.scroll-fade-in.delay-2 {
+  transition-delay: 0.24s;
+}
+
+.scroll-fade-in.delay-3 {
+  transition-delay: 0.36s;
 }
 
 /* Responsive adjustments */

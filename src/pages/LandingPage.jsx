@@ -62,6 +62,30 @@ export default function LandingPage() {
     return () => clearInterval(timer)
   }, [testimonials.length])
 
+  // Scroll reveal animation: Triggered only once per element
+  useEffect(() => {
+    const observerCallback = (entries, observer) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target) // Trigger only once!
+        }
+      })
+    }
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -50px 0px',
+      threshold: 0.1,
+    }
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions)
+    const elements = document.querySelectorAll('.scroll-fade-in')
+    elements.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
+
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
   }
@@ -129,7 +153,7 @@ export default function LandingPage() {
       {/* Two-Column Intro Header */}
       <section className="services-intro">
         <div className="container">
-          <div className="services-intro-grid">
+          <div className="services-intro-grid scroll-fade-in">
             <div className="services-intro-left">
               <p className="services-tagline">Pace Finance is the smart way to manage your wealth.</p>
             </div>
@@ -148,7 +172,7 @@ export default function LandingPage() {
           <div className="services-grid">
 
             {/* Card 1: Debt Tracker — Photo Background */}
-            <div className="service-card service-card-photo">
+            <div className="service-card service-card-photo scroll-fade-in">
               <div className="service-card-overlay">
                 <div className="service-card-emoji">⚔️</div>
                 <h3>Tactical Debt Eradication</h3>
@@ -158,14 +182,14 @@ export default function LandingPage() {
             </div>
 
             {/* Card 2: Credit Hub — Lavender */}
-            <div className="service-card service-card-lavender">
+            <div className="service-card service-card-lavender scroll-fade-in delay-1">
               <div className="service-card-icon">📊</div>
               <h3>Actionable Credit Hub</h3>
               <p>Don't just watch your score. Manipulate it. See exactly how paying down an account impacts your credit profile.</p>
             </div>
 
             {/* Card 3: Cashflow — Yellow-Green */}
-            <div className="service-card service-card-lime">
+            <div className="service-card service-card-lime scroll-fade-in delay-2">
               <div className="service-card-icon">💰</div>
               <h3>Autonomous Cashflow</h3>
               <p>Allocate every Rand with precision. Dynamic "pots" that intelligently fund your goals and protect your emergency reserves.</p>
@@ -179,7 +203,7 @@ export default function LandingPage() {
       <section className="ai-reveal-section">
         <div className="container">
           <div className="ai-grid">
-            <div className="ai-visual">
+            <div className="ai-visual scroll-fade-in">
                <div className="coach-mockup">
                   <div className="chat-header">
                     <div className="bot-status"></div>
@@ -198,7 +222,7 @@ export default function LandingPage() {
                   </div>
                </div>
             </div>
-            <div className="ai-text">
+            <div className="ai-text scroll-fade-in delay-1">
                <div className="section-label">THE SECRET SAUCE</div>
                <h2>Meet the Coach that Never Sleeps</h2>
                <p>Traditional finance apps show you where your money <em>went</em>. Pace shows you where it's <em>going</em>.</p>
@@ -233,14 +257,14 @@ export default function LandingPage() {
       {/* Lifestyle Feature Section */}
       <section className="lifestyle-feature-section">
         <div className="container">
-          <div className="lifestyle-intro-centered">
+          <div className="lifestyle-intro-centered scroll-fade-in">
             <h2 className="lifestyle-intro-title">
               Build Wealth. Eradicate Debt.<br />
               Everything you need for financial independence.
             </h2>
           </div>
 
-          <div className="lifestyle-image-card">
+          <div className="lifestyle-image-card scroll-fade-in delay-1">
             <img 
               src="/lifestyle_friends.jpg" 
               alt="South African friends managing their finances together" 
@@ -253,7 +277,7 @@ export default function LandingPage() {
       {/* Security Section */}
       <section className="security-section">
         <div className="container">
-          <div className="security-container glass">
+          <div className="security-container glass scroll-fade-in">
              <div className="security-icon-main">
                 <Shield size={64} className="text-emerald-400" />
              </div>
@@ -282,14 +306,14 @@ export default function LandingPage() {
       {/* How It Works */}
       <section className="how-it-works">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header scroll-fade-in">
             <h2>Get Started in 3 Simple Steps</h2>
             <p>From signup to financial clarity in minutes</p>
           </div>
 
           <div className="steps-cards-grid">
             {/* Card 1: Photo Background */}
-            <div className="step-card step-card-photo">
+            <div className="step-card step-card-photo scroll-fade-in">
               <div className="step-card-overlay">
                 <div className="step-badge-num photo-num">01</div>
                 <h3>Establish Your Baseline</h3>
@@ -299,14 +323,14 @@ export default function LandingPage() {
             </div>
 
             {/* Card 2: Lavender Card */}
-            <div className="step-card step-card-lavender">
+            <div className="step-card step-card-lavender scroll-fade-in delay-1">
               <div className="step-badge-num lavender-num">02</div>
               <h3>Deploy the Strategy</h3>
               <p>Activate your debt snowball or avalanche. Let Pace blueprint your fastest, mathematically proven path to freedom.</p>
             </div>
 
             {/* Card 3: Lime Card */}
-            <div className="step-card step-card-lime">
+            <div className="step-card step-card-lime scroll-fade-in delay-2">
               <div className="step-badge-num lime-num">03</div>
               <h3>Engage the AI</h3>
               <p>Consult your personal 24/7 financial strategist for insights, course corrections, and growth tactics.</p>
@@ -318,12 +342,12 @@ export default function LandingPage() {
       {/* Pricing Section */}
       <section className="pricing">
         <div className="container">
-          <div className="section-header">
+          <div className="section-header scroll-fade-in">
             <h2>Choose Your Plan</h2>
             <p>Start free, upgrade when you're ready</p>
           </div>
           <div className="pricing-grid">
-            <div className="pricing-card">
+            <div className="pricing-card scroll-fade-in">
               <h3>Starter</h3>
               <div className="price">
                 <span className="currency">R</span>
@@ -341,7 +365,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="pricing-card featured">
+            <div className="pricing-card featured scroll-fade-in delay-1">
               <div className="badge">Most Popular</div>
               <h3>Pace Pro</h3>
               <div className="price">
@@ -362,7 +386,7 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="pricing-card">
+            <div className="pricing-card scroll-fade-in delay-2">
               <h3>Wealth</h3>
               <div className="price">
                 <span className="currency">R</span>
@@ -387,7 +411,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section className="final-cta">
         <div className="container">
-          <div className="final-cta-banner">
+          <div className="final-cta-banner scroll-fade-in">
             <div className="final-cta-content">
               <h2 className="final-cta-title">
                 Ready to Transform<br />
