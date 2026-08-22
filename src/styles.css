@@ -3920,26 +3920,78 @@ body {
 }
 
 .ai-coach-header {
-  padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 0.85rem 1.25rem;
+  background: rgba(18, 26, 44, 0.7);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.header-info {
+.ai-coach-header .header-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.header-info h3 {
+.ai-coach-header .header-info h3 {
   margin: 0;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 750;
   color: white;
   letter-spacing: -0.01em;
+}
+
+.ai-coach-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Glassmorphic Minimal Header Buttons */
+.ai-coach-header .icon-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow: none !important;
+}
+
+.ai-coach-header .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.ai-coach-header .icon-btn.minimize:hover {
+  background: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #38bdf8 !important;
+}
+
+.ai-coach-header .icon-btn.close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+.ai-coach-header .icon-btn.history-toggle {
+  margin-right: 2px;
+}
+
+.ai-coach-header .icon-btn.history-toggle.active {
+  background: rgba(59, 130, 246, 0.25) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  color: #38bdf8 !important;
 }
 
 .bot-avatar {
@@ -4117,49 +4169,10 @@ body {
   color: #9CA3AF;
 }
 
-.typing {
+.message-bubble {
+  max-width: 86%;
   display: flex;
-  gap: 4px;
-  padding: 8px 12px;
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  background: #9CA3AF;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.dot:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.dot:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-@keyframes bounce {
-
-  0%,
-  80%,
-  100% {
-    transform: scale(0);
-  }
-
-  40% {
-    transform: scale(1.0);
-  }
-}
-
-@media (max-width: 480px) {
-  .ai-coach-panel {
-    bottom: 0;
-    right: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 0;
-  }
+  flex-direction: column;
 }
 
 .message-bubble.assistant {
@@ -4170,16 +4183,57 @@ body {
   align-self: flex-end;
 }
 
+.bubble-content {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
 .assistant .bubble-content {
-  background: rgba(255, 255, 255, 0.08);
-  color: #F9FAFB;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #f1f5f9;
   border-bottom-left-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .user .bubble-content {
-  background: var(--accent);
-  color: white;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
   border-bottom-right-radius: 4px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  font-weight: 500;
+}
+
+.assistant .bubble-content strong {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.user .bubble-content strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  background: #38bdf8;
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
 }
 
 /* AI Chat History Sidebar CSS Extensions */
@@ -4222,78 +4276,114 @@ body {
   text-transform: uppercase;
 }
 
-.new-chat-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 8px;
-  width: 28px;
-  height: 28px;
+.history-header {
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
+  justify-content: space-between;
+}
+
+.history-header h4 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.new-chat-btn {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: #38bdf8 !important;
+  border-radius: 8px !important;
+  padding: 4px 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
 }
 
 .new-chat-btn:hover {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.35) !important;
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
 }
 
 .conversations-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem;
+  padding: 0.6rem;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .conv-item {
   display: flex;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.2s;
-  color: rgba(255, 255, 255, 0.6);
-  position: relative;
+  transition: all 0.2s ease;
+  color: #94a3b8;
+  border: 1px solid transparent;
   gap: 8px;
 }
 
 .conv-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
 }
 
 .conv-item.active {
-  background: rgba(79, 140, 255, 0.15);
-  border: 1px solid rgba(79, 140, 255, 0.25);
-  color: white;
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #ffffff;
 }
 
 .conv-icon {
   flex-shrink: 0;
 }
 
+.conv-text-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 2px;
+}
+
 .conv-title {
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
+}
+
+.conv-date {
+  font-size: 10px;
+  color: #64748b;
 }
 
 .delete-conv-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.3);
+  background: none !important;
+  border: none !important;
+  color: rgba(255, 255, 255, 0.25) !important;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 4px !important;
+  border-radius: 6px;
   opacity: 0;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .conv-item:hover .delete-conv-btn {
@@ -4301,8 +4391,41 @@ body {
 }
 
 .delete-conv-btn:hover {
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+}
+
+.no-chats-box {
+  padding: 2rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.no-chats-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.start-first-chat-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-first-chat-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #ffffff;
 }
 
 .ai-chat-main {
@@ -4310,17 +4433,6 @@ body {
   flex-direction: column;
   flex: 1;
   height: 100%;
-}
-
-.icon-btn.history-toggle {
-  margin-right: 8px;
-}
-
-.no-chats-msg {
-  text-align: center;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 2rem;
 }
 
 .ai-coach-messages.loading {

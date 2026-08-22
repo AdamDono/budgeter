@@ -445,34 +445,54 @@
   }
 
   .hero.full-screen-hero {
-    min-height: 100svh;
-    height: 100svh;
+    min-height: auto;
+    height: auto;
     position: relative;
     overflow: hidden;
   }
 
   .hero-fullscreen-inner {
-    min-height: 100svh;
-    height: 100%;
+    min-height: auto;
+    height: auto;
     position: relative;
     overflow: hidden;
   }
 
   .hero-container-fullscreen {
-    min-height: 100svh;
-    height: 100%;
+    min-height: auto;
+    height: auto;
     position: relative;
     flex-direction: column;
-    padding: 0 1.5rem !important;
-    justify-content: center;
+    padding: 6.5rem 1.5rem 0 !important;
+    justify-content: flex-start;
     align-items: center;
     box-sizing: border-box;
     overflow: hidden;
   }
 
-  /* Hide the man image on mobile */
+  /* Show the man image on mobile just like the woman in the final CTA */
   .hero-banner-image-wrap {
-    display: none !important;
+    display: flex !important;
+    position: relative;
+    right: auto;
+    bottom: 0;
+    width: 100%;
+    height: 330px;
+    max-height: 350px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-top: 1.5rem;
+    pointer-events: none;
+    z-index: 5;
+    animation: heroManSlideIn 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+
+  .hero-banner-man {
+    height: 100%;
+    max-height: 330px;
+    width: auto;
+    object-fit: contain;
+    object-position: bottom center;
   }
 
   .hero-banner-content {
@@ -2000,9 +2020,10 @@
 }
 
 .footer-content {
-  display: grid;
-  grid-template-columns: 2fr 1.1fr 1.1fr 1.1fr;
-  gap: 3.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4rem;
   margin-bottom: 3.5rem;
 }
 
@@ -2138,35 +2159,18 @@
   50% { transform: scale(1.3); opacity: 0.6; }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 800px) {
   .footer {
     padding: 4rem 0 2rem;
   }
 
   .footer-content {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: column;
     gap: 2.5rem;
   }
 
-  .footer-brand {
-    grid-column: span 2;
-  }
-
   .footer-bottom {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-}
-
-@media (max-width: 600px) {
-  .footer-content {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .footer-brand {
-    grid-column: span 1;
+    padding-top: 1.75rem;
   }
 }
 

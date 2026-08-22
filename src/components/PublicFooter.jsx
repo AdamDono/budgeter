@@ -23,24 +23,6 @@ export default function PublicFooter() {
           </div>
 
           <div className="footer-section">
-            <h4>Platform</h4>
-            <Link to="/landing#services-cards">Tactical Debt Tracker</Link>
-            <Link to="/landing#services-cards">Actionable Credit Hub</Link>
-            <Link to="/landing#services-cards">Autonomous Cashflow</Link>
-            <Link to="/landing#ai-coach">24/7 AI Coach</Link>
-            <Link to="/register">Get Started</Link>
-          </div>
-
-          <div className="footer-section">
-            <h4>Calculators & Tools</h4>
-            <Link to="/landing#services-cards">Debt Snowball Engine</Link>
-            <Link to="/landing#services-cards">Interest Saved Tracker</Link>
-            <Link to="/landing#services-cards">Credit Score Simulator</Link>
-            <Link to="/login">Client Portal</Link>
-            <Link to="/contact">Help Center</Link>
-          </div>
-
-          <div className="footer-section">
             <h4>Security & Legal</h4>
             <Link to="/security">Privacy First Architecture</Link>
             <Link to="/security">Bank-Level 256-Bit SSL</Link>

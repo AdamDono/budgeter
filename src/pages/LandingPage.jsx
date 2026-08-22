@@ -463,24 +463,6 @@ export default function LandingPage() {
             </div>
 
             <div className="footer-section">
-              <h4>Platform</h4>
-              <a href="#services-cards">Tactical Debt Tracker</a>
-              <a href="#services-cards">Actionable Credit Hub</a>
-              <a href="#services-cards">Autonomous Cashflow</a>
-              <a href="#ai-coach">24/7 AI Coach</a>
-              <Link to="/register">Get Started</Link>
-            </div>
-
-            <div className="footer-section">
-              <h4>Calculators & Tools</h4>
-              <a href="#services-cards">Debt Snowball Engine</a>
-              <a href="#services-cards">Interest Saved Tracker</a>
-              <a href="#services-cards">Credit Score Simulator</a>
-              <Link to="/login">Client Portal</Link>
-              <Link to="/login">Help Center</Link>
-            </div>
-
-            <div className="footer-section">
               <h4>Security & Legal</h4>
               <Link to="/security">Privacy First Architecture</Link>
               <Link to="/security">Bank-Level 256-Bit SSL</Link>

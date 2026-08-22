@@ -1,4 +1,4 @@
-import { AlertCircle, Bot, MinusCircle, Send, Sparkles, TrendingDown, X, MessageSquare, Plus, Trash2, Menu } from 'lucide-react'
+import { AlertCircle, Bot, MessageSquare, Minus, Plus, Send, Sparkles, Trash2, TrendingDown, X, Menu } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
@@ -55,10 +55,11 @@ export default function AICoach() {
   const fetchConversations = async () => {
     try {
       const res = await aiAPI.getConversations()
-      setConversations(res.data.conversations)
+      const list = res.data.conversations || []
+      setConversations(list)
       // Auto-select latest conversation if none is active
-      if (res.data.conversations.length > 0 && !activeConvId) {
-        loadConversation(res.data.conversations[0].id)
+      if (list.length > 0 && !activeConvId) {
+        loadConversation(list[0].id)
       }
     } catch (err) {
       console.error('Failed to load conversations:', err)
@@ -70,7 +71,7 @@ export default function AICoach() {
     setActiveConvId(convId)
     try {
       const res = await aiAPI.getMessages(convId)
-      if (res.data.messages.length > 0) {
+      if (res.data.messages && res.data.messages.length > 0) {
         setChatHistory(res.data.messages)
       } else {
         setChatHistory([
@@ -87,8 +88,9 @@ export default function AICoach() {
   const handleCreateNewChat = async () => {
     try {
       const res = await aiAPI.createConversation('New Chat')
-      setConversations(prev => [res.data.conversation, ...prev])
-      setActiveConvId(res.data.conversation.id)
+      const newConv = res.data.conversation
+      setConversations(prev => [newConv, ...prev])
+      setActiveConvId(newConv.id)
       setChatHistory([
         { role: 'assistant', content: "New conversation initiated. Ask me anything!" }
       ])
@@ -136,7 +138,6 @@ export default function AICoach() {
       // Auto-set the active conversation if we just initialized a new one in the backend
       if (!activeConvId && response.data.conversationId) {
         setActiveConvId(response.data.conversationId)
-        fetchConversations()
       }
 
       // Dynamic Vibe logic
@@ -151,17 +152,14 @@ export default function AICoach() {
       setChatHistory(prev => [...prev, botMessage])
       
       // Refresh list to update titles/sorting order
-      if (activeConvId) {
-        fetchConversations()
-      }
+      await fetchConversations()
     } catch (error) {
       console.error('AI Error:', error)
-      const errorMsg = error.response?.data?.error || 'Oops! My brain is a bit laggy. Check your Gemini API Key in the backend!'
-      toast.error(errorMsg)
+      toast.error('Coach is momentarily busy. Please try again.')
       
       setChatHistory(prev => [...prev, { 
         role: 'assistant', 
-        content: "Sorry, I'm having trouble connecting to my brain. Please make sure the Gemini API Key is set up in your .env file! 🧠🔌" 
+        content: "I'm experiencing a brief connection hiccup while analyzing your finances. Please try sending your question again in a moment!" 
       }])
     } finally {
       setLoading(false)
@@ -187,8 +185,13 @@ export default function AICoach() {
       {/* Drawer Header */}
       <div className="ai-coach-header">
         <div className="header-info">
-          <button onClick={() => setShowHistory(!showHistory)} className="icon-btn history-toggle" title="Chat History">
-            <Menu size={18} />
+          <button 
+            onClick={() => setShowHistory(!showHistory)} 
+            className={`icon-btn history-toggle ${showHistory ? 'active' : ''}`} 
+            title="Chat History"
+            aria-label="Toggle history"
+          >
+            <Menu size={16} />
           </button>
           <div className={`bot-avatar status-${healthStatus}`}>
             {healthStatus === 'danger' ? <AlertCircle size={20} /> : 
@@ -205,11 +208,21 @@ export default function AICoach() {
           </div>
         </div>
         <div className="header-actions">
-          <button onClick={() => setIsMinimized(!isMinimized)} className="icon-btn">
-            <MinusCircle size={18} />
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)} 
+            className="icon-btn minimize" 
+            title={isMinimized ? "Expand" : "Minimize"}
+            aria-label="Minimize"
+          >
+            <Minus size={16} />
           </button>
-          <button onClick={() => setIsOpen(false)} className="icon-btn close">
-            <X size={18} />
+          <button 
+            onClick={() => setIsOpen(false)} 
+            className="icon-btn close" 
+            title="Close"
+            aria-label="Close"
+          >
+            <X size={16} />
           </button>
         </div>
       </div>
@@ -222,13 +235,19 @@ export default function AICoach() {
             <div className="ai-history-sidebar">
               <div className="history-header">
                 <h4>Past Chats</h4>
-                <button onClick={handleCreateNewChat} className="new-chat-btn" title="New Chat">
-                  <Plus size={16} />
+                <button onClick={handleCreateNewChat} className="new-chat-btn" title="Start New Chat">
+                  <Plus size={14} />
+                  <span>New</span>
                 </button>
               </div>
               <div className="conversations-list">
                 {conversations.length === 0 ? (
-                  <p className="no-chats-msg">No chats saved yet.</p>
+                  <div className="no-chats-box">
+                    <p className="no-chats-msg">No chats saved yet.</p>
+                    <button onClick={handleCreateNewChat} className="start-first-chat-btn">
+                      Start First Chat
+                    </button>
+                  </div>
                 ) : (
                   conversations.map(c => (
                     <div 
@@ -237,7 +256,14 @@ export default function AICoach() {
                       onClick={() => { loadConversation(c.id); setShowHistory(false); }}
                     >
                       <MessageSquare size={14} className="conv-icon" />
-                      <span className="conv-title">{c.title}</span>
+                      <div className="conv-text-wrap">
+                        <span className="conv-title">{c.title || 'Financial Query'}</span>
+                        {c.created_at && (
+                          <span className="conv-date">
+                            {new Date(c.created_at).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
                       <button onClick={(e) => handleDeleteChat(e, c.id)} className="delete-conv-btn" title="Delete Chat">
                         <Trash2 size={12} />
                       </button>

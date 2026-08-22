@@ -396,3 +396,174 @@ export async function sendMonthlySummaryEmail(toEmail, firstName, { month, year,
   })
 }
 
+// ─── Sunday Financial Pulse Email ──────────────────────────────────────────────
+export async function sendSundayPulseEmail(toEmail, firstName, {
+  weekSpend = 0,
+  budgetPaceText = 'Pacing well for this month',
+  isUnderBudget = true,
+  upcomingBills = [],
+  activeGoals = [],
+  debtsCount = 0,
+  aiTip = ''
+}) {
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/dashboard`
+
+  const billsHtml = upcomingBills.length > 0
+    ? upcomingBills.map(b => `
+      <tr>
+        <td style="padding:10px 0;color:#c5d0e0;font-size:13.5px;border-bottom:1px solid #1a2545;">
+          <strong>${b.name}</strong><br/>
+          <span style="font-size:11.5px;color:#7a8fae;">Due ${new Date(b.due_date).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })}</span>
+        </td>
+        <td style="padding:10px 0;color:#e8edf5;font-size:14px;font-weight:700;text-align:right;border-bottom:1px solid #1a2545;">
+          R ${parseFloat(b.amount).toFixed(2)}
+        </td>
+      </tr>
+    `).join('')
+    : `<tr><td colspan="2" style="padding:10px 0;color:#7a8fae;font-size:13px;text-align:center;">No bills due in the next 7 days 🎉</td></tr>`
+
+  const html = emailBase({
+    preheader: `Your Sunday Financial Pulse: ${budgetPaceText}`,
+    body: `
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="display:inline-block;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);color:#38bdf8;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+          Weekly Briefing
+        </span>
+        <h1 style="margin:12px 0 6px;color:#e8edf5;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+          Sunday Financial Pulse ⚡
+        </h1>
+        <p style="margin:0;color:#7a8fae;font-size:14px;">
+          Hey ${firstName}, here is your quick briefing before the new week begins.
+        </p>
+      </div>
+
+      <!-- Weekly Performance Card -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:14px;border:1px solid #1a2545;margin-bottom:20px;">
+        <tr><td style="padding:22px 24px;">
+          <p style="margin:0 0 6px;color:#7a8fae;font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">Past 7 Days Spend</p>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;">
+            <span style="color:#ffffff;font-size:26px;font-weight:800;letter-spacing:-0.5px;">
+              R ${parseFloat(weekSpend || 0).toFixed(2)}
+            </span>
+          </div>
+          <div style="margin-top:12px;padding:8px 12px;border-radius:8px;background:${isUnderBudget ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)'};border:1px solid ${isUnderBudget ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'};">
+            <p style="margin:0;color:${isUnderBudget ? '#34d399' : '#f87171'};font-size:13px;font-weight:600;">
+              ${budgetPaceText}
+            </p>
+          </div>
+        </td></tr>
+      </table>
+
+      <!-- AI Coach Directive -->
+      ${aiTip ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:radial-gradient(circle at top left,rgba(59,130,246,0.15),transparent 70%),#0b1226;border-radius:14px;border:1px solid rgba(59,130,246,0.3);margin-bottom:20px;">
+        <tr><td style="padding:20px 24px;">
+          <p style="margin:0 0 6px;color:#38bdf8;font-size:11px;text-transform:uppercase;letter-spacing:0.8px;font-weight:800;">
+            🤖 AI Coach Directive
+          </p>
+          <p style="margin:0;color:#f1f5f9;font-size:13.5px;line-height:1.6;">
+            "${aiTip}"
+          </p>
+        </td></tr>
+      </table>` : ''}
+
+      <!-- Next Week's Upcoming Bills -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:14px;border:1px solid #1a2545;margin-bottom:28px;">
+        <tr><td style="padding:20px 24px;">
+          <p style="margin:0 0 14px;color:#7a8fae;font-size:11.5px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">
+            📅 Upcoming Bills (Next 7 Days)
+          </p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${billsHtml}
+          </table>
+        </td></tr>
+      </table>
+
+      <!-- CTA -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="${dashboardUrl}"
+               style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;text-decoration:none;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 4px 20px rgba(59,130,246,0.4);">
+              Open Your Command Center →
+            </a>
+          </td>
+        </tr>
+      </table>
+    `
+  })
+
+  await sendViaBrevo({
+    to: toEmail,
+    subject: `⚡ Sunday Financial Pulse: ${budgetPaceText}`,
+    html,
+  })
+}
+
+// ─── Inactivity Re-Engagement Email (30-Day Check-in) ──────────────────────────
+export async function sendInactivityReEngagementEmail(toEmail, firstName, { activeDebtsCount = 0, totalDebt = 0, goalsCount = 0 }) {
+  const dashboardUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app/dashboard`
+
+  const html = emailBase({
+    preheader: `Quick check-in on your financial snowball, ${firstName}.`,
+    body: `
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="display:inline-block;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#fbbf24;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+          30-Day Check-in
+        </span>
+        <h1 style="margin:12px 0 6px;color:#e8edf5;font-size:24px;font-weight:800;letter-spacing:-0.5px;">
+          Time for a 60-Second Check-in ⏱️
+        </h1>
+        <p style="margin:0;color:#7a8fae;font-size:14px;line-height:1.6;">
+          Hey ${firstName}, it's been about 30 days since your last update. Consistent tracking is the secret to eliminating debt and building real wealth.
+        </p>
+      </div>
+
+      <!-- Quick Action Checklist -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="background:#070b1f;border-radius:14px;border:1px solid #1a2545;margin-bottom:28px;">
+        <tr><td style="padding:22px 24px;">
+          <p style="margin:0 0 16px;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">
+            Recommended 60-Second Actions:
+          </p>
+          ${activeDebtsCount > 0 ? `
+          <div style="margin-bottom:14px;padding-left:10px;border-left:3px solid #3b82f6;">
+            <p style="margin:0;color:#ffffff;font-size:14px;font-weight:600;">Update your debt balances</p>
+            <p style="margin:4px 0 0;color:#7a8fae;font-size:12.5px;">You have ${activeDebtsCount} active liability accounts (R ${parseFloat(totalDebt).toFixed(2)} total). Keep your payoff date accurate.</p>
+          </div>` : ''}
+          ${goalsCount > 0 ? `
+          <div style="margin-bottom:14px;padding-left:10px;border-left:3px solid #10b981;">
+            <p style="margin:0;color:#ffffff;font-size:14px;font-weight:600;">Check your savings goals</p>
+            <p style="margin:4px 0 0;color:#7a8fae;font-size:12.5px;">You have ${goalsCount} active savings pots. Log this month's contributions.</p>
+          </div>` : ''}
+          <div style="padding-left:10px;border-left:3px solid #a855f7;">
+            <p style="margin:0;color:#ffffff;font-size:14px;font-weight:600;">Review your monthly budget</p>
+            <p style="margin:4px 0 0;color:#7a8fae;font-size:12.5px;">Ensure no surprise subscriptions slipped through.</p>
+          </div>
+        </td></tr>
+      </table>
+
+      <!-- CTA -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="${dashboardUrl}"
+               style="display:inline-block;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;text-decoration:none;padding:15px 36px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.3px;box-shadow:0 4px 20px rgba(59,130,246,0.4);">
+              Update My Finances in 60s →
+            </a>
+          </td>
+        </tr>
+      </table>
+    `
+  })
+
+  await sendViaBrevo({
+    to: toEmail,
+    subject: `👋 Quick 60-second financial check-in, ${firstName}`,
+    html,
+  })
+}
+
