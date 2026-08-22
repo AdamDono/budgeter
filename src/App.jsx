@@ -32,6 +32,7 @@ import Trends from './pages/Trends'
 // Components
 import Layout from './components/Layout'
 import LoadingSpinner from './components/LoadingSpinner'
+import PWAInstallBanner from './components/PWAInstallBanner'
 
 // Create a client
 const queryClient = new QueryClient({
@@ -117,6 +118,9 @@ export default function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
             
+            {/* PWA Mobile Install Banner */}
+            <PWAInstallBanner />
+
             {/* Toast notifications */}
             <Toaster
               position="top-right"
