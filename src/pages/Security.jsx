@@ -144,7 +144,7 @@ export default function Security() {
               <section id="reporting" className="legal-section">
                 <h2><Shield size={22} className="text-emerald-500" /> 6. Responsible Vulnerability Disclosure</h2>
                 <p>
-                  We actively welcome responsible disclosures from ethical security researchers. If you identify a potential security vulnerability within our platform, please report it immediately to our security response team at <a href="mailto:security@pacefinance.co.za" className="text-blue-600 font-semibold">security@pacefinance.co.za</a>.
+                  We actively welcome responsible disclosures from ethical security researchers. If you identify a potential security vulnerability within our platform, please report it immediately to our security response team at <a href="mailto:security@pacefinances.co.za" className="text-blue-600 font-semibold">security@pacefinances.co.za</a>.
                 </p>
                 <div style={{ marginTop: '2rem' }}>
                   <Link to="/contact" className="contact-submit-btn" style={{ textDecoration: 'none' }}>

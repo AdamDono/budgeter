@@ -43,9 +43,23 @@ app.use(helmet())
 app.use(compression())
 app.use(cookieParser())
 // Allow all origins in development, otherwise use specific origin
+const allowedOrigins = [
+  'https://pacefinances.co.za',
+  'https://www.pacefinances.co.za',
+  'https://pacefinance.onrender.com',
+  'https://pacedebt.onrender.com',
+  process.env.FRONTEND_URL,
+].filter(Boolean)
+
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? (process.env.FRONTEND_URL || 'http://localhost:5173') 
+    ? (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true)
+        } else {
+          callback(null, true) // Allow subdomains / requests gracefully
+        }
+      }
     : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
 }

@@ -128,9 +128,9 @@ export default function Privacy() {
                   For any privacy inquiries, data subject access requests (DSARs), or POPIA compliance questions, contact our appointed Information Officer:
                 </p>
                 <div className="legal-callout-card">
-                  <h4>Information Officer — Pace Finance (Pty) Ltd</h4>
-                  <p><strong>Email:</strong> <a href="mailto:privacy@pacefinance.co.za" className="text-blue-600">privacy@pacefinance.co.za</a></p>
-                  <p><strong>Physical Address:</strong> Cape Town, Western Cape, South Africa</p>
+                  <h4>Information Officer: Pace Finance (Pty) Ltd</h4>
+                  <p><strong>Email:</strong> <a href="mailto:privacy@pacefinances.co.za" className="text-blue-600">privacy@pacefinances.co.za</a></p>
+                  <p><strong>Physical Address:</strong> Johannesburg, Gauteng, South Africa</p>
                 </div>
                 <div style={{ marginTop: '2rem' }}>
                   <Link to="/contact" className="contact-submit-btn" style={{ textDecoration: 'none' }}>

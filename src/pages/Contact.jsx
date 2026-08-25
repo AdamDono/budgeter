@@ -70,7 +70,7 @@ export default function Contact() {
                 <div className="contact-icon"><Mail size={22} /></div>
                 <div className="contact-item-text">
                   <h4>Customer Support</h4>
-                  <p><a href="mailto:support@pacefinance.co.za">support@pacefinance.co.za</a></p>
+                  <p><a href="mailto:support@pacefinances.co.za">support@pacefinances.co.za</a></p>
                   <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>For account, feature, or billing assistance</p>
                 </div>
               </div>
@@ -79,7 +79,7 @@ export default function Contact() {
                 <div className="contact-icon"><ShieldCheck size={22} /></div>
                 <div className="contact-item-text">
                   <h4>Security & POPIA Compliance</h4>
-                  <p><a href="mailto:security@pacefinance.co.za">security@pacefinance.co.za</a></p>
+                  <p><a href="mailto:security@pacefinances.co.za">security@pacefinances.co.za</a></p>
                   <p style={{ fontSize: '0.85rem', color: '#94a3b8' }}>For data privacy & responsible disclosures</p>
                 </div>
               </div>
@@ -88,8 +88,8 @@ export default function Contact() {
                 <div className="contact-icon"><Clock size={22} /></div>
                 <div className="contact-item-text">
                   <h4>Operational Hours</h4>
-                  <p>Monday – Friday: 08:00 – 18:00 SAST</p>
-                  <p>Saturday: 09:00 – 13:00 SAST</p>
+                  <p>Monday to Friday: 08:00 to 18:00 SAST</p>
+                  <p>Saturday: 09:00 to 13:00 SAST</p>
                 </div>
               </div>
 
