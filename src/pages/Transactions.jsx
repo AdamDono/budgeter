@@ -82,6 +82,11 @@ export default function Transactions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      queryClient.invalidateQueries({ queryKey: ['savings'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['ai-briefing'] })
       setShowAddForm(false)
       toast.success('Transaction added successfully!')
     },
@@ -95,6 +100,11 @@ export default function Transactions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      queryClient.invalidateQueries({ queryKey: ['savings'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['ai-briefing'] })
       toast.success('Transaction deleted successfully!')
     },
     onError: (error) => {
@@ -247,7 +257,23 @@ export default function Transactions() {
                 </div>
                 <div className="tx-desc-cell">
                   <h4>{transaction.description}</h4>
-                  {transaction.goal_name && <p className="text-accent" style={{ color: '#4f8cff' }}>Goal: {transaction.goal_name}</p>}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                    {transaction.goal_name && (
+                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(79, 140, 255, 0.12)', color: '#4f8cff', fontWeight: 600 }}>
+                        🎯 Goal: {transaction.goal_name}
+                      </span>
+                    )}
+                    {transaction.debt_name && (
+                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', fontWeight: 600 }}>
+                        💳 Debt Paid: {transaction.debt_name}
+                      </span>
+                    )}
+                    {transaction.savings_name && (
+                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', fontWeight: 600 }}>
+                        🏦 Pot: {transaction.savings_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="tx-cat-cell">
                   <span className="cat-pill" style={{ pointerEvents: 'none', background: 'rgba(255,255,255,0.03)' }}>
@@ -321,6 +347,13 @@ export default function Transactions() {
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] })
             queryClient.invalidateQueries({ queryKey: ['analytics'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+            queryClient.invalidateQueries({ queryKey: ['debts'] })
+            queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+            queryClient.invalidateQueries({ queryKey: ['bills'] })
+            queryClient.invalidateQueries({ queryKey: ['savings'] })
+            queryClient.invalidateQueries({ queryKey: ['goals'] })
+            queryClient.invalidateQueries({ queryKey: ['ai-briefing'] })
             setShowImport(false)
           }}
         />
@@ -471,38 +504,42 @@ function TransactionForm({ categories, goals, debts, savings, onSubmit, onClose,
           </div>
 
           {/* Dynamic Linkage Sections */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            {selectedCategoryName === 'Debt Repayment' && (
-              <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
-                <label className="text-muted" style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem' }}>Link to Debt</label>
-                <select name="debtId" value={formData.debtId} onChange={handleChange} className="premium-input" required>
-                  <option value="">Select debt...</option>
+          <div style={{ marginBottom: '1.5rem', display: 'grid', gap: '0.85rem' }}>
+            {formData.type === 'expense' && debts.filter(d => parseFloat(d.balance) > 0).length > 0 && (
+              <div className="glass-panel" style={{ padding: '0.85rem 1rem', background: selectedCategoryName === 'Debt Repayment' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.02)', border: selectedCategoryName === 'Debt Repayment' ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <label className="text-muted" style={{ display: 'block', marginBottom: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
+                  💳 Link to Debt Paydown {selectedCategoryName === 'Debt Repayment' ? '(Required)' : '(Optional — auto-reduces debt balance)'}
+                </label>
+                <select name="debtId" value={formData.debtId} onChange={handleChange} className="premium-input" required={selectedCategoryName === 'Debt Repayment'}>
+                  <option value="">No linked debt</option>
                   {debts.filter(d => parseFloat(d.balance) > 0).map(debt => (
-                    <option key={debt.id} value={debt.id}>{debt.name} (R{debt.balance})</option>
+                    <option key={debt.id} value={debt.id}>{debt.name} ({formatCurrency(debt.balance)} remaining)</option>
                   ))}
                 </select>
               </div>
             )}
 
-            {selectedCategoryName === 'Savings Contribution' && (
-              <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-                <label className="text-muted" style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem' }}>Link to Savings Pot</label>
-                <select name="savingsId" value={formData.savingsId} onChange={handleChange} className="premium-input" required>
-                  <option value="">Select pot...</option>
+            {savings.length > 0 && (
+              <div className="glass-panel" style={{ padding: '0.85rem 1rem', background: selectedCategoryName === 'Savings Contribution' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.02)', border: selectedCategoryName === 'Savings Contribution' ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <label className="text-muted" style={{ display: 'block', marginBottom: '6px', fontSize: '0.78rem', fontWeight: 600 }}>
+                  🏦 Link to Savings Pot {selectedCategoryName === 'Savings Contribution' ? '(Required)' : '(Optional)'}
+                </label>
+                <select name="savingsId" value={formData.savingsId} onChange={handleChange} className="premium-input" required={selectedCategoryName === 'Savings Contribution'}>
+                  <option value="">No linked savings pot</option>
                   {savings.map(pot => (
-                    <option key={pot.id} value={pot.id}>{pot.name}</option>
+                    <option key={pot.id} value={pot.id}>{pot.name} ({formatCurrency(pot.balance)})</option>
                   ))}
                 </select>
               </div>
             )}
 
-            {formData.type === 'income' && selectedCategoryName !== 'Savings Contribution' && (
+            {goals.length > 0 && (
               <div className="premium-form-group">
-                <label>Link to Goal? (Optional)</label>
+                <label style={{ fontSize: '0.78rem' }}>🎯 Link to Financial Goal (Optional — adds to goal progress)</label>
                 <select name="goalId" value={formData.goalId} onChange={handleChange} className="premium-input">
                   <option value="">No specific goal</option>
                   {goals.map(goal => (
-                    <option key={goal.id} value={goal.id}>{goal.name}</option>
+                    <option key={goal.id} value={goal.id}>{goal.name} ({formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)})</option>
                   ))}
                 </select>
               </div>

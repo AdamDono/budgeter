@@ -4,7 +4,7 @@ import * as pdfjs from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { budgetsAPI, importAPI, aiAPI } from '../lib/api'
+import { budgetsAPI, importAPI, aiAPI, debtsAPI, billsAPI, savingsAPI, goalsAPI } from '../lib/api'
 
 // Set up PDF.js worker using local bundle
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
@@ -169,6 +169,66 @@ function autoCategorize(description, categories) {
   return '' // uncategorized - user picks manually
 }
 
+// ─── Smart Entity Matcher (Matches statement rows to User's Debts, Bills, Savings, Goals) ───
+// Example: If user has a Debt or Bill named "Maki" and statement line says "EFT Payment Maki",
+// it automatically links the row to that Debt/Bill and sets the category!
+function autoMatchEntities(description, type, { debts = [], bills = [], savings = [], goals = [], categories = [] }, aiHints = {}) {
+  const d = (description || '').toLowerCase()
+  const findNameMatch = (items) => {
+    for (const item of items) {
+      const name = (item.name || '').toLowerCase().trim()
+      if (!name || name.length < 2) continue
+      if (d.includes(name)) return String(item.id)
+      // Also match significant tokens (>= 3 chars) for multi-word names like "Maki Loan" -> "maki"
+      const tokens = name.split(/[\s\-_\/]+/).filter(t => t.length >= 3 && !['loan', 'card', 'bank', 'account', 'pot', 'bill', 'the', 'and'].includes(t))
+      if (tokens.length > 0 && tokens.some(tok => d.includes(tok))) {
+        return String(item.id)
+      }
+    }
+    return ''
+  }
+
+  let debtId = aiHints.debtId ? String(aiHints.debtId) : ''
+  let billId = aiHints.billId ? String(aiHints.billId) : ''
+  let savingsId = aiHints.savingsId ? String(aiHints.savingsId) : ''
+  let goalId = aiHints.goalId ? String(aiHints.goalId) : ''
+
+  if (!debtId && type === 'expense') {
+    debtId = findNameMatch(debts.filter(x => parseFloat(x.balance) > 0))
+  }
+  if (!billId && !debtId && type === 'expense') {
+    billId = findNameMatch(bills.filter(x => !x.is_paid))
+  }
+  if (!savingsId && !debtId && !billId) {
+    savingsId = findNameMatch(savings)
+  }
+  if (!goalId && !debtId && !billId && !savingsId) {
+    goalId = findNameMatch(goals.filter(x => !x.is_achieved))
+  }
+
+  // Encode into a single linkTarget value for easy UI selection: "debt:12", "bill:5", "savings:3", "goal:2", or ""
+  let linkTarget = ''
+  if (debtId) linkTarget = `debt:${debtId}`
+  else if (billId) linkTarget = `bill:${billId}`
+  else if (savingsId) linkTarget = `savings:${savingsId}`
+  else if (goalId) linkTarget = `goal:${goalId}`
+
+  // Auto-assign category if linked to Debt or Savings Pot
+  let matchedCategoryId = aiHints.categoryId ? String(aiHints.categoryId) : ''
+  if (debtId && !matchedCategoryId) {
+    const debtCat = categories.find(c => c.name === 'Debt Repayment')
+    if (debtCat) matchedCategoryId = String(debtCat.id)
+  } else if (savingsId && !matchedCategoryId) {
+    const savCat = categories.find(c => c.name === 'Savings Contribution')
+    if (savCat) matchedCategoryId = String(savCat.id)
+  }
+
+  return {
+    linkTarget,
+    categoryId: matchedCategoryId || autoCategorize(description, categories)
+  }
+}
+
 // Detect common SA bank CSV formats
 function detectBankFormat(headers) {
   const h = headers.map(h => h.toLowerCase().trim())
@@ -268,6 +328,31 @@ function parseCSV(text) {
   const headers = splitRow(lines[0])
   const rows = lines.slice(1).map(l => splitRow(l))
   return { headers, rows }
+}
+
+// Extract raw line-by-line text from PDF for AI Scanner
+async function extractRawTextFromPDF(file) {
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
+  const lines = []
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const rowsMap = {}
+    content.items.forEach(item => {
+      const y = Math.round(item.transform[5] / 3) * 3
+      if (!rowsMap[y]) rowsMap[y] = []
+      rowsMap[y].push(item)
+    })
+    const sortedY = Object.keys(rowsMap).sort((a, b) => b - a)
+    sortedY.forEach(y => {
+      const rowItems = rowsMap[y].sort((a, b) => a.transform[4] - b.transform[4])
+      const line = rowItems.map(item => item.str).join(' ').trim()
+      if (line.length > 2) lines.push(line)
+    })
+  }
+  return lines.join('\n')
 }
 
 // PDF Parsing Logic - Enhanced for SA Banks
@@ -407,6 +492,30 @@ export default function CSVImport({ onClose, onSuccess }) {
   })
   const categories = categoriesData?.categories || []
 
+  const { data: debtsData } = useQuery({
+    queryKey: ['debts'],
+    queryFn: async () => (await debtsAPI.getAll()).data,
+  })
+  const debts = debtsData?.debts || []
+
+  const { data: billsData } = useQuery({
+    queryKey: ['bills'],
+    queryFn: async () => (await billsAPI.getAll()).data,
+  })
+  const bills = billsData?.bills || []
+
+  const { data: savingsData } = useQuery({
+    queryKey: ['savings'],
+    queryFn: async () => (await savingsAPI.getAll()).data,
+  })
+  const savings = savingsData?.savings || []
+
+  const { data: goalsData } = useQuery({
+    queryKey: ['goals'],
+    queryFn: async () => (await goalsAPI.getAll()).data,
+  })
+  const goals = goalsData?.goals || []
+
   const [useAI, setUseAI] = useState(true)
 
   const handleFile = async (e) => {
@@ -421,9 +530,11 @@ export default function CSVImport({ onClose, onSuccess }) {
       return
     }
 
+    const entitiesContext = { debts, bills, savings, goals, categories }
+
     try {
       if (useAI) {
-        toast.loading('Pace AI is scanning statement details...')
+        toast.loading('Pace AI is scanning statement & matching debts/bills...')
         let rawText = ''
         if (isCSV) {
           rawText = await new Promise((resolve) => {
@@ -447,20 +558,29 @@ export default function CSVImport({ onClose, onSuccess }) {
           throw new Error('AI could not find any transactions')
         }
 
-        const parsed = transactions.map((r, i) => ({
-          _id: i,
-          _include: true,
-          description: r.description,
-          amount: parseFloat(r.amount),
-          type: r.type,
-          transactionDate: r.date,
-          categoryId: r.categoryId || autoCategorize(r.description, categories)
-        }))
+        const parsed = transactions.map((r, i) => {
+          const matched = autoMatchEntities(r.description, r.type, entitiesContext, r)
+          return {
+            _id: i,
+            _include: true,
+            description: r.description,
+            amount: parseFloat(r.amount),
+            type: r.type,
+            transactionDate: r.date,
+            categoryId: matched.categoryId,
+            linkTarget: matched.linkTarget
+          }
+        })
 
+        const autoLinkedCount = parsed.filter(p => p.linkTarget).length
         setFormat(isCSV ? 'CSV Statement (AI Scanned)' : 'PDF Statement (AI Scanned)')
         setEditedRows(parsed)
         setStep('preview')
-        toast.success(`AI successfully extracted ${parsed.length} transactions!`)
+        toast.success(
+          autoLinkedCount > 0
+            ? `Extracted ${parsed.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
+            : `AI successfully extracted ${parsed.length} transactions!`
+        )
         return
       }
     } catch (aiErr) {
@@ -484,7 +604,17 @@ export default function CSVImport({ onClose, onSuccess }) {
             toast.error('No valid transactions found in CSV.')
             return
           }
-          setEditedRows(parsed.map((r, i) => ({ ...r, _id: i, _include: true, categoryId: autoCategorize(r.description, categories) })))
+          const enriched = parsed.map((r, i) => {
+            const matched = autoMatchEntities(r.description, r.type, entitiesContext)
+            return {
+              ...r,
+              _id: i,
+              _include: true,
+              categoryId: matched.categoryId,
+              linkTarget: matched.linkTarget
+            }
+          })
+          setEditedRows(enriched)
           setStep('preview')
         }
         reader.readAsText(file)
@@ -499,15 +629,19 @@ export default function CSVImport({ onClose, onSuccess }) {
           return
         }
 
-        const parsed = pdfRows.map((r, i) => ({
-          _id: i,
-          _include: true,
-          description: r.description,
-          amount: r.amount,
-          type: r.type,
-          transactionDate: parseNativeDate(r.date),
-          categoryId: autoCategorize(r.description, categories)
-        }))
+        const parsed = pdfRows.map((r, i) => {
+          const matched = autoMatchEntities(r.description, r.type, entitiesContext)
+          return {
+            _id: i,
+            _include: true,
+            description: r.description,
+            amount: r.amount,
+            type: r.type,
+            transactionDate: parseNativeDate(r.date),
+            categoryId: matched.categoryId,
+            linkTarget: matched.linkTarget
+          }
+        })
         
         setFormat('PDF Statement (Standard)')
         setEditedRows(parsed)
@@ -522,13 +656,21 @@ export default function CSVImport({ onClose, onSuccess }) {
   }
 
   const handleImport = async () => {
-    const toImport = editedRows.filter(r => r._include).map(r => ({
-      type: r.type,
-      amount: r.amount,
-      description: r.description,
-      transactionDate: r.transactionDate,
-      categoryId: r.categoryId ? parseInt(r.categoryId) : null,
-    }))
+    const toImport = editedRows.filter(r => r._include).map(r => {
+      const [linkType, linkId] = (r.linkTarget || '').split(':')
+      const parsedId = linkId ? parseInt(linkId) : null
+      return {
+        type: r.type,
+        amount: r.amount,
+        description: r.description,
+        transactionDate: r.transactionDate,
+        categoryId: r.categoryId ? parseInt(r.categoryId) : null,
+        debtId: linkType === 'debt' ? parsedId : null,
+        billId: linkType === 'bill' ? parsedId : null,
+        savingsId: linkType === 'savings' ? parsedId : null,
+        goalId: linkType === 'goal' ? parsedId : null,
+      }
+    })
 
     if (toImport.length === 0) {
       toast.error('Select at least one transaction to import')
@@ -538,7 +680,14 @@ export default function CSVImport({ onClose, onSuccess }) {
     setImporting(true)
     try {
       const res = await importAPI.importTransactions(toImport)
-      setResult({ imported: res.data.imported, failed: res.data.failed || 0 })
+      setResult({
+        imported: res.data.imported,
+        failed: res.data.failed || 0,
+        debtsUpdated: res.data.debtsUpdated || 0,
+        billsPaid: res.data.billsPaid || 0,
+        savingsUpdated: res.data.savingsUpdated || 0,
+        goalsUpdated: res.data.goalsUpdated || 0,
+      })
       setStep('done')
       toast.success(`Successfully imported ${res.data.imported} transactions!`)
       onSuccess?.()
@@ -639,6 +788,7 @@ export default function CSVImport({ onClose, onSuccess }) {
                     <th>Type</th>
                     <th>Amount</th>
                     <th>Category</th>
+                    <th>Auto-Link (Debt / Bill / Pot)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -658,6 +808,56 @@ export default function CSVImport({ onClose, onSuccess }) {
                         <select className="inline-select" value={row.categoryId} onChange={e => updateRow(row._id, 'categoryId', e.target.value)}>
                           <option value="">Uncategorized</option>
                           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className="inline-select"
+                          value={row.linkTarget || ''}
+                          onChange={e => updateRow(row._id, 'linkTarget', e.target.value)}
+                          style={
+                            row.linkTarget
+                              ? { borderColor: '#10b981', color: '#10b981', fontWeight: 600, background: 'rgba(16, 185, 129, 0.08)' }
+                              : undefined
+                          }
+                        >
+                          <option value="">None</option>
+                          {debts.filter(d => parseFloat(d.balance) > 0).length > 0 && (
+                            <optgroup label="💳 Pay Off Debt">
+                              {debts.filter(d => parseFloat(d.balance) > 0).map(d => (
+                                <option key={`debt:${d.id}`} value={`debt:${d.id}`}>
+                                  💳 Debt: {d.name} (R{parseFloat(d.balance).toLocaleString()})
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {bills.filter(b => !b.is_paid).length > 0 && (
+                            <optgroup label="📅 Mark Bill Paid">
+                              {bills.filter(b => !b.is_paid).map(b => (
+                                <option key={`bill:${b.id}`} value={`bill:${b.id}`}>
+                                  📅 Bill: {b.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {savings.length > 0 && (
+                            <optgroup label="🏦 Savings Pot">
+                              {savings.map(s => (
+                                <option key={`savings:${s.id}`} value={`savings:${s.id}`}>
+                                  🏦 Pot: {s.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
+                          {goals.filter(g => !g.is_achieved).length > 0 && (
+                            <optgroup label="🎯 Financial Goal">
+                              {goals.filter(g => !g.is_achieved).map(g => (
+                                <option key={`goal:${g.id}`} value={`goal:${g.id}`}>
+                                  🎯 Goal: {g.name}
+                                </option>
+                              ))}
+                            </optgroup>
+                          )}
                         </select>
                       </td>
                     </tr>
@@ -680,6 +880,17 @@ export default function CSVImport({ onClose, onSuccess }) {
             <CheckCircle size={64} className="import-success-icon" />
             <h3>Import Complete!</h3>
             <p>Successfully imported <strong>{result.imported}</strong> transactions.</p>
+            {(result.debtsUpdated > 0 || result.billsPaid > 0 || result.savingsUpdated > 0 || result.goalsUpdated > 0) && (
+              <div style={{ margin: '1rem auto', padding: '0.85rem 1.25rem', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10b981', fontSize: '0.9rem' }}>
+                ⚡ <strong>Auto-Synced Balances:</strong>{' '}
+                {[
+                  result.debtsUpdated > 0 && `${result.debtsUpdated} Debt payment(s) deducted`,
+                  result.billsPaid > 0 && `${result.billsPaid} Bill(s) marked paid`,
+                  result.savingsUpdated > 0 && `${result.savingsUpdated} Savings Pot(s) updated`,
+                  result.goalsUpdated > 0 && `${result.goalsUpdated} Goal(s) progressed`,
+                ].filter(Boolean).join(' • ')}
+              </div>
+            )}
             <button className="btn primary" onClick={onClose}>Done</button>
           </div>
         )}

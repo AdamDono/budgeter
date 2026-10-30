@@ -23,6 +23,7 @@ import tipsRoutes from './routes/tips.js'
 import transactionRoutes from './routes/transactions.js'
 
 // Middleware
+import { ensureDatabaseSchema } from './database/runMigrations.js'
 import { authenticateToken } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { startAllCrons } from './utils/cron.js'
@@ -54,13 +55,18 @@ const allowedOrigins = [
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
     ? (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          origin.endsWith('.pacefinances.co.za') ||
+          origin.endsWith('.onrender.com')
+        ) {
           callback(null, true)
         } else {
-          callback(null, true) // Allow subdomains / requests gracefully
+          callback(new Error('Not allowed by CORS'))
         }
       }
-    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:4173'],
   credentials: true,
 }
 app.use(cors(corsOptions))
@@ -116,8 +122,9 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' })
 })
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`)
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
+  await ensureDatabaseSchema()
   startAllCrons()
 })

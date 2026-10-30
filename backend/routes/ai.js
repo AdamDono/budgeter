@@ -88,6 +88,23 @@ async function compileFinancialContext(userId) {
       GROUP BY DATE_TRUNC('month', transaction_date)
       ORDER BY month_date DESC
     `, [userId]),
+
+    // 8. Savings pots
+    pool.query(`
+      SELECT name, balance, target_amount, interest_rate
+      FROM savings
+      WHERE user_id = $1
+      ORDER BY balance DESC
+    `, [userId]),
+
+    // 9. Latest credit score
+    pool.query(`
+      SELECT score, provider, last_updated
+      FROM credit_scores
+      WHERE user_id = $1
+      ORDER BY last_updated DESC
+      LIMIT 1
+    `, [userId]),
   ]
 
   const results = await Promise.allSettled(queries)
@@ -101,9 +118,13 @@ async function compileFinancialContext(userId) {
   const billsRows          = extractRows(results[5])
   const recurringRows      = extractRows(results[6])
   const monthlySummaryRows = extractRows(results[7])
+  const savingsRows        = extractRows(results[8])
+  const creditRows         = extractRows(results[9])
 
   const totalDebt = debtsRows.reduce((sum, d) => sum + parseFloat(d.balance || 0), 0)
   const totalBalance = accountsRows.reduce((sum, a) => sum + parseFloat(a.balance || 0), 0)
+  const totalSavingsPots = savingsRows.reduce((sum, s) => sum + parseFloat(s.balance || 0), 0)
+  const latestCreditScore = creditRows[0]?.score || null
 
   const today = new Date()
   const todayISO = today.toISOString().split('T')[0]
@@ -136,6 +157,15 @@ ${debtsRows.length > 0
   : '- No debts recorded'}
 Total debt: R${totalDebt.toFixed(2)}
 
+** SAVINGS POTS (Dedicated Liquidity Buckets) **
+${savingsRows.length > 0
+  ? savingsRows.map(s => `- ${s.name}: R${parseFloat(s.balance).toFixed(2)} saved${s.target_amount ? ` of R${parseFloat(s.target_amount).toFixed(2)} target` : ''} | ${s.interest_rate || 0}% yield`).join('\n')
+  : '- No savings pots created yet'}
+Total in savings pots: R${totalSavingsPots.toFixed(2)}
+
+** CREDIT SCORE **
+${latestCreditScore ? `- Latest Credit Score: ${latestCreditScore} (via ${creditRows[0]?.provider || 'Manual'})` : '- No credit score recorded yet'}
+
 ** FINANCIAL GOALS (Savings Pots/Targets) **
 ${goalsRows.length > 0
   ? goalsRows.map(g => `- ${g.name}: R${parseFloat(g.current_amount).toFixed(2)} saved of R${parseFloat(g.target_amount).toFixed(2)} target (${g.progress_pct}% done)${g.target_date ? ` | Target date: ${g.target_date}` : ''}${g.description ? ` | Note: ${g.description}` : ''}`).join('\n')
@@ -166,12 +196,69 @@ ${recentTxRows.map(t => `- ${t.transaction_date}: ${t.type === 'income' ? '+' : 
 `
 }
 
+// Helper to build a deterministic data-driven briefing if Gemini is offline or rate-limited
+async function buildSmartFallbackBriefing(userId) {
+  try {
+    const [debtsRes, billsRes, txRes] = await Promise.all([
+      pool.query('SELECT name, balance, interest_rate FROM debts WHERE user_id = $1 AND balance > 0 ORDER BY interest_rate DESC LIMIT 1', [userId]),
+      pool.query('SELECT name, amount, due_date FROM bill_reminders WHERE user_id = $1 AND is_paid = FALSE AND due_date >= CURRENT_DATE ORDER BY due_date ASC LIMIT 1', [userId]),
+      pool.query(`
+        SELECT 
+          COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as income,
+          COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
+        FROM transactions
+        WHERE user_id = $1 AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)
+      `, [userId])
+    ])
+
+    const topDebt = debtsRes.rows[0]
+    const nextBill = billsRes.rows[0]
+    const income = parseFloat(txRes.rows[0]?.income || 0)
+    const expenses = parseFloat(txRes.rows[0]?.expenses || 0)
+    const net = income - expenses
+
+    if (topDebt && parseFloat(topDebt.interest_rate) >= 15) {
+      return {
+        headline: `⚡ High-Interest Alert: ${topDebt.name} at ${topDebt.interest_rate}% APR`,
+        suggestion: `Channeling R500 extra into ${topDebt.name} (R${parseFloat(topDebt.balance).toLocaleString()} balance) will slash your interest cost.`,
+        action: '/app/debt'
+      }
+    }
+    if (nextBill) {
+      return {
+        headline: `📅 Upcoming Liability: ${nextBill.name} due soon`,
+        suggestion: `Keep R${parseFloat(nextBill.amount || 0).toLocaleString()} liquid for ${nextBill.name} due on ${new Date(nextBill.due_date).toLocaleDateString('en-ZA')}.`,
+        action: '/app/bills'
+      }
+    }
+    if (net > 0) {
+      return {
+        headline: `🚀 Positive Monthly Surplus of R${net.toLocaleString()}`,
+        suggestion: `You're cashflow positive this month! Deploy a portion of your R${net.toLocaleString()} surplus into a high-yield Savings Pot.`,
+        action: '/app/savings'
+      }
+    }
+    return {
+      headline: `🇿🇦 Pace Strategic Command Active`,
+      suggestion: `Log your latest income, expenses, or bank statement to unlock real-time ZAR cashflow and debt velocity tracking.`,
+      action: '/app/transactions'
+    }
+  } catch {
+    return {
+      headline: `🇿🇦 Pace Strategic Command Active`,
+      suggestion: `Review your monthly cashflow and debt eradication roadmap to optimize your net worth.`,
+      action: '/app/debt'
+    }
+  }
+}
+
 // ─── AI Strategic Briefing Endpoint (Dashboard) ────────────────────────────────
 router.get('/briefing', async (req, res, next) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return res.status(500).json({ error: 'Gemini API Key missing' })
+      const fallback = await buildSmartFallbackBriefing(req.user.id)
+      return res.json({ briefing: fallback })
     }
 
     const context = await compileFinancialContext(req.user.id)
@@ -208,9 +295,9 @@ ${context}
     res.json({ briefing: parsed })
 
   } catch (error) {
-    console.error('--- AI BRIEFING ERROR ---')
-    console.error(error)
-    res.status(500).json({ error: 'Briefing generation failed: ' + error.message })
+    console.warn('AI Briefing using smart fallback:', error.message)
+    const fallback = await buildSmartFallbackBriefing(req.user.id)
+    res.json({ briefing: fallback })
   }
 })
 
@@ -444,6 +531,104 @@ ${context}
     console.error('--- AI BACKEND ERROR ---')
     console.error(error)
     res.status(500).json({ error: 'AI Coach error: ' + error.message })
+  }
+})
+
+// ─── AI Bank Statement Scanner Endpoint (CSV/PDF Raw Text) ─────────────────────
+router.post('/scan-statement', async (req, res, next) => {
+  try {
+    const { text, categories = [] } = req.body
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'Statement text is required' })
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) {
+      return res.status(400).json({ error: 'Gemini API key not configured for AI scan' })
+    }
+
+    // Fetch user's active debts, bills, savings pots, and goals so AI can auto-link payments (e.g., "Maki")
+    const [debtsRes, billsRes, savingsRes, goalsRes] = await Promise.all([
+      pool.query('SELECT id, name, balance FROM debts WHERE user_id = $1 AND balance > 0', [req.user.id]),
+      pool.query('SELECT id, name, amount FROM bill_reminders WHERE user_id = $1 AND is_paid = FALSE', [req.user.id]),
+      pool.query('SELECT id, name FROM savings WHERE user_id = $1', [req.user.id]),
+      pool.query('SELECT id, name FROM goals WHERE user_id = $1 AND is_achieved = FALSE', [req.user.id]),
+    ])
+
+    const debtsList = debtsRes.rows.map(d => `${d.id}: "${d.name}" (Balance R${d.balance})`).join(', ')
+    const billsList = billsRes.rows.map(b => `${b.id}: "${b.name}" (Due R${b.amount || 0})`).join(', ')
+    const savingsList = savingsRes.rows.map(s => `${s.id}: "${s.name}"`).join(', ')
+    const goalsList = goalsRes.rows.map(g => `${g.id}: "${g.name}"`).join(', ')
+
+    const catList = categories.map(c => `${c.id}: ${c.name}`).join(', ')
+    const truncatedText = text.slice(0, 35000)
+
+    const prompt = `
+You are an expert South African bank statement parser (FNB, Capitec, Standard Bank, Nedbank, Absa, TymeBank, Discovery Bank).
+Extract all financial transactions from the raw statement text below and return a JSON object with a "transactions" array.
+
+Available Budget Categories (id: name):
+${catList || 'None provided'}
+
+User's Active Debts (id: name):
+${debtsList || 'None'}
+
+User's Unpaid Bills (id: name):
+${billsList || 'None'}
+
+User's Savings Pots (id: name):
+${savingsList || 'None'}
+
+User's Financial Goals (id: name):
+${goalsList || 'None'}
+
+Rules:
+1. Ignore opening/closing balances, brought forward lines, and page headers.
+2. Convert all dates to YYYY-MM-DD format (if year is missing, assume ${new Date().getFullYear()}).
+3. "amount" must be a positive number.
+4. "type" must be either "income" (credits, deposits, salary, inward transfers) or "expense" (debits, card purchases, fees, payments, EFTs out).
+5. "categoryId" should be the matching category ID as a string if obvious, or "" if unsure.
+6. CRITICAL ENTITY LINKING:
+   - If a payment/debit description matches or mentions one of the User's Active Debts (for example, paying a person or lender like "Maki", "WesBank", "FNB Credit Card", etc.), set "debtId" to that Debt's ID as a string (otherwise "").
+   - If it matches one of the User's Unpaid Bills, set "billId" to that Bill's ID as a string (otherwise "").
+   - If it is a transfer into one of the User's Savings Pots, set "savingsId" to that Savings Pot's ID as a string (otherwise "").
+   - If it contributes to one of the User's Financial Goals, set "goalId" to that Goal's ID as a string (otherwise "").
+
+Return JSON in this exact structure:
+{
+  "transactions": [
+    {
+      "date": "YYYY-MM-DD",
+      "description": "Clean merchant or transaction description",
+      "amount": 123.45,
+      "type": "expense",
+      "categoryId": "",
+      "debtId": "",
+      "billId": "",
+      "savingsId": "",
+      "goalId": ""
+    }
+  ]
+}
+
+RAW STATEMENT TEXT:
+${truncatedText}
+`
+
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+
+    const result = await model.generateContent(prompt)
+    const parsed = JSON.parse(result.response.text().trim())
+    const transactions = Array.isArray(parsed.transactions) ? parsed.transactions : []
+
+    res.json({ transactions })
+  } catch (error) {
+    console.warn('AI scan-statement error:', error.message)
+    res.status(500).json({ error: 'Failed to AI-scan statement: ' + error.message })
   }
 })
 

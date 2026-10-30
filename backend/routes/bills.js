@@ -113,11 +113,12 @@ router.put('/:id', async (req, res, next) => {
 
 // MARK a bill as paid
 router.post('/:id/pay', async (req, res, next) => {
+  const client = await pool.connect()
   try {
     const { id } = req.params
 
     // If recurring, set next due date; otherwise just mark paid
-    const billResult = await pool.query(
+    const billResult = await client.query(
       'SELECT * FROM bill_reminders WHERE id = $1 AND user_id = $2',
       [id, req.user.id]
     )
@@ -139,6 +140,8 @@ router.post('/:id/pay', async (req, res, next) => {
       nextDueDate = current.toISOString().split('T')[0]
     }
 
+    await client.query('BEGIN')
+
     const updateQuery = nextDueDate
       ? `UPDATE bill_reminders SET is_paid = FALSE, due_date = $1 WHERE id = $2 AND user_id = $3 RETURNING *`
       : `UPDATE bill_reminders SET is_paid = TRUE WHERE id = $1 AND user_id = $2 RETURNING *`
@@ -147,10 +150,33 @@ router.post('/:id/pay', async (req, res, next) => {
       ? [nextDueDate, id, req.user.id]
       : [id, req.user.id]
 
-    const result = await pool.query(updateQuery, updateParams)
-    res.json({ bill: result.rows[0], message: nextDueDate ? `Next due: ${nextDueDate}` : 'Bill marked as paid' })
+    const result = await client.query(updateQuery, updateParams)
+
+    // Automatically log expense transaction if bill has an amount > 0
+    const billAmount = parseFloat(bill.amount || 0)
+    if (billAmount > 0) {
+      const accRes = await client.query('SELECT id FROM accounts WHERE user_id = $1 LIMIT 1', [req.user.id])
+      const accountId = accRes.rows[0]?.id || null
+      await client.query(
+        `INSERT INTO transactions (user_id, account_id, category_id, bill_id, type, amount, description, transaction_date)
+         VALUES ($1, $2, $3, $4, 'expense', $5, $6, CURRENT_DATE)`,
+        [req.user.id, accountId, bill.category_id || null, bill.id, billAmount, `Bill Paid: ${bill.name}`]
+      )
+      if (accountId) {
+        await client.query('UPDATE accounts SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [billAmount, accountId])
+      }
+    }
+
+    await client.query('COMMIT')
+    res.json({
+      bill: result.rows[0],
+      message: nextDueDate ? `Paid & logged! Next due: ${nextDueDate}` : 'Bill marked as paid & transaction logged'
+    })
   } catch (error) {
+    await client.query('ROLLBACK')
     next(error)
+  } finally {
+    client.release()
   }
 })
 

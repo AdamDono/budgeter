@@ -74,7 +74,9 @@ export const debtsAPI = {
   create: (data) => api.post('/debts', data),
   update: (id, data) => api.put(`/debts/${id}`, data),
   delete: (id) => api.delete(`/debts/${id}`),
-  calculatePayoff: (strategy = 'snowball') => api.post('/debts/calculate/payoff', { strategy }),
+  pay: (id, data) => api.post(`/debts/${id}/pay`, data),
+  calculatePayoff: (strategy = 'snowball', extraPayment = 0, rateDelta = 0) =>
+    api.post('/debts/calculate/payoff', { strategy, extraPayment, rateDelta }),
 }
 
 // Savings API
@@ -92,7 +94,21 @@ export const taxAPI = {
   createDeduction: (data) => api.post('/taxes', data),
   updateDeduction: (id, data) => api.put(`/taxes/${id}`, data),
   deleteDeduction: (id) => api.delete(`/taxes/${id}`),
-  getSummary: (year, taxRate = 28) => api.get(`/taxes/summary/${year}?taxRate=${taxRate}`),
+  getSummary: (year, options = 28) => {
+    if (typeof options === 'number' || typeof options === 'string') {
+      return api.get(`/taxes/summary/${year}?taxRate=${options}&mode=flat`)
+    }
+    const {
+      mode = 'sars',
+      taxRate = 28,
+      ageGroup = 'under65',
+      medicalMembers = 0,
+      manualIncome = ''
+    } = options || {}
+    return api.get(`/taxes/summary/${year}`, {
+      params: { mode, taxRate, ageGroup, medicalMembers, manualIncome }
+    })
+  },
 }
 
 // Tips API

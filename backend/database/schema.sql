@@ -11,6 +11,8 @@ CREATE TABLE users (
   id_number VARCHAR(13), -- SA ID number
   profile_picture TEXT,
   is_verified BOOLEAN DEFAULT FALSE,
+  reset_password_token VARCHAR(255),
+  reset_password_expiry TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -32,6 +34,7 @@ CREATE TABLE accounts (
   bank_name VARCHAR(100),
   account_number VARCHAR(50),
   balance DECIMAL(15,2) DEFAULT 0.00,
+  credit_limit DECIMAL(15,2) DEFAULT 0.00,
   currency VARCHAR(3) DEFAULT 'ZAR',
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -66,13 +69,53 @@ CREATE TABLE goals (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- DEBTS TABLE
+CREATE TABLE IF NOT EXISTS debts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  balance DECIMAL(15,2) NOT NULL,
+  interest_rate DECIMAL(5,2) NOT NULL,
+  monthly_payment DECIMAL(10,2) NOT NULL,
+  credit_limit DECIMAL(15,2) DEFAULT 0.00,
+  type VARCHAR(50) NOT NULL CHECK (type IN ('credit-card', 'personal-loan', 'student-loan', 'mortgage', 'vehicle-finance', 'store-card', 'bnpl', 'other')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- SAVINGS POTS TABLE
+CREATE TABLE IF NOT EXISTS savings (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  balance DECIMAL(15,2) DEFAULT 0.00,
+  target_amount DECIMAL(15,2),
+  interest_rate DECIMAL(5,2) DEFAULT 0.00,
+  color VARCHAR(7) DEFAULT '#10B981',
+  icon VARCHAR(50) DEFAULT 'piggy-bank',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CREDIT SCORES TABLE
+CREATE TABLE IF NOT EXISTS credit_scores (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  score INTEGER NOT NULL CHECK (score >= 300 AND score <= 850),
+  provider VARCHAR(50) DEFAULT 'Manual',
+  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Transactions
 CREATE TABLE transactions (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   account_id INTEGER REFERENCES accounts(id) ON DELETE CASCADE,
   category_id INTEGER REFERENCES budget_categories(id),
-  goal_id INTEGER REFERENCES goals(id), -- for goal contributions
+  goal_id INTEGER REFERENCES goals(id) ON DELETE SET NULL, -- for goal contributions
+  debt_id INTEGER REFERENCES debts(id) ON DELETE SET NULL, -- for debt repayments
+  savings_id INTEGER REFERENCES savings(id) ON DELETE SET NULL, -- for savings pot transfers
+  bill_id INTEGER, -- for linked bill payments
   type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense', 'transfer')),
   amount DECIMAL(15,2) NOT NULL,
   description TEXT,
@@ -162,20 +205,9 @@ INSERT INTO account_types (name, description, icon) VALUES
 ('Cash', 'Physical cash', 'banknote')
 ON CONFLICT (name) DO NOTHING;
 
--- DEBTS TABLE
-CREATE TABLE debts (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  name VARCHAR(100) NOT NULL,
-  balance DECIMAL(15,2) NOT NULL,
-  interest_rate DECIMAL(5,2) NOT NULL,
-  monthly_payment DECIMAL(10,2) NOT NULL,
-  type VARCHAR(50) NOT NULL CHECK (type IN ('credit-card', 'personal-loan', 'student-loan', 'mortgage', 'other')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_debts_user ON debts(user_id);
+CREATE INDEX IF NOT EXISTS idx_debts_user ON debts(user_id);
+CREATE INDEX IF NOT EXISTS idx_savings_user ON savings(user_id);
+CREATE INDEX IF NOT EXISTS idx_credit_scores_user ON credit_scores(user_id, last_updated DESC);
 
 -- TAX DEDUCTIONS TABLE
 CREATE TABLE tax_deductions (
@@ -269,5 +301,7 @@ INSERT INTO budget_categories (user_id, name, icon, color) VALUES
 (NULL, 'Clothing', 'shirt', '#A855F7'),
 (NULL, 'Salary', 'briefcase', '#22C55E'),
 (NULL, 'Freelance', 'laptop', '#06B6D4'),
-(NULL, 'Investment', 'trending-up', '#8B5CF6')
+(NULL, 'Investment', 'trending-up', '#8B5CF6'),
+(NULL, 'Debt Repayment', 'credit-card', '#EF4444'),
+(NULL, 'Savings Contribution', 'piggy-bank', '#10B981')
 ON CONFLICT (name, user_id) DO NOTHING;

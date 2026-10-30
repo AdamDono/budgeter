@@ -37,6 +37,8 @@ export default function Bills() {
     mutationFn: billsAPI.markPaid,
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['bills'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success(res.data.message || 'Bill marked as paid!')
     },
     onError: (e) => toast.error(e.response?.data?.error || 'Failed to update bill')

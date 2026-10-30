@@ -1,5 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Calendar, CheckCircle, DollarSign, Plus, Trash2, TrendingDown, X } from 'lucide-react'
+import {
+  Calendar,
+  CheckCircle,
+  CreditCard,
+  DollarSign,
+  Edit3,
+  Plus,
+  Sparkles,
+  Trash2,
+  TrendingDown,
+  X,
+  Zap
+} from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
@@ -30,10 +42,25 @@ ChartJS.register(
   Filler
 )
 
+const DEBT_TYPE_LABELS = {
+  'credit-card': 'Credit Card',
+  'personal-loan': 'Personal Loan',
+  'vehicle-finance': 'Vehicle Finance',
+  'mortgage': 'Home Loan / Bond',
+  'store-card': 'Store Card (TFG/Woolies)',
+  'bnpl': 'BNPL (PayJustNow/Float)',
+  'student-loan': 'Student Loan',
+  'other': 'Other Liability'
+}
+
 export default function Debt() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [editingDebt, setEditingDebt] = useState(null)
+  const [payModalDebt, setPayModalDebt] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   const [payoffStrategy, setPayoffStrategy] = useState('snowball')
+  const [extraPayment, setExtraPayment] = useState(500)
+  const [rateDelta, setRateDelta] = useState(0)
   const queryClient = useQueryClient()
 
   const { data: debtsData, isLoading } = useQuery({
@@ -42,15 +69,24 @@ export default function Debt() {
   })
 
   const { data: payoffPlanData } = useQuery({
-    queryKey: ['payoff-plan', payoffStrategy],
-    queryFn: async () => (await debtsAPI.calculatePayoff(payoffStrategy)).data,
+    queryKey: ['payoff-plan', payoffStrategy, extraPayment, rateDelta],
+    queryFn: async () => (await debtsAPI.calculatePayoff(payoffStrategy, extraPayment, rateDelta)).data,
   })
+
+  const invalidateAllDebtQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['debts'] })
+    queryClient.invalidateQueries({ queryKey: ['debts-all'] })
+    queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+    queryClient.invalidateQueries({ queryKey: ['credit'] })
+    queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    queryClient.invalidateQueries({ queryKey: ['ai-briefing'] })
+  }
 
   const createMutation = useMutation({
     mutationFn: debtsAPI.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      invalidateAllDebtQueries()
       setShowAddForm(false)
       toast.success('Debt added successfully!')
     },
@@ -59,11 +95,34 @@ export default function Debt() {
     }
   })
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => debtsAPI.update(id, data),
+    onSuccess: () => {
+      invalidateAllDebtQueries()
+      setEditingDebt(null)
+      toast.success('Debt updated successfully!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to update debt')
+    }
+  })
+
+  const payMutation = useMutation({
+    mutationFn: ({ id, data }) => debtsAPI.pay(id, data),
+    onSuccess: (res) => {
+      invalidateAllDebtQueries()
+      setPayModalDebt(null)
+      toast.success(res.data?.message || 'Payment recorded!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to record payment')
+    }
+  })
+
   const deleteMutation = useMutation({
     mutationFn: debtsAPI.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['debts'] })
-      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      invalidateAllDebtQueries()
       toast.success('Debt removed!')
     },
     onError: (error) => {
@@ -73,6 +132,12 @@ export default function Debt() {
 
   const handleAddDebt = (formData) => {
     createMutation.mutate(formData)
+  }
+
+  const handleUpdateDebt = (formData) => {
+    if (editingDebt) {
+      updateMutation.mutate({ id: editingDebt.id, data: formData })
+    }
   }
 
   const handleDeleteDebt = (id) => {
@@ -95,24 +160,23 @@ export default function Debt() {
   const totalMonthlyPayment = debts.reduce((sum, d) => sum + parseFloat(d.monthly_payment || 0), 0)
 
   // Rollover payoff timeline simulation for client-side visual comparison
-  const simulatePayoff = (debtsList, strategy) => {
+  const simulatePayoff = (debtsList, strategy, extra = extraPayment, delta = rateDelta) => {
     if (debtsList.length === 0) return []
-    const debts = debtsList.map(d => ({
+    const simDebts = debtsList.map(d => ({
       name: d.name,
-      balance: parseFloat(d.balance),
-      rate: (parseFloat(d.interest_rate) || 0) / 100 / 12,
-      minPayment: parseFloat(d.monthly_payment) || 10 // avoid zero
+      balance: Math.max(0, parseFloat(d.balance) || 0),
+      rate: Math.max(0, ((parseFloat(d.interest_rate) || 0) + parseFloat(delta || 0))) / 100 / 12,
+      minPayment: Math.max(10, parseFloat(d.monthly_payment) || 10)
     }))
 
-    const totalMinPayment = debts.reduce((sum, d) => sum + d.minPayment, 0)
-    // Rollover budget is the total minimums plus R500 speed rollover
-    const monthlyBudget = totalMinPayment + 500
+    const totalMinPayment = simDebts.reduce((sum, d) => sum + (d.balance > 0 ? d.minPayment : 0), 0)
+    const monthlyBudget = totalMinPayment + Math.max(0, parseFloat(extra) || 0)
 
     let month = 0
-    const history = [debts.reduce((sum, d) => sum + d.balance, 0)]
+    const history = [simDebts.reduce((sum, d) => sum + d.balance, 0)]
 
-    while (month < 120) {
-      let activeDebts = debts.filter(d => d.balance > 0)
+    while (month < 180) {
+      let activeDebts = simDebts.filter(d => d.balance > 0.01)
       if (activeDebts.length === 0) break
 
       if (strategy === 'snowball') {
@@ -133,25 +197,27 @@ export default function Debt() {
         remainingBudget -= payment
       }
 
-      // Funnel any extra budget into target debt
-      if (remainingBudget > 0 && activeDebts.length > 0) {
-        const target = activeDebts[0]
-        const extraPayment = Math.min(target.balance, remainingBudget)
-        target.balance -= extraPayment
+      // Funnel any extra budget across priority debts
+      for (let d of activeDebts) {
+        if (remainingBudget <= 0.01) break
+        if (d.balance > 0) {
+          const extraPay = Math.min(d.balance, remainingBudget)
+          d.balance -= extraPay
+          remainingBudget -= extraPay
+        }
       }
 
-      const currentTotal = debts.reduce((sum, d) => sum + d.balance, 0)
+      const currentTotal = simDebts.reduce((sum, d) => sum + Math.max(0, d.balance), 0)
       history.push(currentTotal)
-      if (currentTotal <= 0) break
+      if (currentTotal <= 0.01) break
       month++
     }
 
-    // Pad if timeline finishes early to compare visually
     return history
   }
 
-  const snowballTimeline = simulatePayoff(debts, 'snowball')
-  const avalancheTimeline = simulatePayoff(debts, 'avalanche')
+  const snowballTimeline = simulatePayoff(debts, 'snowball', extraPayment, rateDelta)
+  const avalancheTimeline = simulatePayoff(debts, 'avalanche', extraPayment, rateDelta)
 
   const chartData = {
     labels: Array.from(
@@ -160,7 +226,7 @@ export default function Debt() {
     ),
     datasets: [
       {
-        label: 'Snowball Method',
+        label: 'Snowball Method (Quick Wins)',
         data: snowballTimeline,
         borderColor: '#4f8cff',
         backgroundColor: 'rgba(79, 140, 255, 0.05)',
@@ -170,7 +236,7 @@ export default function Debt() {
         fill: true,
       },
       {
-        label: 'Avalanche Method',
+        label: 'Avalanche Method (Lowest Interest)',
         data: avalancheTimeline,
         borderColor: '#10b981',
         backgroundColor: 'rgba(16, 185, 129, 0.05)',
@@ -225,7 +291,7 @@ export default function Debt() {
       <header className="dash-header">
         <div className="header-info dashboard-header-info">
           <h1>Debt Management</h1>
-          <p className="text-muted dash-subtitle">Track and pay off your debts strategically</p>
+          <p className="text-muted dash-subtitle">Track, stress-test, and eradicate your liabilities strategically</p>
         </div>
         <div className="header-actions">
           <button
@@ -254,8 +320,11 @@ export default function Debt() {
             <TrendingDown size={20} />
           </div>
           <div className="intel-content">
-            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Monthly Payment</span>
-            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(totalMonthlyPayment)}</span>
+            <span className="intel-label" style={{ fontSize: '0.8rem' }}>Monthly Commitment</span>
+            <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>{formatCurrency(totalMonthlyPayment + extraPayment)}</span>
+            {extraPayment > 0 && (
+              <span style={{ fontSize: '0.72rem', color: '#10b981' }}>Includes +{formatCurrency(extraPayment)} boost</span>
+            )}
           </div>
         </div>
 
@@ -268,29 +337,37 @@ export default function Debt() {
             <span className="intel-value" style={{ fontSize: '1.25rem', marginTop: '0.25rem' }}>
               {payoffPlan ? `${payoffPlan.months} months` : 'N/A'}
             </span>
+            {payoffPlan?.monthsSaved > 0 && (
+              <span style={{ fontSize: '0.72rem', color: '#10b981' }}>⚡ {payoffPlan.monthsSaved} months faster!</span>
+            )}
           </div>
         </div>
 
         <div className="intel-block glass-panel" style={{ padding: '1.5rem' }}>
-          <div className="intel-icon" style={{ background: 'rgba(79, 140, 255, 0.1)', color: '#4f8cff' }}>
-            <DollarSign size={20} />
+          <div className="intel-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+            <Sparkles size={20} />
           </div>
           <div className="intel-content">
             <span className="intel-label" style={{ fontSize: '0.8rem' }}>Total Interest</span>
             <span className="intel-value" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.25rem', marginTop: '0.25rem' }}>
               {payoffPlan ? formatCurrency(payoffPlan.totalInterest) : 'N/A'}
             </span>
+            {parseFloat(payoffPlan?.interestSaved) > 0 && (
+              <span style={{ fontSize: '0.72rem', color: '#10b981' }}>Saves {formatCurrency(payoffPlan.interestSaved)}</span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Payoff Strategy Selector */}
+      {/* Payoff Strategy & Interactive Simulator */}
       {debts.length > 0 && (
         <div className="payoff-plan-v2">
           <div className="card-v2-header">
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Payoff Strategy</h2>
-              <p className="text-muted" style={{ fontSize: '0.85rem' }}>Rollover projection assumes R500 extra contribution monthly</p>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>Payoff Strategy & SARB Stress-Tester</h2>
+              <p className="text-muted" style={{ fontSize: '0.85rem' }}>
+                Simulate extra monthly debt-snowball rollovers and SARB Repo/Prime interest rate changes in real time
+              </p>
             </div>
           </div>
           <div className="strategy-row-v2" style={{ marginBottom: '1.5rem' }}>
@@ -299,19 +376,90 @@ export default function Debt() {
               onClick={() => setPayoffStrategy('snowball')}
             >
               <h4>Snowball Method</h4>
-              <p>Pay smallest debt first for quick wins</p>
+              <p>Pay smallest debt first for quick psychological wins</p>
             </div>
             <div
               className={`strategy-btn-v2 ${payoffStrategy === 'avalanche' ? 'active' : ''}`}
               onClick={() => setPayoffStrategy('avalanche')}
             >
               <h4>Avalanche Method</h4>
-              <p>Pay highest interest first to save money</p>
+              <p>Pay highest APR first for maximum ZAR interest savings</p>
+            </div>
+          </div>
+
+          {/* Interactive Rollover & SARB Rate Sliders */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '1.25rem',
+              padding: '1.25rem',
+              background: 'rgba(255, 255, 255, 0.02)',
+              borderRadius: '14px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              marginBottom: '1.5rem'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 600 }}>
+                  🚀 Extra Monthly Rollover Boost
+                </span>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#10b981' }}>
+                  +{formatCurrency(extraPayment)} / mo
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="10000"
+                step="250"
+                value={extraPayment}
+                onChange={(e) => setExtraPayment(Number(e.target.value))}
+                style={{ width: '100%', accentColor: '#10b981', cursor: 'pointer' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                <span>R0 (Minimums only)</span>
+                <span>R2,500</span>
+                <span>R5,000</span>
+                <span>R10,000</span>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 600 }}>
+                  🏦 SARB Prime Rate Shift (Stress Test)
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontWeight: 700,
+                    color: rateDelta < 0 ? '#10b981' : rateDelta > 0 ? '#ef4444' : '#4f8cff'
+                  }}
+                >
+                  {rateDelta > 0 ? `+${rateDelta.toFixed(2)}%` : `${rateDelta.toFixed(2)}%`}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="-1.5"
+                max="2.0"
+                step="0.25"
+                value={rateDelta}
+                onChange={(e) => setRateDelta(Number(e.target.value))}
+                style={{ width: '100%', accentColor: '#4f8cff', cursor: 'pointer' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#64748b', marginTop: '4px' }}>
+                <span>-1.50% (Rate Cuts)</span>
+                <span>0% (Current Prime)</span>
+                <span>+2.00% (Rate Hikes)</span>
+              </div>
             </div>
           </div>
           
           {/* Visual Timelines Comparison Chart */}
-          <div className="visual-payoff-chart-container" style={{ height: '300px', width: '100%', marginTop: '2rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+          <div className="visual-payoff-chart-container" style={{ height: '300px', width: '100%', marginTop: '1rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.02)', borderRadius: '16px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
             <h3 style={{ fontSize: '1rem', color: 'white', marginBottom: '1rem', fontWeight: 700 }}>Eradication Velocity Comparison</h3>
             <div style={{ height: '240px', position: 'relative' }}>
               <Line data={chartData} options={chartOptions} />
@@ -328,18 +476,35 @@ export default function Debt() {
           </div>
         </div>
         {debts.length > 0 ? (
-          <div className="goals-glass-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', display: 'grid', gap: '1.5rem' }}>
-            {debts.map((debt, idx) => {
-              const payoffInfo = payoffPlan?.plan[idx]
+          <div className="goals-glass-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', display: 'grid', gap: '1.5rem' }}>
+            {debts.map((debt) => {
+              const payoffInfo = payoffPlan?.plan?.find(p => p.id === debt.id)
               const isPaidOff = parseFloat(debt.balance) <= 0
+              const limit = parseFloat(debt.credit_limit) || 0
+              const utilization = limit > 0 ? Math.min(100, (parseFloat(debt.balance) / limit) * 100) : null
+
               return (
                 <div key={debt.id} className={`debt-glass-card shadow-2xl ${isPaidOff ? 'paid-off' : ''}`}>
                   <div className="debt-card-header-v2">
-                    <h3>{debt.name}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div>
+                      <h3>{debt.name}</h3>
+                      <span style={{ fontSize: '0.72rem', color: '#94a3b8', background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '6px', display: 'inline-block', marginTop: '4px' }}>
+                        {DEBT_TYPE_LABELS[debt.type] || debt.type}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       {isPaidOff && <CheckCircle size={18} className="text-pos" />}
                       <button
                         className="btn ghost extra-small"
+                        title="Edit Debt"
+                        style={{ padding: '0.4rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
+                        onClick={() => setEditingDebt(debt)}
+                      >
+                        <Edit3 size={14} color="#94a3b8" />
+                      </button>
+                      <button
+                        className="btn ghost extra-small"
+                        title="Remove Debt"
                         style={{ padding: '0.4rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)' }}
                         onClick={() => handleDeleteDebt(debt.id)}
                       >
@@ -361,29 +526,45 @@ export default function Debt() {
                       <span className="label">Monthly Payment:</span>
                       <span className="value highlight">{formatCurrency(debt.monthly_payment)}</span>
                     </div>
+                    {limit > 0 && (
+                      <div className="debt-detail-v2">
+                        <span className="label">Credit Limit:</span>
+                        <span className="value">{formatCurrency(limit)} ({utilization.toFixed(0)}% used)</span>
+                      </div>
+                    )}
                   </div>
 
                   {payoffInfo && (
                     <div className="debt-payoff-info-v2">
                       <div className="payoff-row">
-                        <span>Payoff Time:</span>
+                        <span>Target Payoff:</span>
                         <strong>{payoffInfo.payoffMonths} months</strong>
                       </div>
                       <div className="payoff-row">
-                        <span>Total Interest:</span>
+                        <span>Projected Interest:</span>
                         <strong>{formatCurrency(payoffInfo.totalInterest)}</strong>
                       </div>
                     </div>
                   )}
 
-                  <div className="debt-progress-v2" style={{ marginTop: 'auto' }}>
+                  <div className="debt-progress-v2" style={{ marginTop: 'auto', marginBottom: '0.85rem' }}>
                     <div
                       className="debt-progress-fill-v2"
                       style={{
-                        width: `${Math.min(100, ((parseFloat(debt.monthly_payment) || 0) / (parseFloat(debt.balance) || 1) * 100))}%`
+                        width: `${isPaidOff ? 100 : Math.min(100, ((parseFloat(debt.monthly_payment) || 0) / (parseFloat(debt.balance) || 1) * 100))}%`
                       }}
                     ></div>
                   </div>
+
+                  {!isPaidOff && (
+                    <button
+                      className="btn primary small"
+                      style={{ width: '100%', justifyContent: 'center', borderRadius: '10px', padding: '0.6rem' }}
+                      onClick={() => setPayModalDebt(debt)}
+                    >
+                      <Zap size={14} /> Record Payment
+                    </button>
+                  )}
                 </div>
               )
             })}
@@ -394,7 +575,7 @@ export default function Debt() {
               <TrendingDown size={32} />
             </div>
             <h3 style={{ color: 'white', fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 700 }}>No Debts Tracked</h3>
-            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Add your debts to create a payoff plan</p>
+            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Add your credit cards, vehicle finance, store cards, or bonds to generate a payoff roadmap</p>
             <button
               className="btn primary"
               onClick={() => setShowAddForm(true)}
@@ -448,6 +629,26 @@ export default function Debt() {
         />
       )}
 
+      {/* Edit Debt Modal */}
+      {editingDebt && (
+        <DebtForm
+          initialData={editingDebt}
+          onSubmit={handleUpdateDebt}
+          onClose={() => setEditingDebt(null)}
+          loading={updateMutation.isPending}
+        />
+      )}
+
+      {/* Quick Pay Debt Modal */}
+      {payModalDebt && (
+        <PayDebtModal
+          debt={payModalDebt}
+          onClose={() => setPayModalDebt(null)}
+          onSubmit={(data) => payMutation.mutate({ id: payModalDebt.id, data })}
+          loading={payMutation.isPending}
+        />
+      )}
+
       {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteConfirm.show}
@@ -462,14 +663,107 @@ export default function Debt() {
   )
 }
 
-function DebtForm({ onSubmit, onClose, loading }) {
+function PayDebtModal({ debt, onSubmit, onClose, loading }) {
+  const [amount, setAmount] = useState(debt.monthly_payment || '')
+  const [description, setDescription] = useState(`Payment towards ${debt.name}`)
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSubmit({ amount: parseFloat(amount), description })
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-content glass-modal shadow-2xl"
+        style={{ maxWidth: '440px', margin: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="modal-header-v2" style={{ padding: '1.5rem 1.5rem 1rem' }}>
+          <div className="header-info">
+            <h2 style={{ fontSize: '1.35rem', color: 'white', fontWeight: 700, margin: '0 0 4px' }}>
+              Pay {debt.name}
+            </h2>
+            <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
+              Current Balance: {formatCurrency(debt.balance)}
+            </p>
+          </div>
+          <button className="btn ghost small" onClick={onClose} aria-label="Close modal">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ padding: '0 1.5rem 1.75rem' }}>
+          <div className="premium-form-group" style={{ marginBottom: '1rem' }}>
+            <label>Payment Amount (ZAR)</label>
+            <input
+              type="number"
+              className="premium-input"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              step="0.01"
+              min="1"
+              max={debt.balance}
+              required
+            />
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <button
+                type="button"
+                className="btn ghost extra-small"
+                onClick={() => setAmount(debt.monthly_payment)}
+              >
+                Min ({formatCurrency(debt.monthly_payment)})
+              </button>
+              <button
+                type="button"
+                className="btn ghost extra-small"
+                onClick={() => setAmount((parseFloat(debt.monthly_payment) || 0) + 500)}
+              >
+                +R500 Boost
+              </button>
+              <button
+                type="button"
+                className="btn ghost extra-small"
+                onClick={() => setAmount(debt.balance)}
+              >
+                Settle Full ({formatCurrency(debt.balance)})
+              </button>
+            </div>
+          </div>
+
+          <div className="premium-form-group" style={{ marginBottom: '1.25rem' }}>
+            <label>Reference / Note</label>
+            <input
+              type="text"
+              className="premium-input"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <button type="button" className="btn ghost" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn primary" disabled={loading}>
+              {loading ? 'Processing...' : 'Confirm Payment'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function DebtForm({ initialData = null, onSubmit, onClose, loading }) {
   const [formData, setFormData] = useState({
-    name: '',
-    balance: '',
-    interestRate: '',
-    monthlyPayment: '',
-    type: 'credit-card',
-    creditLimit: ''
+    name: initialData?.name || '',
+    balance: initialData?.balance ?? '',
+    interestRate: initialData?.interest_rate ?? '',
+    monthlyPayment: initialData?.monthly_payment ?? '',
+    type: initialData?.type || 'credit-card',
+    creditLimit: initialData?.credit_limit ?? ''
   })
 
   const handleSubmit = (e) => {
@@ -503,7 +797,9 @@ function DebtForm({ onSubmit, onClose, loading }) {
       >
         <div className="modal-header-v2" style={{ padding: '1.5rem 1.5rem 1rem' }}>
           <div className="header-info">
-            <h2 style={{ fontSize: '1.4rem', color: 'white', fontWeight: 700, margin: '0 0 4px' }}>Add Debt</h2>
+            <h2 style={{ fontSize: '1.4rem', color: 'white', fontWeight: 700, margin: '0 0 4px' }}>
+              {initialData ? 'Edit Debt' : 'Add Debt'}
+            </h2>
             <p className="text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>Track and pay off your debts strategically</p>
           </div>
           <button className="btn ghost small" onClick={onClose} aria-label="Close modal">
@@ -520,7 +816,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
               className="premium-input"
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., Credit Card, Car Loan"
+              placeholder="e.g., FNB Credit Card, WesBank Vehicle Finance, Bash Store Card"
               required
             />
           </div>
@@ -551,7 +847,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
                 onChange={handleChange}
                 step="0.01"
                 min="0"
-                placeholder="0.00"
+                placeholder="e.g. 11.25 or 20.5"
                 required
               />
             </div>
@@ -589,7 +885,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
           </div>
           
           <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '-0.75rem', marginBottom: '1.25rem', display: 'block' }}>
-            Essential for accurate credit utilization boost.
+            Essential for accurate Credit Hub utilization and score simulations.
           </p>
 
           <div className="premium-form-group" style={{ marginBottom: '1.5rem' }}>
@@ -597,8 +893,11 @@ function DebtForm({ onSubmit, onClose, loading }) {
             <select name="type" className="premium-input" value={formData.type} onChange={handleChange}>
               <option value="credit-card">Credit Card</option>
               <option value="personal-loan">Personal Loan</option>
+              <option value="vehicle-finance">Vehicle Finance (WesBank / MFC / etc.)</option>
+              <option value="mortgage">Home Loan / Bond</option>
+              <option value="store-card">Store Card (TFG / Bash / Woolworths / Mr Price)</option>
+              <option value="bnpl">Buy Now Pay Later (PayJustNow / MoreTyme / Float)</option>
               <option value="student-loan">Student Loan</option>
-              <option value="mortgage">Mortgage</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -608,7 +907,7 @@ function DebtForm({ onSubmit, onClose, loading }) {
               Cancel
             </button>
             <button type="submit" className="btn primary" disabled={loading} style={{ minWidth: '110px' }}>
-              {loading ? 'Adding...' : 'Add Debt'}
+              {loading ? 'Saving...' : initialData ? 'Save Changes' : 'Add Debt'}
             </button>
           </div>
         </form>

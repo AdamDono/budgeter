@@ -11,6 +11,7 @@ const transactionSchema = Joi.object({
   goalId: Joi.number().integer().allow(null).optional(),
   debtId: Joi.number().integer().allow(null).optional(),
   savingsId: Joi.number().integer().allow(null).optional(),
+  billId: Joi.number().integer().allow(null).optional(),
   type: Joi.string().valid('income', 'expense').required(),
   amount: Joi.number().positive().required(),
   description: Joi.string().max(500).required(),
@@ -26,10 +27,14 @@ router.get('/', async (req, res, next) => {
 
     let query = `
       SELECT t.*, c.name as category_name, c.color as category_color,
-             g.name as goal_name
+             g.name as goal_name,
+             d.name as debt_name,
+             s.name as savings_name
       FROM transactions t
       LEFT JOIN budget_categories c ON t.category_id = c.id
       LEFT JOIN goals g ON t.goal_id = g.id
+      LEFT JOIN debts d ON t.debt_id = d.id
+      LEFT JOIN savings s ON t.savings_id = s.id
       WHERE t.user_id = $1
     `
     const params = [req.user.id]
@@ -146,27 +151,40 @@ router.post('/', async (req, res, next) => {
     // Create transaction
     const result = await client.query(
       `INSERT INTO transactions 
-       (user_id, account_id, category_id, goal_id, debt_id, savings_id, type, amount, description, 
+       (user_id, account_id, category_id, goal_id, debt_id, savings_id, bill_id, type, amount, description, 
         transaction_date, tags)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
-      [req.user.id, accountId, categoryId, goalId, value.debtId, value.savingsId, type, amount, description,
+      [req.user.id, accountId, categoryId, goalId, value.debtId, value.savingsId, value.billId || null, type, amount, description,
        transactionDate, tags]
     )
 
-    // Update goal progress if applicable
-    if (goalId && type === 'expense') {
+    // Update account balance
+    if (accountId) {
+      const accountDelta = type === 'income' ? amount : -amount
       await client.query(
-        'UPDATE goals SET current_amount = current_amount + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        [amount, goalId]
+        'UPDATE accounts SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [accountDelta, accountId]
+      )
+    }
+
+    // Update goal progress if applicable
+    if (goalId) {
+      await client.query(
+        `UPDATE goals 
+         SET current_amount = current_amount + $1,
+             is_achieved = CASE WHEN (current_amount + $1) >= target_amount THEN TRUE ELSE is_achieved END,
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $2 AND user_id = $3`,
+        [amount, goalId, req.user.id]
       )
     }
 
     // Update Debt balance if linked
     if (value.debtId && type === 'expense') {
       await client.query(
-        'UPDATE debts SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        [amount, value.debtId]
+        'UPDATE debts SET balance = GREATEST(0, balance - $1), updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+        [amount, value.debtId, req.user.id]
       )
     }
 
@@ -174,9 +192,36 @@ router.post('/', async (req, res, next) => {
     if (value.savingsId) {
       const balanceChange = type === 'expense' ? amount : -amount
       await client.query(
-        'UPDATE savings SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-        [balanceChange, value.savingsId]
+        'UPDATE savings SET balance = GREATEST(0, balance + $1), updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+        [balanceChange, value.savingsId, req.user.id]
       )
+    }
+
+    // Mark Bill as paid / advance next due date if linked
+    if (value.billId && type === 'expense') {
+      const billRes = await client.query(
+        'SELECT * FROM bill_reminders WHERE id = $1 AND user_id = $2',
+        [value.billId, req.user.id]
+      )
+      if (billRes.rows.length > 0) {
+        const bill = billRes.rows[0]
+        if (bill.frequency) {
+          const current = new Date(bill.due_date)
+          if (bill.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
+          else if (bill.frequency === 'quarterly') current.setMonth(current.getMonth() + 3)
+          else if (bill.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+          const nextDueDate = current.toISOString().split('T')[0]
+          await client.query(
+            'UPDATE bill_reminders SET is_paid = FALSE, due_date = $1 WHERE id = $2 AND user_id = $3',
+            [nextDueDate, value.billId, req.user.id]
+          )
+        } else {
+          await client.query(
+            'UPDATE bill_reminders SET is_paid = TRUE WHERE id = $1 AND user_id = $2',
+            [value.billId, req.user.id]
+          )
+        }
+      }
     }
 
     await client.query('COMMIT')
@@ -305,26 +350,34 @@ router.put('/:id', async (req, res, next) => {
     )
 
     // 1. REVERSE ORIGINAL IMPACT
+    if (original.account_id) {
+      const origAccountDelta = original.type === 'income' ? -original.amount : original.amount
+      await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [origAccountDelta, original.account_id])
+    }
     if (original.debt_id && original.type === 'expense') {
       await client.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [original.amount, original.debt_id])
     }
     if (original.savings_id) {
       const originalChange = original.type === 'expense' ? original.amount : -original.amount
-      await client.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [originalChange, original.savings_id])
+      await client.query('UPDATE savings SET balance = GREATEST(0, balance - $1) WHERE id = $2', [originalChange, original.savings_id])
     }
-    if (original.goal_id && original.type === 'expense') {
-      await client.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [original.amount, original.goal_id])
+    if (original.goal_id) {
+      await client.query('UPDATE goals SET current_amount = GREATEST(0, current_amount - $1) WHERE id = $2', [original.amount, original.goal_id])
     }
 
     // 2. APPLY NEW IMPACT
+    if (original.account_id) {
+      const newAccountDelta = type === 'income' ? amount : -amount
+      await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [newAccountDelta, original.account_id])
+    }
     if (debtId && type === 'expense') {
-      await client.query('UPDATE debts SET balance = balance - $1 WHERE id = $2', [amount, debtId])
+      await client.query('UPDATE debts SET balance = GREATEST(0, balance - $1) WHERE id = $2', [amount, debtId])
     }
     if (savingsId) {
       const newChange = type === 'expense' ? amount : -amount
-      await client.query('UPDATE savings SET balance = balance + $1 WHERE id = $2', [newChange, savingsId])
+      await client.query('UPDATE savings SET balance = GREATEST(0, balance + $1) WHERE id = $2', [newChange, savingsId])
     }
-    if (goalId && type === 'expense') {
+    if (goalId) {
       await client.query('UPDATE goals SET current_amount = current_amount + $1 WHERE id = $2', [amount, goalId])
     }
 
@@ -368,6 +421,12 @@ router.delete('/:id', async (req, res, next) => {
       [id, req.user.id]
     )
 
+    // Reverse Account impact
+    if (transaction.account_id) {
+      const accountReverse = transaction.type === 'income' ? -transaction.amount : transaction.amount
+      await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [accountReverse, transaction.account_id])
+    }
+
     // Reverse Debt impact
     if (transaction.debt_id && transaction.type === 'expense') {
       await client.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [transaction.amount, transaction.debt_id])
@@ -376,12 +435,12 @@ router.delete('/:id', async (req, res, next) => {
     // Reverse Savings impact
     if (transaction.savings_id) {
       const balanceChange = transaction.type === 'expense' ? transaction.amount : -transaction.amount
-      await client.query('UPDATE savings SET balance = balance - $1 WHERE id = $2', [balanceChange, transaction.savings_id])
+      await client.query('UPDATE savings SET balance = GREATEST(0, balance - $1) WHERE id = $2', [balanceChange, transaction.savings_id])
     }
 
     // Reverse Goal impact
-    if (transaction.goal_id && transaction.type === 'expense') {
-      await client.query('UPDATE goals SET current_amount = current_amount - $1 WHERE id = $2', [transaction.amount, transaction.goal_id])
+    if (transaction.goal_id) {
+      await client.query('UPDATE goals SET current_amount = GREATEST(0, current_amount - $1) WHERE id = $2', [transaction.amount, transaction.goal_id])
     }
 
     await client.query('COMMIT')
@@ -492,12 +551,14 @@ router.post('/import', async (req, res, next) => {
       return res.json({ message: 'No valid transactions to import', imported: 0, failed })
     }
 
-    // Build a single batch INSERT instead of a loop, much faster on remote DBs
+    await client.query('BEGIN')
+
+    // Build a single batch INSERT including debt_id, savings_id, goal_id, bill_id
     const values = []
     const params = []
     valid.forEach((tx, i) => {
-      const base = i * 7
-      values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7})`)
+      const base = i * 11
+      values.push(`($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, $${base + 6}, $${base + 7}, $${base + 8}, $${base + 9}, $${base + 10}, $${base + 11})`)
       params.push(
         req.user.id,
         accountId,
@@ -505,22 +566,112 @@ router.post('/import', async (req, res, next) => {
         parseFloat(tx.amount),
         String(tx.description).substring(0, 500),
         tx.transactionDate,
-        tx.categoryId || null
+        tx.categoryId || null,
+        tx.debtId || null,
+        tx.savingsId || null,
+        tx.goalId || null,
+        tx.billId || null
       )
     })
 
     await client.query(
-      `INSERT INTO transactions (user_id, account_id, type, amount, description, transaction_date, category_id)
+      `INSERT INTO transactions 
+       (user_id, account_id, type, amount, description, transaction_date, category_id, debt_id, savings_id, goal_id, bill_id)
        VALUES ${values.join(', ')}`,
       params
     )
 
+    if (accountId) {
+      const netDelta = valid.reduce((acc, tx) => {
+        const amt = parseFloat(tx.amount) || 0
+        return acc + (tx.type === 'income' ? amt : -amt)
+      }, 0)
+      await client.query(
+        'UPDATE accounts SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [netDelta, accountId]
+      )
+    }
+
+    // Apply automatic balance updates for linked Debts, Bills, Savings Pots, and Goals
+    let debtsUpdated = 0
+    let billsPaid = 0
+    let savingsUpdated = 0
+    let goalsUpdated = 0
+
+    for (const tx of valid) {
+      const amt = parseFloat(tx.amount) || 0
+      if (amt <= 0) continue
+
+      if (tx.debtId && tx.type === 'expense') {
+        await client.query(
+          'UPDATE debts SET balance = GREATEST(0, balance - $1), updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+          [amt, tx.debtId, req.user.id]
+        )
+        debtsUpdated++
+      }
+
+      if (tx.savingsId) {
+        const delta = tx.type === 'expense' ? amt : -amt
+        await client.query(
+          'UPDATE savings SET balance = GREATEST(0, balance + $1), updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_id = $3',
+          [delta, tx.savingsId, req.user.id]
+        )
+        savingsUpdated++
+      }
+
+      if (tx.goalId) {
+        await client.query(
+          `UPDATE goals 
+           SET current_amount = current_amount + $1,
+               is_achieved = CASE WHEN (current_amount + $1) >= target_amount THEN TRUE ELSE is_achieved END,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2 AND user_id = $3`,
+          [amt, tx.goalId, req.user.id]
+        )
+        goalsUpdated++
+      }
+
+      if (tx.billId && tx.type === 'expense') {
+        const billRes = await client.query(
+          'SELECT * FROM bill_reminders WHERE id = $1 AND user_id = $2',
+          [tx.billId, req.user.id]
+        )
+        if (billRes.rows.length > 0) {
+          const bill = billRes.rows[0]
+          if (bill.frequency) {
+            const current = new Date(bill.due_date)
+            if (bill.frequency === 'monthly') current.setMonth(current.getMonth() + 1)
+            else if (bill.frequency === 'quarterly') current.setMonth(current.getMonth() + 3)
+            else if (bill.frequency === 'yearly') current.setFullYear(current.getFullYear() + 1)
+            const nextDueDate = current.toISOString().split('T')[0]
+            await client.query(
+              'UPDATE bill_reminders SET is_paid = FALSE, due_date = $1 WHERE id = $2 AND user_id = $3',
+              [nextDueDate, tx.billId, req.user.id]
+            )
+          } else {
+            await client.query(
+              'UPDATE bill_reminders SET is_paid = TRUE WHERE id = $1 AND user_id = $2',
+              [tx.billId, req.user.id]
+            )
+          }
+          billsPaid++
+        }
+      }
+    }
+
+    await client.query('COMMIT')
+
     res.json({
       message: `Import complete: ${valid.length} imported, ${failed} failed`,
       imported: valid.length,
-      failed
+      failed,
+      debtsUpdated,
+      billsPaid,
+      savingsUpdated,
+      goalsUpdated
     })
   } catch (error) {
+    await client.query('ROLLBACK')
     next(error)
   } finally {
     client.release()
