@@ -6,10 +6,35 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  timeout: 25000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+// Automatic retry interceptor for cold-starts or transient DB wakeups
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config
+    if (!config || config._retryCount >= 2) {
+      return Promise.reject(error)
+    }
+    const isNetworkOrServerWakeup =
+      !error.response ||
+      error.code === 'ECONNABORTED' ||
+      error.response.status === 502 ||
+      error.response.status === 503 ||
+      error.response.status === 504
+
+    if (isNetworkOrServerWakeup) {
+      config._retryCount = (config._retryCount || 0) + 1
+      await new Promise((resolve) => setTimeout(resolve, 1000 * config._retryCount))
+      return api(config)
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Auth API
 export const authAPI = {

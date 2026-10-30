@@ -23,6 +23,7 @@ import tipsRoutes from './routes/tips.js'
 import transactionRoutes from './routes/transactions.js'
 
 // Middleware
+import { pool } from './database/connection.js'
 import { ensureDatabaseSchema } from './database/runMigrations.js'
 import { authenticateToken } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
@@ -92,10 +93,17 @@ app.use((req, res, next) => {
 // Static files (for receipt uploads)
 app.use('/uploads', express.static(join(__dirname, 'uploads')))
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() })
-})
+// Health check (also touches Aiven DB so external monitors / keep-alives keep PG warm)
+const healthHandler = async (req, res) => {
+  try {
+    await pool.query('SELECT 1')
+    res.json({ status: 'OK', db: 'connected', timestamp: new Date().toISOString() })
+  } catch (err) {
+    res.status(200).json({ status: 'OK', db: 'waking', timestamp: new Date().toISOString() })
+  }
+}
+app.get('/health', healthHandler)
+app.get('/api/health', healthHandler)
 
 // Public routes
 app.use('/api/auth', authRoutes)

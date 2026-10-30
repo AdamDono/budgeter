@@ -303,7 +303,37 @@ export function startMonthlySummaryCron() {
   console.log('📅 Monthly summary cron scheduled (1st of month 09:00 SAST)')
 }
 
+// ─── ⑤ Aiven DB & Render Keep-Alive Heartbeat - runs every 4 minutes ───────────
+export function startDatabaseKeepAliveCron() {
+  // 1. Ping Aiven PostgreSQL every 4 minutes so it never sleeps due to inactivity
+  cron.schedule('*/4 * * * *', async () => {
+    try {
+      await pool.query('SELECT 1')
+    } catch (err) {
+      console.warn('⚠️ [KEEP-ALIVE] DB ping warning:', err.message)
+    }
+  })
+
+  // 2. If hosted on Render (RENDER_EXTERNAL_URL is auto-set by Render) or BACKEND_URL is set,
+  // self-ping /health every 10 minutes so the Node process and DB stay warm 24/7
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL
+  if (externalUrl) {
+    cron.schedule('*/10 * * * *', async () => {
+      try {
+        const cleanUrl = externalUrl.replace(/\/$/, '')
+        await fetch(`${cleanUrl}/health`)
+      } catch (err) {
+        // Ignore transient self-ping network errors
+      }
+    })
+    console.log(`💓 Self-keep-alive ping active for ${externalUrl}/health (every 10m)`)
+  }
+
+  console.log('💓 Aiven PostgreSQL keep-alive heartbeat scheduled (every 4 minutes)')
+}
+
 export function startAllCrons() {
+  startDatabaseKeepAliveCron()
   startBillReminderCron()
   startSundayPulseCron()
   startInactivityCheckCron()
