@@ -70,7 +70,7 @@ export default function PWAInstallBanner() {
     <aside aria-label="Install App" className="pwa-banner-wrap animate-slide-up">
       <div className="pwa-banner-card glass-panel">
         <div className="pwa-banner-icon">
-          <img src="/pwa-192x192.png" alt="Pace Finance App" className="pwa-app-icon" />
+          <img src="/pwa-192x192.png?v=2" alt="Pace Finance App" className="pwa-app-icon" />
         </div>
 
         <div className="pwa-banner-text">

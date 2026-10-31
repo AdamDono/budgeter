@@ -1,12 +1,12 @@
-const CACHE_NAME = 'pace-finance-v1'
+const CACHE_NAME = 'pace-finance-v2'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/apple-touch-icon.png',
+  '/manifest.json?v=2',
+  '/favicon.svg?v=2',
+  '/pwa-192x192.png?v=2',
+  '/pwa-512x512.png?v=2',
+  '/apple-touch-icon.png?v=2',
   '/logo_pace_finance.svg',
   '/hero_background.png'
 ]

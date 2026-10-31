@@ -1,29 +1,24 @@
 import {
-    Bell,
-    Calendar,
+    Calculator,
     CreditCard,
-    DollarSign,
     LayoutDashboard,
     LogOut,
     Menu,
+    PiggyBank,
     Repeat,
     Settings,
     ShieldCheck,
-    Target,
+    Sparkles,
     TrendingDown,
     TrendingUp,
-    Globe,
-    X,
-    Sparkles,
-    MoreHorizontal
+    X
 } from 'lucide-react'
 import { useState } from 'react'
-import { NavLink, Link, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAI } from '../contexts/AIContext'
+import { useAuth } from '../contexts/AuthContext'
 import AICoach from './AICoach'
 
-// Triggers a rebuild to resolve ShieldCheck undefined issues.
 export default function Layout() {
   const { user, logout } = useAuth()
   const { setIsOpen: setChatOpen } = useAI()
@@ -33,13 +28,12 @@ export default function Layout() {
   const navigation = [
     { name: 'Dashboard', href: '/app/dashboard', icon: LayoutDashboard },
     { name: 'Transactions', href: '/app/transactions', icon: CreditCard },
-    { name: 'Fixed Goals', href: '/app/goals', icon: Target },
-    { name: 'Savings Pots', href: '/app/savings', icon: DollarSign },
     { name: 'Analytics', href: '/app/analytics', icon: TrendingUp },
-    { name: 'Recurring', href: '/app/recurring', icon: Repeat },
-    { name: 'Spending Trends', href: '/app/trends', icon: TrendingDown },
-    { name: 'Debt Tracker', href: '/app/debt', icon: DollarSign },
+    { name: 'Savings & Goals', href: '/app/savings', icon: PiggyBank, matchPaths: ['/app/savings', '/app/goals'] },
+    { name: 'Bills & Debit Orders', href: '/app/recurring', icon: Repeat, matchPaths: ['/app/recurring', '/app/bills'] },
+    { name: 'Debt Payoff', href: '/app/debt', icon: TrendingDown },
     { name: 'Credit Hub', href: '/app/credit-hub', icon: ShieldCheck },
+    { name: 'SARS Tax Hub', href: '/app/tax', icon: Calculator },
     { name: 'Settings', href: '/app/settings', icon: Settings },
   ]
 
@@ -74,13 +68,15 @@ export default function Layout() {
         <nav className="sidebar-nav">
           {navigation.map((item) => {
             const Icon = item.icon
-            const isActive = location.pathname === item.href
-            
+            const isMatched = item.matchPaths
+              ? item.matchPaths.includes(location.pathname)
+              : location.pathname === item.href
+
             return (
               <NavLink
                 key={item.href}
                 to={item.href}
-                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                className={() => `nav-link ${isMatched ? 'nav-link-active' : ''}`}
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon size={20} />
@@ -115,8 +111,8 @@ export default function Layout() {
           <button className="menu-btn" onClick={() => setSidebarOpen(true)}>
             <Menu size={24} />
           </button>
-          <h1 className="page-title">Pace Finance</h1>
-          <div style={{ width: 24 }}></div> {/* Spacer */}
+          <img src="/logo_pace_finance.svg" alt="Pace Finance" style={{ height: '28px', width: 'auto' }} />
+          <div style={{ width: 24 }}></div>
         </header>
 
         {/* Page content */}
@@ -152,11 +148,11 @@ export default function Layout() {
         </button>
 
         <NavLink 
-          to="/app/goals" 
-          className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}
+          to="/app/savings" 
+          className={() => `mobile-nav-item ${['/app/savings', '/app/goals'].includes(location.pathname) ? 'active' : ''}`}
         >
-          <Target size={20} />
-          <span>Goals</span>
+          <PiggyBank size={20} />
+          <span>Savings</span>
         </NavLink>
 
         <NavLink 

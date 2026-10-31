@@ -4,16 +4,13 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-d
 import { AIProvider } from './contexts/AIContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
-// Pages (Vite rebuild trigger: 2026-03-03)
+// Pages
 import Analytics from './pages/Analytics'
-import Bills from './pages/Bills'
+import Contact from './pages/Contact'
 import CreditHub from './pages/CreditHub'
 import Dashboard from './pages/Dashboard'
 import Debt from './pages/Debt'
-import Contact from './pages/Contact'
-import Forex from './pages/Forex'
 import ForgotPassword from './pages/ForgotPassword'
-import Goals from './pages/Goals'
 import LandingPage from './pages/LandingPage'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
@@ -27,7 +24,6 @@ import Settings from './pages/Settings'
 import Tax from './pages/Tax'
 import Terms from './pages/Terms'
 import Transactions from './pages/Transactions'
-import Trends from './pages/Trends'
 
 // Components
 import Layout from './components/Layout'
@@ -98,13 +94,15 @@ export default function App() {
                 <Route index element={<Navigate to="/app/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="transactions" element={<Transactions />} />
-                <Route path="goals" element={<Goals />} />
                 <Route path="savings" element={<Savings />} />
+                <Route path="goals" element={<Savings />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="trends" element={<Navigate to="/app/analytics" replace />} />
                 <Route path="recurring" element={<Recurring />} />
-                <Route path="trends" element={<Trends />} />
+                <Route path="bills" element={<Recurring />} />
                 <Route path="debt" element={<Debt />} />
                 <Route path="credit-hub" element={<CreditHub />} />
+                <Route path="tax" element={<Tax />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               
