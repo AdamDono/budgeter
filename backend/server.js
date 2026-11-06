@@ -80,9 +80,9 @@ const limiter = rateLimit({
 })
 app.use('/api/', limiter)
 
-// Body parsing
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true }))
+// Body parsing (25mb limit to support base64 PDF bank statements & payslip images)
+app.use(express.json({ limit: '25mb' }))
+app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
 // Request Logging
 app.use((req, res, next) => {

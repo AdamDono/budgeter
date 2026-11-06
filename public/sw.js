@@ -1,17 +1,14 @@
-const CACHE_NAME = 'pace-finance-v2'
+const CACHE_NAME = 'pace-finance-v3'
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json?v=2',
   '/favicon.svg?v=2',
   '/pwa-192x192.png?v=2',
   '/pwa-512x512.png?v=2',
   '/apple-touch-icon.png?v=2',
-  '/logo_pace_finance.svg',
-  '/hero_background.png'
+  '/logo_pace_finance.svg'
 ]
 
-// Install event - cache critical static shell
+// Install event - cache critical static icons
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -40,17 +37,44 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Fetch event - Network-first for APIs, Stale-while-revalidate for static shell
+// Fetch event - Network-first for HTML navigation & JS/CSS/MJS bundles so deployments update immediately
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // 1. Bypass non-GET and API requests (pass directly to network)
-  if (request.method !== 'GET' || url.pathname.startsWith('/api')) {
+  // 1. Bypass non-GET, API requests, and PDF worker (.mjs) scripts
+  if (
+    request.method !== 'GET' ||
+    url.pathname.startsWith('/api') ||
+    url.pathname.endsWith('.mjs')
+  ) {
     return
   }
 
-  // 2. Stale-while-revalidate strategy for UI pages & static assets
+  // 2. Network-first for HTML navigation and JS/CSS bundles
+  if (
+    request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    url.pathname.startsWith('/assets/')
+  ) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone()
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, responseToCache)
+            })
+          }
+          return networkResponse
+        })
+        .catch(() => caches.match(request).then((res) => res || caches.match('/')))
+    )
+    return
+  }
+
+  // 3. Stale-while-revalidate for static images & icons
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
       const fetchPromise = fetch(request)
@@ -63,12 +87,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse
         })
-        .catch(() => {
-          // If offline and requesting navigation, return cached root/index.html
-          if (request.mode === 'navigate') {
-            return caches.match('/')
-          }
-        })
+        .catch(() => cachedResponse)
 
       return cachedResponse || fetchPromise
     })

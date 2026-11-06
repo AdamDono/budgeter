@@ -153,7 +153,7 @@ export default function Transactions() {
             className="btn ghost"
             onClick={() => setShowImport(true)}
           >
-            <FileText size={16} /> Import
+            <FileText size={16} /> Import Statement / Payslip
           </button>
           <button 
             className="btn primary"

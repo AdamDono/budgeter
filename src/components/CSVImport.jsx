@@ -1,17 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
-import { CheckCircle, FileText, Upload } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertCircle, CheckCircle, FileText, Loader2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import * as pdfjs from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { budgetsAPI, importAPI, aiAPI, debtsAPI, billsAPI, savingsAPI, goalsAPI } from '../lib/api'
+import { aiAPI, billsAPI, budgetsAPI, debtsAPI, goalsAPI, importAPI, savingsAPI, taxAPI } from '../lib/api'
 
 // Set up PDF.js worker using local bundle
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+} catch (err) {
+  console.warn('PDF.js worker init warning:', err)
+}
 
 // ─── SA Smart Auto-Categorizer ───────────────────────────────────────────────
-// Matches transaction descriptions to budget categories using SA-specific keywords.
-// Returns the matching category ID string, or '' if no match found.
 function autoCategorize(description, categories) {
   if (!description || !categories?.length) return ''
   const d = description.toLowerCase()
@@ -21,9 +23,10 @@ function autoCategorize(description, categories) {
       name: 'Salary',
       keywords: [
         'salary', 'payroll', 'remuneration', 'wages', 'nett pay', 'net pay',
-        'monthly pay', 'employee pay', 'staff pay', 'pay credit', 'salaris',
-        'payment received', 'inward transfer', 'inward eft', 'direct deposit',
-        'credit transfer', 'salary credit', 'net salary', 'sal/wages',
+        'basic pay', 'gross pay', 'monthly pay', 'employee pay', 'staff pay',
+        'pay credit', 'salaris', 'payment received', 'inward transfer',
+        'inward eft', 'direct deposit', 'credit transfer', 'salary credit',
+        'net salary', 'sal/wages', 'payslip',
       ],
     },
     {
@@ -90,7 +93,7 @@ function autoCategorize(description, categories) {
         '1life', 'sanlam', 'liberty life', 'hollard', 'miway', 'king price',
         'auto and general', 'auto & general', 'mutual & federal',
         'insurance', 'assurance', 'life cover', 'funeral cover',
-        'short term insur', 'medical aid',
+        'short term insur', 'uif', 'unemployment insurance',
       ],
     },
     {
@@ -100,6 +103,7 @@ function autoCategorize(description, categories) {
         'netcare', 'life healthcare', 'mediclinic', 'intercare',
         'doctor', 'hospital', 'dentist', 'optometrist', 'physiotherapy',
         'medical', 'health ', 'chronic', 'prescription', 'script',
+        'discovery health', 'bonitas', 'medihelp', 'bestmed',
       ],
     },
     {
@@ -138,7 +142,8 @@ function autoCategorize(description, categories) {
         'easy equities', 'etfsa', 'satrix', 'absa stockbrokers',
         'fnb securities', 'nedbank invest', 'standard bank online share',
         'tax free savings', 'tfsa', 'unit trust', 'etf ', 'shares purchase',
-        'investment transfer', 'invest ',
+        'investment transfer', 'invest ', 'retirement annuity', 'pension',
+        'provident fund', 'allan gray', 'sygnia', 'coronation',
       ],
     },
     {
@@ -154,7 +159,7 @@ function autoCategorize(description, categories) {
         'credit card payment', 'loan repayment', 'instalment', 'wesbank',
         'vehicle finance', 'car payment', 'fnb vehicle', 'std bank vaf',
         'debt ', 'store card', 'account payment', 'flexi reserve',
-        'personal loan', 'overdraft',
+        'personal loan', 'overdraft', 'garnishee', 'staff loan',
       ],
     },
   ]
@@ -166,12 +171,10 @@ function autoCategorize(description, categories) {
     }
   }
 
-  return '' // uncategorized - user picks manually
+  return ''
 }
 
-// ─── Smart Entity Matcher (Matches statement rows to User's Debts, Bills, Savings, Goals) ───
-// Example: If user has a Debt or Bill named "Maki" and statement line says "EFT Payment Maki",
-// it automatically links the row to that Debt/Bill and sets the category!
+// ─── Smart Entity Matcher (Matches statement/payslip rows to User's Debts, Bills, Savings, Goals) ───
 function autoMatchEntities(description, type, { debts = [], bills = [], savings = [], goals = [], categories = [] }, aiHints = {}) {
   const d = (description || '').toLowerCase()
   const findNameMatch = (items) => {
@@ -179,7 +182,6 @@ function autoMatchEntities(description, type, { debts = [], bills = [], savings 
       const name = (item.name || '').toLowerCase().trim()
       if (!name || name.length < 2) continue
       if (d.includes(name)) return String(item.id)
-      // Also match significant tokens (>= 3 chars) for multi-word names like "Maki Loan" -> "maki"
       const tokens = name.split(/[\s\-_\/]+/).filter(t => t.length >= 3 && !['loan', 'card', 'bank', 'account', 'pot', 'bill', 'the', 'and'].includes(t))
       if (tokens.length > 0 && tokens.some(tok => d.includes(tok))) {
         return String(item.id)
@@ -206,14 +208,12 @@ function autoMatchEntities(description, type, { debts = [], bills = [], savings 
     goalId = findNameMatch(goals.filter(x => !x.is_achieved))
   }
 
-  // Encode into a single linkTarget value for easy UI selection: "debt:12", "bill:5", "savings:3", "goal:2", or ""
   let linkTarget = ''
   if (debtId) linkTarget = `debt:${debtId}`
   else if (billId) linkTarget = `bill:${billId}`
   else if (savingsId) linkTarget = `savings:${savingsId}`
   else if (goalId) linkTarget = `goal:${goalId}`
 
-  // Auto-assign category if linked to Debt or Savings Pot
   let matchedCategoryId = aiHints.categoryId ? String(aiHints.categoryId) : ''
   if (debtId && !matchedCategoryId) {
     const debtCat = categories.find(c => c.name === 'Debt Repayment')
@@ -240,7 +240,7 @@ function detectBankFormat(headers) {
 }
 
 // Parse a CSV row into a transaction
-function parseRow(row, headers, format, categories) {
+function parseRow(row, headers, format) {
   const get = (key) => {
     const idx = headers.findIndex(h => h.toLowerCase().trim().includes(key.toLowerCase()))
     return idx >= 0 ? (row[idx] || '').trim() : ''
@@ -272,40 +272,29 @@ function parseRow(row, headers, format, categories) {
       break
     }
     default: {
-      const rawAmount = parseFloat((get('amount') || get('value')).replace(/[^0-9.-]/g, '')) || 0
+      const rawAmount = parseFloat((get('amount') || get('value') || get('nett') || get('total')).replace(/[^0-9.-]/g, '')) || 0
       amount = Math.abs(rawAmount)
       type = rawAmount >= 0 ? 'income' : 'expense'
-      description = get('description') || get('narration') || get('memo') || get('reference')
-      date = get('date') || get('transaction date') || get('trans date')
+      description = get('description') || get('narration') || get('memo') || get('reference') || get('item')
+      date = get('date') || get('transaction date') || get('trans date') || get('pay date')
     }
   }
 
-  let parsedDate = null
-  if (date) {
-    const d = date.replace(/\./g, '/').replace(/-/g, '/')
-    const parts = d.split('/')
-    if (parts.length === 3) {
-      if (parts[2].length === 4) {
-        parsedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-      } else {
-        parsedDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`
-      }
-    }
-  }
+  const parsedDate = parseNativeDate(date)
 
   return {
     description: description || 'Imported transaction',
     amount: isNaN(amount) ? 0 : amount,
     type,
-    transactionDate: parsedDate || new Date().toISOString().split('T')[0],
+    transactionDate: parsedDate,
     categoryId: null,
-    _valid: amount > 0 && parsedDate !== null
+    _valid: amount > 0
   }
 }
 
 function parseCSV(text) {
-  const lines = text.trim().split('\n').filter(l => l.trim())
-  if (lines.length < 2) return []
+  const lines = text.trim().split(/\r?\n/).filter(l => l.trim())
+  if (lines.length < 2) return { headers: [], rows: [] }
   
   const splitRow = (line) => {
     const result = []
@@ -314,7 +303,7 @@ function parseCSV(text) {
     for (const char of line) {
       if (char === '"') {
         inQuote = !inQuote
-      } else if (char === ',' && !inQuote) {
+      } else if ((char === ',' || char === ';') && !inQuote) {
         result.push(current)
         current = ''
       } else {
@@ -330,161 +319,287 @@ function parseCSV(text) {
   return { headers, rows }
 }
 
-// Extract raw line-by-line text from PDF for AI Scanner
-async function extractRawTextFromPDF(file) {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
-  const lines = []
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    const rowsMap = {}
-    content.items.forEach(item => {
-      const y = Math.round(item.transform[5] / 3) * 3
-      if (!rowsMap[y]) rowsMap[y] = []
-      rowsMap[y].push(item)
-    })
-    const sortedY = Object.keys(rowsMap).sort((a, b) => b - a)
-    sortedY.forEach(y => {
-      const rowItems = rowsMap[y].sort((a, b) => a.transform[4] - b.transform[4])
-      const line = rowItems.map(item => item.str).join(' ').trim()
-      if (line.length > 2) lines.push(line)
-    })
-  }
-  return lines.join('\n')
+// Convert File to Base64 string (without data:...;base64, prefix) for Gemini Multimodal
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const res = String(reader.result || '')
+      const base64 = res.includes(',') ? res.split(',')[1] : res
+      resolve(base64)
+    }
+    reader.onerror = (err) => reject(err)
+    reader.readAsDataURL(file)
+  })
 }
 
-// PDF Parsing Logic - Enhanced for SA Banks
-async function extractTransactionsFromPDF(file) {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
-  const allRows = []
-
-  // Date patterns: "01 Jan", "2024-01-15", "15/01/2024"
-  const dateRegex = /(\d{1,2} [A-Z][a-z]{2}|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{4})/gi
-  // Money regex - lenient. Decimals are OPTIONAL so amounts like "1 250" or "250" still match.
-  // Captures Cr/Dr suffix (FNB style). Requires at least 2 digits to avoid single-digit false positives.
-  // Stricter: must have R prefix, OR a decimal, OR thousands separator - NOT bare 2-digit numbers
-  const moneyRegex = /(?:R\s*\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})?|\d{1,3}(?:[\s,']\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?:\s*(?:CR|DR|Cr|Dr))?/g
-
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    
-    // Group text items by Y coordinate with 3px tolerance
-    // PDF.js sometimes places text on slightly different Y values on the same visual line
-    const rowsMap = {}
-    content.items.forEach(item => {
-      const y = Math.round(item.transform[5] / 3) * 3  // snap to nearest 3px bucket
-      if (!rowsMap[y]) rowsMap[y] = []
-      rowsMap[y].push(item)
-    })
-    
-    // Process lines from top to bottom
-    const sortedY = Object.keys(rowsMap).sort((a, b) => b - a)
-    
-    sortedY.forEach(y => {
-      const rowItems = rowsMap[y].sort((a, b) => a.transform[4] - b.transform[4])
-      const line = rowItems.map(item => item.str).join(' ').trim()
-
-      if (line.length < 5) return // skip near-empty lines
-      
-      const lowerLine = line.toLowerCase()
-      // Skip statement summary lines
-      const skipKeywords = ['opening balance', 'closing balance', 'brought forward', 'carried forward', 'statement date', 'available balance', 'total']
-      if (skipKeywords.some(k => lowerLine.includes(k))) return
-
-      const dateMatches = line.match(dateRegex)
-      if (!dateMatches) return
-      
-      const date = dateMatches[0]
-
-      // REMOVE ALL possible dates from the line so they don't interfere with money detection
-      // Use the global flag and a regex that handles optional spaces in dates
-      const spaceyDateRegex = /(\d{1,2}\s*[A-Z][a-z]{2}|\d{4}\s*[\-\/\.]\s*\d{2}\s*[\-\/\.]\s*\d{2}|\d{2}\s*[\-\/\.]\s*\d{2}\s*[\-\/\.]\s*\d{4})/gi
-      const lineWithoutDates = line.replace(spaceyDateRegex, '')
-
-      moneyRegex.lastIndex = 0 
-      const moneyMatches = lineWithoutDates.match(moneyRegex)
-
-      if (!moneyMatches) return
-
-      const parsedAmounts = moneyMatches
-        .map(m => {
-          const clean = m.replace(/[R\s,']/gi, '').replace(/CR|DR/gi, '')
-          return { original: m, value: parseFloat(clean) }
-        })
-        .filter(m => !isNaN(m.value) && m.value > 0.5)
-
-      if (parsedAmounts.length === 0) return
-
-      // First amount is usually the transaction, last is usually the balance
-      const txAmount = parsedAmounts[0]
-      let description = lineWithoutDates.replace(txAmount.original, '')
-      if (parsedAmounts.length > 1) {
-        description = description.replace(parsedAmounts[parsedAmounts.length - 1].original, '')
+// Extract raw line-by-line text from PDF with a strict 6-second timeout so PDF.js worker never hangs
+async function extractRawTextFromPDF(file) {
+  const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(''), 6000))
+  const parsePromise = (async () => {
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      let pdf
+      try {
+        pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise
+      } catch {
+        // Fallback if Web Worker fails to load
+        pdf = await pdfjs.getDocument({ data: arrayBuffer, disableWorker: true }).promise
       }
-      description = description.replace(/\s+/g, ' ').trim() || 'Imported Transaction'
+      const lines = []
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i)
+        const content = await page.getTextContent()
+        const rowsMap = {}
+        content.items.forEach(item => {
+          const y = Math.round((item.transform?.[5] || 0) / 3) * 3
+          if (!rowsMap[y]) rowsMap[y] = []
+          rowsMap[y].push(item)
+        })
+        const sortedY = Object.keys(rowsMap).sort((a, b) => b - a)
+        sortedY.forEach(y => {
+          const rowItems = rowsMap[y].sort((a, b) => (a.transform?.[4] || 0) - (b.transform?.[4] || 0))
+          const line = rowItems.map(item => item.str).join(' ').trim()
+          if (line.length > 1) lines.push(line)
+        })
+      }
+      return lines.join('\n')
+    } catch (err) {
+      console.warn('Client PDF text extraction skipped:', err.message)
+      return ''
+    }
+  })()
 
-      // Income vs expense detection
-      const rawUpper = txAmount.original.toUpperCase()
-      // Reuse lowerLine instead of redeclaring it
-      let type = 'expense'
+  return Promise.race([parsePromise, timeoutPromise])
+}
 
-      if (rawUpper.includes('CR')) {
-        type = 'income'
-      } else if (rawUpper.includes('DR')) {
-        type = 'expense'
-      } else if (lowerLine.includes(' cr') || lowerLine.includes('credit')) {
-        type = 'income'
-      } else if (lowerLine.includes(' dr') || lowerLine.includes('debit')) {
-        type = 'expense'
-      } else if (txAmount.original.includes('-') || txAmount.value < 0) {
-        type = 'expense'
-      } else if (parsedAmounts.length > 0 && txAmount.value > 0) {
-        if (['salary', 'deposit', 'transfer from', 'inward', 'received', 'interest'].some(k => lowerLine.includes(k))) {
-            type = 'income'
+function parseNativeDate(dateStr) {
+  if (!dateStr) return new Date().toISOString().split('T')[0]
+  const clean = String(dateStr).trim()
+
+  const monthMap = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' }
+  const upper = clean.toUpperCase()
+
+  // Handle DD MMM YYYY or DD MMM YY or DD MMM
+  const dmyText = upper.match(/(\d{1,2})[\s\-\/]+([A-Z]{3})[A-Z]*(?:[\s\-\/,]+(\d{2,4}))?/)
+  if (dmyText && monthMap[dmyText[2]]) {
+    let year = dmyText[3] || String(new Date().getFullYear())
+    if (year.length === 2) year = '20' + year
+    return `${year}-${monthMap[dmyText[2]]}-${dmyText[1].padStart(2, '0')}`
+  }
+
+  // Handle YYYY-MM-DD or YYYY/MM/DD
+  const isoMatch = clean.match(/(\d{4})[\-\/\.](\d{1,2})[\-\/\.](\d{1,2})/)
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`
+
+  // Handle DD/MM/YYYY or DD-MM-YYYY
+  const dmYMatch = clean.match(/(\d{1,2})[\-\/\.](\d{1,2})[\-\/\.](\d{4})/)
+  if (dmYMatch) return `${dmYMatch[3]}-${dmYMatch[2].padStart(2, '0')}-${dmYMatch[1].padStart(2, '0')}`
+
+  // Handle DD/MM/YY
+  const dmyShort = clean.match(/(\d{1,2})[\-\/\.](\d{1,2})[\-\/\.](\d{2})\b/)
+  if (dmyShort) return `20${dmyShort[3]}-${dmyShort[2].padStart(2, '0')}-${dmyShort[1].padStart(2, '0')}`
+
+  return new Date().toISOString().split('T')[0]
+}
+
+// ─── Client-Side Payslip Parser Fallback ─────────────────────────────────────
+function extractPayslipFromText(rawText) {
+  if (!rawText) return null
+  const lower = rawText.toLowerCase()
+  const payslipIndicators = ['payslip', 'pay slip', 'basic salary', 'basic pay', 'gross pay', 'net pay', 'nett pay', 'paye', 'uif', 'earnings', 'deductions', 'employee', 'remuneration']
+  const matchCount = payslipIndicators.filter(k => lower.includes(k)).length
+  if (matchCount < 2) return null
+
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+  const moneyPattern = /(?:R\s*)?(\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})|\d+\.\d{2})/g
+
+  // Find pay date if any
+  const dateRegex = /(\d{1,2}[\s\-\/][A-Za-z]{3,9}[\s\-\/]\d{2,4}|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{2,4})/
+  let payDate = new Date().toISOString().split('T')[0]
+  for (const line of lines) {
+    const dm = line.match(dateRegex)
+    if (dm) {
+      payDate = parseNativeDate(dm[0])
+      break
+    }
+  }
+
+  const extractLineAmount = (keywords) => {
+    for (const line of lines) {
+      const l = line.toLowerCase()
+      if (keywords.some(k => l.includes(k))) {
+        const matches = [...line.matchAll(moneyPattern)]
+        if (matches.length > 0) {
+          const val = parseFloat(matches[matches.length - 1][1].replace(/[\s,']/g, ''))
+          if (!isNaN(val) && val > 0) return val
         }
       }
+    }
+    return 0
+  }
 
-      allRows.push({ date, description, amount: Math.abs(txAmount.value), type })
+  const grossPay = extractLineAmount(['gross pay', 'gross salary', 'total earnings', 'basic salary', 'basic pay'])
+  const netPay = extractLineAmount(['net pay', 'nett pay', 'net salary', 'nett salary', 'take home', 'nett pay'])
+  const payeTax = extractLineAmount(['paye', 'income tax', 'tax paid'])
+  const uif = extractLineAmount(['uif', 'unemployment'])
+  const medicalAid = extractLineAmount(['medical aid', 'discovery health', 'bonitas', 'medihelp', 'medical scheme'])
+  const retirementAnnuity = extractLineAmount(['retirement', 'pension', 'provident fund', 'ra contribution'])
+  const loanDeduction = extractLineAmount(['staff loan', 'garnishee', 'loan deduction', 'salary advance'])
+
+  const transactions = []
+  const primaryIncome = netPay > 0 ? netPay : grossPay
+  if (primaryIncome > 0) {
+    transactions.push({
+      date: payDate,
+      description: netPay > 0 ? 'Salary (Payslip Net Pay)' : 'Salary (Payslip Gross Pay)',
+      amount: primaryIncome,
+      type: 'income',
+      includeByDefault: true,
+      taxCategory: ''
+    })
+  }
+  if (retirementAnnuity > 0) {
+    transactions.push({
+      date: payDate,
+      description: 'Retirement / Pension Contribution (Payslip)',
+      amount: retirementAnnuity,
+      type: 'expense',
+      includeByDefault: true,
+      taxCategory: 'Retirement Annuity (RA)'
+    })
+  }
+  if (medicalAid > 0) {
+    transactions.push({
+      date: payDate,
+      description: 'Medical Aid Contribution (Payslip)',
+      amount: medicalAid,
+      type: 'expense',
+      includeByDefault: true,
+      taxCategory: 'Medical'
+    })
+  }
+  if (loanDeduction > 0) {
+    transactions.push({
+      date: payDate,
+      description: 'Staff Loan / Garnishee Deduction (Payslip)',
+      amount: loanDeduction,
+      type: 'expense',
+      includeByDefault: true,
+      taxCategory: ''
+    })
+  }
+  if (payeTax > 0) {
+    transactions.push({
+      date: payDate,
+      description: 'PAYE Income Tax (Payslip)',
+      amount: payeTax,
+      type: 'expense',
+      includeByDefault: netPay === 0,
+      taxCategory: ''
+    })
+  }
+  if (uif > 0) {
+    transactions.push({
+      date: payDate,
+      description: 'UIF Contribution (Payslip)',
+      amount: uif,
+      type: 'expense',
+      includeByDefault: netPay === 0,
+      taxCategory: ''
+    })
+  }
+
+  if (transactions.length === 0) return null
+
+  return {
+    documentType: 'payslip',
+    payslipSummary: {
+      employer: '',
+      payDate,
+      grossPay,
+      netPay,
+      payeTax,
+      uif,
+      medicalAid,
+      retirementAnnuity
+    },
+    transactions
+  }
+}
+
+// ─── Client-Side Bank Statement Text Parser Fallback ─────────────────────────
+function extractTransactionsFromRawText(rawText) {
+  if (!rawText) return []
+  const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length >= 5)
+  const allRows = []
+
+  const dateRegex = /^(\d{1,2}[\s\-\/][A-Za-z]{3}(?:[\s\-\/]\d{2,4})?|\d{4}[\-\/\.]\d{2}[\-\/\.]\d{2}|\d{2}[\-\/\.]\d{2}[\-\/\.]\d{2,4})\b/i
+  const moneyRegex = /(?:R\s*\d{1,3}(?:[\s,']\d{3})*(?:\.\d{2})?|\d{1,3}(?:[\s,']\d{3})+(?:\.\d{2})?|\d+\.\d{2})(?:\s*(?:CR|DR|Cr|Dr|-))?/g
+
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase()
+    const skipKeywords = ['opening balance', 'closing balance', 'brought forward', 'carried forward', 'statement date', 'available balance']
+    if (skipKeywords.some(k => lowerLine.includes(k))) continue
+
+    const dateMatch = line.match(dateRegex)
+    if (!dateMatch) continue
+
+    const date = dateMatch[0]
+    const lineWithoutDate = line.slice(date.length).trim()
+
+    moneyRegex.lastIndex = 0
+    const moneyMatches = lineWithoutDate.match(moneyRegex)
+    if (!moneyMatches) continue
+
+    const parsedAmounts = moneyMatches
+      .map(m => {
+        const clean = m.replace(/[R\s,']/gi, '').replace(/CR|DR|-/gi, '')
+        return { original: m, value: parseFloat(clean) }
+      })
+      .filter(m => !isNaN(m.value) && m.value > 0.5)
+
+    if (parsedAmounts.length === 0) continue
+
+    const txAmount = parsedAmounts[0]
+    let description = lineWithoutDate.replace(txAmount.original, '')
+    if (parsedAmounts.length > 1) {
+      description = description.replace(parsedAmounts[parsedAmounts.length - 1].original, '')
+    }
+    description = description.replace(/\s+/g, ' ').trim() || 'Imported Transaction'
+
+    const rawUpper = txAmount.original.toUpperCase()
+    let type = 'expense'
+    if (rawUpper.includes('CR') || lowerLine.includes(' cr') || lowerLine.includes('credit')) {
+      type = 'income'
+    } else if (['salary', 'deposit', 'transfer from', 'inward', 'received', 'interest', 'nett pay'].some(k => lowerLine.includes(k)) && !txAmount.original.includes('-')) {
+      type = 'income'
+    }
+
+    allRows.push({
+      date: parseNativeDate(date),
+      description,
+      amount: Math.abs(txAmount.value),
+      type
     })
   }
   return allRows
 }
 
-function parseNativeDate(dateStr) {
-  if (!dateStr) return new Date().toISOString().split('T')[0]
-  
-  // Handle DD MMM (e.g. 01 JAN)
-  const monthMap = { JAN: '01', FEB: '02', MAR: '03', APR: '04', MAY: '05', JUN: '06', JUL: '07', AUG: '08', SEP: '09', OCT: '10', NOV: '11', DEC: '12' }
-  const upper = dateStr.toUpperCase()
-  const parts = upper.match(/(\d{1,2})\s([A-Z]{3})/)
-  
-  if (parts && monthMap[parts[2]]) {
-    const year = new Date().getFullYear()
-    return `${year}-${monthMap[parts[2]]}-${parts[1].padStart(2, '0')}`
-  }
-  
-  // Handle ISO or common YYYY/MM/DD
-  const isoMatch = dateStr.match(/(\d{4})[\-\/\.](\d{2})[\-\/\.](\d{2})/)
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`
-
-  // Handle DD/MM/YYYY
-  const dmYMatch = dateStr.match(/(\d{2})[\-\/\.](\d{2})[\-\/\.](\d{4})/)
-  if (dmYMatch) return `${dmYMatch[3]}-${dmYMatch[2]}-${dmYMatch[1]}`
-  
-  return new Date().toISOString().split('T')[0]
-}
-
 export default function CSVImport({ onClose, onSuccess }) {
-  const [step, setStep] = useState('upload') 
+  const [step, setStep] = useState('upload')
   const [format, setFormat] = useState('GENERIC')
   const [editedRows, setEditedRows] = useState([])
+  const [payslipSummary, setPayslipSummary] = useState(null)
+  const [syncTaxDeductions, setSyncTaxDeductions] = useState(true)
   const [importing, setImporting] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanStatus, setScanStatus] = useState('')
+  const [scanError, setScanError] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
   const [result, setResult] = useState(null)
   const fileInputRef = useRef()
+  const queryClient = useQueryClient()
 
   const { data: categoriesData } = useQuery({
     queryKey: ['categories'],
@@ -518,145 +633,223 @@ export default function CSVImport({ onClose, onSuccess }) {
 
   const [useAI, setUseAI] = useState(true)
 
-  const handleFile = async (e) => {
-    const file = e.target.files[0]
+  const processSelectedFile = async (file) => {
     if (!file) return
-    
-    const isPDF = file.name.endsWith('.pdf')
-    const isCSV = file.name.endsWith('.csv')
+    setScanError('')
 
-    if (!isPDF && !isCSV) {
-      toast.error('Please upload a .csv or .pdf file')
+    const lowerName = (file.name || '').toLowerCase()
+    const mime = (file.type || '').toLowerCase()
+    const isPDF = lowerName.endsWith('.pdf') || mime === 'application/pdf'
+    const isCSV = lowerName.endsWith('.csv') || mime === 'text/csv' || mime === 'application/vnd.ms-excel'
+    const isImage = /\.(png|jpg|jpeg|webp)$/i.test(lowerName) || mime.startsWith('image/')
+
+    if (!isPDF && !isCSV && !isImage) {
+      const msg = 'Unsupported file format. Please upload a PDF, CSV, or Image (.png / .jpg) of your bank statement or payslip.'
+      setScanError(msg)
+      toast.error(msg)
       return
     }
 
     const entitiesContext = { debts, bills, savings, goals, categories }
+    setIsScanning(true)
+    setPayslipSummary(null)
 
     try {
-      if (useAI) {
-        toast.loading('Pace AI is scanning statement & matching debts/bills...')
-        let rawText = ''
-        if (isCSV) {
-          rawText = await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onload = (ev) => resolve(ev.target.result)
-            reader.readAsText(file)
+      let rawText = ''
+      if (isCSV) {
+        setScanStatus(`Reading ${file.name}...`)
+        rawText = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (ev) => resolve(String(ev.target.result || ''))
+          reader.onerror = (err) => reject(err)
+          reader.readAsText(file)
+        })
+      } else if (isPDF) {
+        setScanStatus(`Extracting text from ${file.name}...`)
+        rawText = await extractRawTextFromPDF(file)
+      }
+
+      // 1. Try AI Smart Scanner (supports raw text AND multimodal PDF/Image binary!)
+      if (useAI || isImage || (isPDF && (!rawText || rawText.trim().length < 20))) {
+        try {
+          setScanStatus(`Pace AI is analyzing ${file.name} & matching debts/bills...`)
+          let fileData = ''
+          let mimeType = ''
+
+          // Send base64 binary for PDFs or Images so scanned PDFs & complex Payslips work 100% of the time
+          if (isPDF || isImage) {
+            fileData = await fileToBase64(file)
+            mimeType = isPDF ? 'application/pdf' : (file.type || 'image/jpeg')
+          }
+
+          const scanRes = await aiAPI.scanStatement({
+            text: rawText,
+            fileData,
+            mimeType,
+            fileName: file.name,
+            categories
           })
-        } else {
-          rawText = await extractRawTextFromPDF(file)
+
+          const transactions = scanRes.data?.transactions || []
+          const docType = scanRes.data?.documentType || 'bank_statement'
+          const summary = scanRes.data?.payslipSummary || null
+
+          if (transactions.length > 0) {
+            const parsed = transactions.map((r, i) => {
+              const matched = autoMatchEntities(r.description, r.type, entitiesContext, r)
+              return {
+                _id: i,
+                _include: r.includeByDefault !== false,
+                description: r.description || 'Imported Item',
+                amount: Math.abs(parseFloat(r.amount) || 0),
+                type: r.type === 'income' ? 'income' : 'expense',
+                transactionDate: parseNativeDate(r.date),
+                categoryId: matched.categoryId,
+                linkTarget: matched.linkTarget,
+                taxCategory: r.taxCategory || ''
+              }
+            }).filter(r => r.amount > 0)
+
+            if (parsed.length > 0) {
+              const autoLinkedCount = parsed.filter(p => p.linkTarget).length
+              setPayslipSummary(docType === 'payslip' ? summary : null)
+              setFormat(docType === 'payslip' ? 'Payslip (AI Scanned)' : `${isCSV ? 'CSV' : isImage ? 'Image' : 'PDF'} Statement (AI Scanned)`)
+              setEditedRows(parsed)
+              setIsScanning(false)
+              setStep('preview')
+              toast.success(
+                docType === 'payslip'
+                  ? `Payslip scanned! Extracted ${parsed.length} salary & deduction items.`
+                  : autoLinkedCount > 0
+                    ? `Extracted ${parsed.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
+                    : `Successfully extracted ${parsed.length} transactions!`
+              )
+              return
+            }
+          }
+        } catch (aiErr) {
+          console.warn('AI Scanner fallback to local parser:', aiErr.message)
+        }
+      }
+
+      // 2. Local Deterministic Fallback Parser (CSV / Payslip Text / Statement Text)
+      setScanStatus('Running local statement & payslip parser...')
+      if (isCSV) {
+        const { headers, rows } = parseCSV(rawText)
+        const detectedFormat = detectBankFormat(headers)
+        const parsed = rows
+          .map(row => parseRow(row, headers, detectedFormat))
+          .filter(r => r._valid && r.amount > 0)
+
+        if (parsed.length === 0) {
+          throw new Error('No valid transactions found in CSV file.')
         }
 
-        if (!rawText || rawText.trim().length === 0) {
-          throw new Error('No selectable text found in statement')
-        }
-
-        const scanRes = await aiAPI.scanStatement({ text: rawText, categories })
-        const transactions = scanRes.data.transactions || []
-        toast.dismiss()
-
-        if (transactions.length === 0) {
-          throw new Error('AI could not find any transactions')
-        }
-
-        const parsed = transactions.map((r, i) => {
-          const matched = autoMatchEntities(r.description, r.type, entitiesContext, r)
+        const enriched = parsed.map((r, i) => {
+          const matched = autoMatchEntities(r.description, r.type, entitiesContext)
           return {
+            ...r,
             _id: i,
             _include: true,
-            description: r.description,
-            amount: parseFloat(r.amount),
-            type: r.type,
-            transactionDate: r.date,
             categoryId: matched.categoryId,
-            linkTarget: matched.linkTarget
+            linkTarget: matched.linkTarget,
+            taxCategory: ''
           }
         })
-
-        const autoLinkedCount = parsed.filter(p => p.linkTarget).length
-        setFormat(isCSV ? 'CSV Statement (AI Scanned)' : 'PDF Statement (AI Scanned)')
-        setEditedRows(parsed)
+        setFormat(detectedFormat)
+        setEditedRows(enriched)
+        setIsScanning(false)
         setStep('preview')
-        toast.success(
-          autoLinkedCount > 0
-            ? `Extracted ${parsed.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
-            : `AI successfully extracted ${parsed.length} transactions!`
-        )
+        toast.success(`Extracted ${enriched.length} transactions from CSV`)
         return
       }
-    } catch (aiErr) {
-      console.warn('AI Scanner failed, falling back to standard parser:', aiErr.message)
-      toast.dismiss()
-    }
 
-    // Traditional Standard Parser Fallback
-    try {
-      if (isCSV) {
-        const reader = new FileReader()
-        reader.onload = (ev) => {
-          const { headers, rows } = parseCSV(ev.target.result)
-          const detectedFormat = detectBankFormat(headers)
-          setFormat(detectedFormat)
-          const parsed = rows
-            .map(row => parseRow(row, headers, detectedFormat, categories))
-            .filter(r => r._valid && r.amount > 0)
-          
-          if (parsed.length === 0) {
-            toast.error('No valid transactions found in CSV.')
-            return
-          }
-          const enriched = parsed.map((r, i) => {
+      if (isPDF && rawText && rawText.trim().length > 0) {
+        // First check if the PDF text is a Payslip
+        const payslipResult = extractPayslipFromText(rawText)
+        if (payslipResult && payslipResult.transactions.length > 0) {
+          const parsed = payslipResult.transactions.map((r, i) => {
             const matched = autoMatchEntities(r.description, r.type, entitiesContext)
             return {
-              ...r,
               _id: i,
-              _include: true,
+              _include: r.includeByDefault !== false,
+              description: r.description,
+              amount: r.amount,
+              type: r.type,
+              transactionDate: r.date,
               categoryId: matched.categoryId,
-              linkTarget: matched.linkTarget
+              linkTarget: matched.linkTarget,
+              taxCategory: r.taxCategory || ''
             }
           })
-          setEditedRows(enriched)
+          setPayslipSummary(payslipResult.payslipSummary)
+          setFormat('Payslip (Standard Scan)')
+          setEditedRows(parsed)
+          setIsScanning(false)
           setStep('preview')
-        }
-        reader.readAsText(file)
-      } else {
-        // PDF Path
-        toast.loading('Analyzing PDF statement (Standard Scan)...')
-        const pdfRows = await extractTransactionsFromPDF(file)
-        toast.dismiss()
-        
-        if (pdfRows.length === 0) {
-          toast.error('Could not extract transactions. PDF might be encrypted or scanned (no selectable text).')
+          toast.success(`Payslip scanned! Extracted ${parsed.length} items.`)
           return
         }
 
-        const parsed = pdfRows.map((r, i) => {
-          const matched = autoMatchEntities(r.description, r.type, entitiesContext)
-          return {
-            _id: i,
-            _include: true,
-            description: r.description,
-            amount: r.amount,
-            type: r.type,
-            transactionDate: parseNativeDate(r.date),
-            categoryId: matched.categoryId,
-            linkTarget: matched.linkTarget
-          }
-        })
-        
-        setFormat('PDF Statement (Standard)')
-        setEditedRows(parsed)
-        setStep('preview')
-        toast.success(`Extracted ${parsed.length} transactions from PDF`)
+        // Otherwise parse as Bank Statement
+        const pdfRows = extractTransactionsFromRawText(rawText)
+        if (pdfRows.length > 0) {
+          const parsed = pdfRows.map((r, i) => {
+            const matched = autoMatchEntities(r.description, r.type, entitiesContext)
+            return {
+              _id: i,
+              _include: true,
+              description: r.description,
+              amount: r.amount,
+              type: r.type,
+              transactionDate: r.date,
+              categoryId: matched.categoryId,
+              linkTarget: matched.linkTarget,
+              taxCategory: ''
+            }
+          })
+          setFormat('PDF Statement (Standard Scan)')
+          setEditedRows(parsed)
+          setIsScanning(false)
+          setStep('preview')
+          toast.success(`Extracted ${parsed.length} transactions from PDF`)
+          return
+        }
       }
+
+      throw new Error(
+        'Could not extract transactions from this document. Make sure AI Smart Scan is enabled or try uploading a clear PDF, CSV, or screenshot.'
+      )
     } catch (err) {
-      console.error(err)
-      toast.dismiss()
-      toast.error('Failed to process file. Ensure it is a valid bank statement.')
+      console.error('Import error:', err)
+      setIsScanning(false)
+      const message = err.response?.data?.error || err.message || 'Failed to process file.'
+      setScanError(message)
+      toast.error(message)
+    }
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (e.target) e.target.value = '' // Always reset so re-uploading the same file triggers onChange
+    if (file) {
+      processSelectedFile(file)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    const file = e.dataTransfer?.files?.[0]
+    if (file) {
+      processSelectedFile(file)
     }
   }
 
   const handleImport = async () => {
-    const toImport = editedRows.filter(r => r._include).map(r => {
+    const selectedRows = editedRows.filter(r => r._include)
+    const toImport = selectedRows.map(r => {
       const [linkType, linkId] = (r.linkTarget || '').split(':')
       const parsedId = linkId ? parseInt(linkId) : null
       return {
@@ -673,13 +866,38 @@ export default function CSVImport({ onClose, onSuccess }) {
     })
 
     if (toImport.length === 0) {
-      toast.error('Select at least one transaction to import')
+      toast.error('Select at least one item to import')
       return
     }
 
     setImporting(true)
     try {
       const res = await importAPI.importTransactions(toImport)
+
+      // If Payslip tax deductions (RA / Medical Aid) are present and user checked syncTaxDeductions, log them to SARS Tax Hub
+      let taxLoggedCount = 0
+      if (syncTaxDeductions) {
+        const taxRows = selectedRows.filter(r => r.taxCategory && r.amount > 0)
+        for (const tr of taxRows) {
+          try {
+            await taxAPI.createDeduction({
+              description: tr.description,
+              amount: parseFloat(tr.amount),
+              category: tr.taxCategory,
+              date: tr.transactionDate,
+              receipt: 'Auto-logged from Payslip Import'
+            })
+            taxLoggedCount++
+          } catch (taxErr) {
+            console.warn('Tax deduction auto-log skipped:', taxErr.message)
+          }
+        }
+        if (taxLoggedCount > 0) {
+          queryClient.invalidateQueries({ queryKey: ['tax-deductions'] })
+          queryClient.invalidateQueries({ queryKey: ['tax-summary'] })
+        }
+      }
+
       setResult({
         imported: res.data.imported,
         failed: res.data.failed || 0,
@@ -687,9 +905,10 @@ export default function CSVImport({ onClose, onSuccess }) {
         billsPaid: res.data.billsPaid || 0,
         savingsUpdated: res.data.savingsUpdated || 0,
         goalsUpdated: res.data.goalsUpdated || 0,
+        taxLoggedCount
       })
       setStep('done')
-      toast.success(`Successfully imported ${res.data.imported} transactions!`)
+      toast.success(`Successfully imported ${res.data.imported} item(s)!`)
       onSuccess?.()
     } catch (err) {
       toast.error(err.response?.data?.error || 'Import failed')
@@ -703,14 +922,15 @@ export default function CSVImport({ onClose, onSuccess }) {
   }
 
   const selectedCount = editedRows.filter(r => r._include).length
+  const hasTaxDeductibleRows = editedRows.some(r => r.taxCategory && r._include)
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content modal-large" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div>
-            <h2>Import Bank Statement</h2>
-            <p className="section-subtitle">Upload your bank statement (CSV or PDF) to import transactions</p>
+            <h2>Import Bank Statement or Payslip</h2>
+            <p className="section-subtitle">Upload a CSV, PDF, or photo/screenshot of your bank statement or payslip</p>
           </div>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
@@ -730,36 +950,130 @@ export default function CSVImport({ onClose, onSuccess }) {
 
         {step === 'upload' && (
           <div className="import-upload-zone">
-            <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={48} className="upload-icon" />
-              <h3>Drop your statement here</h3>
-              <p>Supports <strong>CSV</strong> and <strong>PDF</strong> formats</p>
-              <div className="supported-banks">
-                <FileText size={16} /> <span>FNB / Standard / Nedbank / ABSA</span>
-              </div>
-              
-              <div 
-                className="ai-toggle-pill" 
-                onClick={(e) => { e.stopPropagation(); setUseAI(!useAI); }}
-                style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '8px', background: useAI ? 'rgba(79, 140, 255, 0.15)' : 'rgba(255,255,255,0.05)', border: `1px solid ${useAI ? 'rgba(79, 140, 255, 0.3)' : 'rgba(255,255,255,0.1)'}`, padding: '6px 16px', borderRadius: '100px', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.8rem', color: useAI ? '#fff' : '#94a3b8' }}
-              >
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: useAI ? '#10b981' : '#64748b', boxShadow: useAI ? '0 0 8px #10b981' : 'none' }}></div>
-                <strong>AI Smart Scan: {useAI ? 'ENABLED' : 'DISABLED'}</strong>
-              </div>
+            <div
+              className="upload-area"
+              onClick={() => !isScanning && fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                if (!isDragging) setIsDragging(true)
+              }}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsDragging(true)
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsDragging(false)
+              }}
+              onDrop={handleDrop}
+              style={{
+                borderColor: isDragging ? '#10b981' : isScanning ? '#4f8cff' : undefined,
+                background: isDragging ? 'rgba(16, 185, 129, 0.08)' : isScanning ? 'rgba(79, 140, 255, 0.06)' : undefined,
+                cursor: isScanning ? 'wait' : 'pointer'
+              }}
+            >
+              {isScanning ? (
+                <div style={{ padding: '1rem 0' }}>
+                  <Loader2 size={48} className="upload-icon" style={{ animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
+                  <h3 style={{ color: '#fff', marginBottom: '0.5rem' }}>Scanning Your Document...</h3>
+                  <p style={{ color: '#38bdf8', fontWeight: 600 }}>{scanStatus || 'Processing document...'}</p>
+                  <p className="text-muted" style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                    Matching transactions, payslip figures, debts & bills automatically
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Upload size={48} className="upload-icon" />
+                  <h3>Drop your Bank Statement or Payslip here</h3>
+                  <p>Supports <strong>PDF</strong>, <strong>CSV</strong>, and <strong>Images (PNG/JPG)</strong></p>
+                  <div className="supported-banks">
+                    <FileText size={16} /> <span>FNB • Capitec • Standard Bank • Nedbank • ABSA • SA Payslips</span>
+                  </div>
+
+                  <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn primary small"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        fileInputRef.current?.click()
+                      }}
+                    >
+                      <Upload size={15} /> Choose File to Upload
+                    </button>
+
+                    <div
+                      className="ai-toggle-pill"
+                      onClick={(e) => { e.stopPropagation(); setUseAI(!useAI) }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: useAI ? 'rgba(79, 140, 255, 0.15)' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${useAI ? 'rgba(79, 140, 255, 0.3)' : 'rgba(255,255,255,0.1)'}`,
+                        padding: '6px 16px',
+                        borderRadius: '100px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontSize: '0.8rem',
+                        color: useAI ? '#fff' : '#94a3b8'
+                      }}
+                    >
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: useAI ? '#10b981' : '#64748b', boxShadow: useAI ? '0 0 8px #10b981' : 'none' }}></div>
+                      <strong>AI Smart Scan: {useAI ? 'ENABLED' : 'DISABLED'}</strong>
+                    </div>
+                  </div>
+                </>
+              )}
 
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.pdf"
-                onChange={handleFile}
+                accept=".csv,.pdf,.png,.jpg,.jpeg,.webp,application/pdf,text/csv,image/*"
+                onChange={handleFileChange}
                 style={{ display: 'none' }}
               />
             </div>
+
+            {scanError && (
+              <div
+                style={{
+                  marginBottom: '1.5rem',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '12px',
+                  background: 'rgba(239, 68, 68, 0.12)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  color: '#fca5a5',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  textAlign: 'left',
+                  fontSize: '0.88rem'
+                }}
+              >
+                <AlertCircle size={20} style={{ color: '#ef4444', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ color: '#fff', display: 'block', marginBottom: '2px' }}>Could not scan file</strong>
+                  {scanError}
+                </div>
+                <button
+                  type="button"
+                  className="btn ghost small"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Try Another File
+                </button>
+              </div>
+            )}
+
             <div className="import-tips">
-              <h4>💡 Pro Tips:</h4>
+              <h4>💡 What You Can Upload:</h4>
               <ul>
-                <li><strong>PDF Support:</strong> Best with digital statements. Scanned images or password-protected files may not work.</li>
-                <li><strong>Privacy:</strong> Data is handled locally in your browser.</li>
+                <li><strong>Bank Statements (PDF / CSV / Screenshot):</strong> Automatically categorizes expenses and deducts payments made toward your Debts or Bills.</li>
+                <li><strong>Payslips (PDF / Photo):</strong> Automatically extracts your Net Salary, Retirement Annuity (RA), Medical Aid, and deductions, and can sync tax-deductible items straight to your SARS Tax Hub.</li>
               </ul>
             </div>
           </div>
@@ -767,6 +1081,54 @@ export default function CSVImport({ onClose, onSuccess }) {
 
         {step === 'preview' && (
           <div className="import-preview">
+            {payslipSummary && (
+              <div
+                style={{
+                  marginBottom: '1.25rem',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '14px',
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(79, 140, 255, 0.08) 100%)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 700, fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                    <Sparkles size={15} /> Payslip Intelligence Summary {payslipSummary.employer ? `• ${payslipSummary.employer}` : ''}
+                  </span>
+                  {hasTaxDeductibleRows && (
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: '#e2e8f0', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={syncTaxDeductions}
+                        onChange={(e) => setSyncTaxDeductions(e.target.checked)}
+                      />
+                      <ShieldCheck size={14} color="#10b981" /> Also log RA / Medical Aid to SARS Tax Hub
+                    </label>
+                  )}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.75rem', fontSize: '0.82rem' }}>
+                  {payslipSummary.grossPay > 0 && (
+                    <div><span className="text-muted">Gross Pay:</span> <strong style={{ color: '#fff' }}>R{Number(payslipSummary.grossPay).toLocaleString()}</strong></div>
+                  )}
+                  {payslipSummary.netPay > 0 && (
+                    <div><span className="text-muted">Net Pay:</span> <strong style={{ color: '#10b981' }}>R{Number(payslipSummary.netPay).toLocaleString()}</strong></div>
+                  )}
+                  {payslipSummary.payeTax > 0 && (
+                    <div><span className="text-muted">PAYE Tax:</span> <strong style={{ color: '#f87171' }}>R{Number(payslipSummary.payeTax).toLocaleString()}</strong></div>
+                  )}
+                  {payslipSummary.uif > 0 && (
+                    <div><span className="text-muted">UIF:</span> <strong style={{ color: '#cbd5e1' }}>R{Number(payslipSummary.uif).toLocaleString()}</strong></div>
+                  )}
+                  {payslipSummary.retirementAnnuity > 0 && (
+                    <div><span className="text-muted">RA / Pension:</span> <strong style={{ color: '#38bdf8' }}>R{Number(payslipSummary.retirementAnnuity).toLocaleString()}</strong></div>
+                  )}
+                  {payslipSummary.medicalAid > 0 && (
+                    <div><span className="text-muted">Medical Aid:</span> <strong style={{ color: '#38bdf8' }}>R{Number(payslipSummary.medicalAid).toLocaleString()}</strong></div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="preview-header">
               <div>
                 <span className="bank-badge">{format}</span>
@@ -796,7 +1158,14 @@ export default function CSVImport({ onClose, onSuccess }) {
                     <tr key={row._id} className={!row._include ? 'row-excluded' : ''}>
                       <td><input type="checkbox" checked={row._include} onChange={e => updateRow(row._id, '_include', e.target.checked)} /></td>
                       <td className="date-cell">{row.transactionDate}</td>
-                      <td><input className="inline-edit" value={row.description} onChange={e => updateRow(row._id, 'description', e.target.value)} /></td>
+                      <td>
+                        <input className="inline-edit" value={row.description} onChange={e => updateRow(row._id, 'description', e.target.value)} />
+                        {row.taxCategory && (
+                          <span style={{ display: 'inline-block', marginLeft: '6px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
+                            SARS: {row.taxCategory}
+                          </span>
+                        )}
+                      </td>
                       <td>
                         <select className="inline-select" value={row.type} onChange={e => updateRow(row._id, 'type', e.target.value)}>
                           <option value="expense">Expense</option>
@@ -869,7 +1238,7 @@ export default function CSVImport({ onClose, onSuccess }) {
             <div className="form-actions">
               <button className="btn ghost" onClick={() => setStep('upload')}>← Back</button>
               <button className="btn primary" onClick={handleImport} disabled={importing || selectedCount === 0}>
-                {importing ? 'Importing...' : `Import ${selectedCount} Transactions`}
+                {importing ? 'Importing...' : `Import ${selectedCount} Item${selectedCount === 1 ? '' : 's'}`}
               </button>
             </div>
           </div>
@@ -879,8 +1248,8 @@ export default function CSVImport({ onClose, onSuccess }) {
           <div className="import-done">
             <CheckCircle size={64} className="import-success-icon" />
             <h3>Import Complete!</h3>
-            <p>Successfully imported <strong>{result.imported}</strong> transactions.</p>
-            {(result.debtsUpdated > 0 || result.billsPaid > 0 || result.savingsUpdated > 0 || result.goalsUpdated > 0) && (
+            <p>Successfully imported <strong>{result.imported}</strong> transaction(s).</p>
+            {(result.debtsUpdated > 0 || result.billsPaid > 0 || result.savingsUpdated > 0 || result.goalsUpdated > 0 || result.taxLoggedCount > 0) && (
               <div style={{ margin: '1rem auto', padding: '0.85rem 1.25rem', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10b981', fontSize: '0.9rem' }}>
                 ⚡ <strong>Auto-Synced Balances:</strong>{' '}
                 {[
@@ -888,6 +1257,7 @@ export default function CSVImport({ onClose, onSuccess }) {
                   result.billsPaid > 0 && `${result.billsPaid} Bill(s) marked paid`,
                   result.savingsUpdated > 0 && `${result.savingsUpdated} Savings Pot(s) updated`,
                   result.goalsUpdated > 0 && `${result.goalsUpdated} Goal(s) progressed`,
+                  result.taxLoggedCount > 0 && `${result.taxLoggedCount} SARS Tax Deduction(s) logged`,
                 ].filter(Boolean).join(' • ')}
               </div>
             )}

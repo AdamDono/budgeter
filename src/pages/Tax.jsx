@@ -9,17 +9,20 @@ import {
   Sparkles,
   Trash2,
   TrendingUp,
+  Upload,
   X
 } from 'lucide-react'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '../components/ConfirmModal'
+import CSVImport from '../components/CSVImport'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { taxAPI } from '../lib/api'
 import { formatCurrency } from '../utils/format'
 
 export default function Tax() {
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showPayslipImport, setShowPayslipImport] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState({ show: false, id: null })
   const [taxYear, setTaxYear] = useState(new Date().getFullYear())
   const [calcMode, setCalcMode] = useState('sars') // 'sars' | 'flat'
@@ -158,6 +161,14 @@ export default function Tax() {
           <p className="text-muted">Official South African progressive tax brackets, Section 11F RA optimizer & deduction tracker</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn ghost extra-small"
+            style={{ padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
+            onClick={() => setShowPayslipImport(true)}
+          >
+            <Upload size={16} />
+            Upload Payslip
+          </button>
           <button
             className="btn ghost extra-small"
             style={{ padding: '0.75rem 1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}
@@ -425,6 +436,19 @@ export default function Tax() {
           onSubmit={handleAddDeduction}
           onClose={() => setShowAddForm(false)}
           loading={createMutation.isPending}
+        />
+      )}
+
+      {/* Payslip / Statement Scanner Modal */}
+      {showPayslipImport && (
+        <CSVImport
+          onClose={() => setShowPayslipImport(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['tax-deductions'] })
+            queryClient.invalidateQueries({ queryKey: ['tax-summary'] })
+            queryClient.invalidateQueries({ queryKey: ['transactions'] })
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+          }}
         />
       )}
 

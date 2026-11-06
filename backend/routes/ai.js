@@ -534,12 +534,12 @@ ${context}
   }
 })
 
-// ─── AI Bank Statement Scanner Endpoint (CSV/PDF Raw Text) ─────────────────────
+// ─── AI Bank Statement & Payslip Scanner Endpoint (CSV / PDF / Image + Raw Text) ───
 router.post('/scan-statement', async (req, res, next) => {
   try {
-    const { text, categories = [] } = req.body
-    if (!text || typeof text !== 'string' || !text.trim()) {
-      return res.status(400).json({ error: 'Statement text is required' })
+    const { text = '', fileData = '', mimeType = '', fileName = '', categories = [] } = req.body
+    if ((!text || typeof text !== 'string' || !text.trim()) && !fileData) {
+      return res.status(400).json({ error: 'Statement or payslip content is required' })
     }
 
     const apiKey = process.env.GEMINI_API_KEY
@@ -561,11 +561,14 @@ router.post('/scan-statement', async (req, res, next) => {
     const goalsList = goalsRes.rows.map(g => `${g.id}: "${g.name}"`).join(', ')
 
     const catList = categories.map(c => `${c.id}: ${c.name}`).join(', ')
-    const truncatedText = text.slice(0, 35000)
+    const truncatedText = (text || '').slice(0, 40000)
+    const todayISO = new Date().toISOString().split('T')[0]
 
     const prompt = `
-You are an expert South African bank statement parser (FNB, Capitec, Standard Bank, Nedbank, Absa, TymeBank, Discovery Bank).
-Extract all financial transactions from the raw statement text below and return a JSON object with a "transactions" array.
+You are an elite South African financial document parser.
+The user has uploaded a document${fileName ? ` named "${fileName}"` : ''} which is either:
+1. A **South African Bank Statement** (FNB, Capitec, Standard Bank, Nedbank, Absa, TymeBank, Discovery Bank, Investec, etc.), OR
+2. A **South African Payslip / IRP5** (Sage, SimplePay, PaySpace, Workday, corporate payslip, etc.).
 
 Available Budget Categories (id: name):
 ${catList || 'None provided'}
@@ -582,37 +585,61 @@ ${savingsList || 'None'}
 User's Financial Goals (id: name):
 ${goalsList || 'None'}
 
-Rules:
+=== INSTRUCTIONS FOR BANK STATEMENTS ===
 1. Ignore opening/closing balances, brought forward lines, and page headers.
 2. Convert all dates to YYYY-MM-DD format (if year is missing, assume ${new Date().getFullYear()}).
 3. "amount" must be a positive number.
 4. "type" must be either "income" (credits, deposits, salary, inward transfers) or "expense" (debits, card purchases, fees, payments, EFTs out).
-5. "categoryId" should be the matching category ID as a string if obvious, or "" if unsure.
-6. CRITICAL ENTITY LINKING:
-   - If a payment/debit description matches or mentions one of the User's Active Debts (for example, paying a person or lender like "Maki", "WesBank", "FNB Credit Card", etc.), set "debtId" to that Debt's ID as a string (otherwise "").
-   - If it matches one of the User's Unpaid Bills, set "billId" to that Bill's ID as a string (otherwise "").
-   - If it is a transfer into one of the User's Savings Pots, set "savingsId" to that Savings Pot's ID as a string (otherwise "").
-   - If it contributes to one of the User's Financial Goals, set "goalId" to that Goal's ID as a string (otherwise "").
+5. Set "includeByDefault": true for all valid bank statement transactions.
+
+=== INSTRUCTIONS FOR PAYSLIPS ===
+If the document is a Payslip or Salary Advice:
+1. Set "documentType" to "payslip" and populate "payslipSummary" with any values found (grossPay, netPay, payeTax, uif, medicalAid, retirementAnnuity, employer, payDate in YYYY-MM-DD, fallback to ${todayISO}).
+2. Extract actionable transactions into the "transactions" array using the Payslip pay date (or ${todayISO} if no date is shown):
+   - **Net Pay / Nett Salary (Take-home pay)**: Add as an "income" transaction (e.g., description: "Salary - [Employer Name] (Net Pay)", amount: netPay, type: "income", includeByDefault: true). If only Gross/Basic Salary is shown and no Net Pay is listed, use Gross/Basic Salary.
+   - **Retirement Annuity / Pension / Provident Fund**: If > 0, add as an "expense" transaction (description: "Retirement / Pension Fund Contribution", amount, type: "expense", includeByDefault: true, taxCategory: "Retirement Annuity (RA)").
+   - **Medical Aid Contribution**: If > 0, add as an "expense" transaction (description: "Medical Aid Contribution", amount, type: "expense", includeByDefault: true, taxCategory: "Medical").
+   - **Staff Loan / Garnishee / Advance Deduction**: If > 0, add as an "expense" transaction (includeByDefault: true).
+   - **PAYE Income Tax & UIF**: If > 0, add as "expense" transactions with "includeByDefault": false (since Net Pay already deducts PAYE/UIF, the user can toggle them on if they prefer tracking Gross Salary + Tax separately).
+
+=== CRITICAL ENTITY LINKING (BOTH STATEMENTS & PAYSLIPS) ===
+- "categoryId": matching category ID as a string if obvious, or "".
+- If a payment/deduction matches one of the User's Active Debts (e.g. "Maki", "WesBank", "Staff Loan", etc.), set "debtId" to that Debt's ID as a string (otherwise "").
+- If it matches one of the User's Unpaid Bills, set "billId" to that Bill's ID as a string (otherwise "").
+- If it transfers into one of the User's Savings Pots, set "savingsId" to that Savings Pot's ID as a string (otherwise "").
+- If it contributes to one of the User's Financial Goals, set "goalId" to that Goal's ID as a string (otherwise "").
 
 Return JSON in this exact structure:
 {
+  "documentType": "bank_statement" | "payslip",
+  "payslipSummary": {
+    "employer": "",
+    "payDate": "${todayISO}",
+    "grossPay": 0,
+    "netPay": 0,
+    "payeTax": 0,
+    "uif": 0,
+    "medicalAid": 0,
+    "retirementAnnuity": 0
+  },
   "transactions": [
     {
       "date": "YYYY-MM-DD",
-      "description": "Clean merchant or transaction description",
+      "description": "Clean merchant or payslip line description",
       "amount": 123.45,
       "type": "expense",
+      "includeByDefault": true,
       "categoryId": "",
       "debtId": "",
       "billId": "",
       "savingsId": "",
-      "goalId": ""
+      "goalId": "",
+      "taxCategory": ""
     }
   ]
 }
 
-RAW STATEMENT TEXT:
-${truncatedText}
+${truncatedText ? `EXTRACTED DOCUMENT TEXT:\n${truncatedText}` : 'Read the attached PDF/Image document directly and extract all transactions/payslip figures.'}
 `
 
     const genAI = new GoogleGenerativeAI(apiKey)
@@ -621,14 +648,28 @@ ${truncatedText}
       generationConfig: { responseMimeType: 'application/json' }
     })
 
-    const result = await model.generateContent(prompt)
+    const parts = [prompt]
+    if (fileData && mimeType) {
+      parts.push({
+        inlineData: {
+          data: fileData,
+          mimeType
+        }
+      })
+    }
+
+    const result = await model.generateContent(parts)
     const parsed = JSON.parse(result.response.text().trim())
     const transactions = Array.isArray(parsed.transactions) ? parsed.transactions : []
 
-    res.json({ transactions })
+    res.json({
+      documentType: parsed.documentType || 'bank_statement',
+      payslipSummary: parsed.payslipSummary || null,
+      transactions
+    })
   } catch (error) {
     console.warn('AI scan-statement error:', error.message)
-    res.status(500).json({ error: 'Failed to AI-scan statement: ' + error.message })
+    res.status(500).json({ error: 'Failed to AI-scan document: ' + error.message })
   }
 })
 
