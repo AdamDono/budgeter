@@ -3,12 +3,13 @@ import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './styles.css'
 
-// Register Service Worker for PWA
+// Register Service Worker for PWA & force immediate update check on mobile
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((reg) => {
         console.log('✅ [PWA] Service Worker registered with scope:', reg.scope)
+        reg.update().catch(() => {})
       })
       .catch((err) => {
         console.warn('⚠️ [PWA] Service Worker registration failed:', err)

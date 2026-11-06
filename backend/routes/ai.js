@@ -4,6 +4,34 @@ import { pool } from '../database/connection.js'
 
 const router = express.Router()
 
+const GEMINI_FALLBACK_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+]
+
+// Resilient multi-model generator: if one Gemini model returns 503 (high demand) or 429,
+// immediately falls back to the next available flash model without failing the request.
+async function generateWithModelFallback(apiKey, parts, modelOptions = {}) {
+  const genAI = new GoogleGenerativeAI(apiKey)
+  let lastError = null
+  for (const modelName of GEMINI_FALLBACK_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        ...modelOptions,
+        model: modelName,
+      })
+      const result = await model.generateContent(parts)
+      return result.response.text()
+    } catch (err) {
+      lastError = err
+      console.warn(`[Gemini Fallback] ${modelName} failed (${err.status || err.message}), trying next model...`)
+    }
+  }
+  throw lastError || new Error('All Gemini models temporarily unavailable')
+}
+
 // Helper to compile user's financial details into a text context for Gemini
 async function compileFinancialContext(userId) {
   const queries = [
@@ -282,14 +310,9 @@ Do not include any markdown styling, code blocks, or triple backticks in the res
 ${context}
 `
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+    const responseText = (await generateWithModelFallback(apiKey, [systemPrompt], {
       generationConfig: { responseMimeType: "application/json" }
-    })
-
-    const result = await model.generateContent(systemPrompt)
-    const responseText = result.response.text().trim()
+    })).trim()
     const parsed = JSON.parse(responseText)
 
     res.json({ briefing: parsed })
@@ -642,12 +665,6 @@ Return JSON in this exact structure:
 ${truncatedText ? `EXTRACTED DOCUMENT TEXT:\n${truncatedText}` : 'Read the attached PDF/Image document directly and extract all transactions/payslip figures.'}
 `
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: { responseMimeType: 'application/json' }
-    })
-
     const parts = [prompt]
     if (fileData && mimeType) {
       parts.push({
@@ -658,8 +675,10 @@ ${truncatedText ? `EXTRACTED DOCUMENT TEXT:\n${truncatedText}` : 'Read the attac
       })
     }
 
-    const result = await model.generateContent(parts)
-    const parsed = JSON.parse(result.response.text().trim())
+    const responseText = await generateWithModelFallback(apiKey, parts, {
+      generationConfig: { responseMimeType: 'application/json' }
+    })
+    const parsed = JSON.parse(responseText.trim())
     const transactions = Array.isArray(parsed.transactions) ? parsed.transactions : []
 
     res.json({

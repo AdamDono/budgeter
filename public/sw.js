@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pace-finance-v3'
+const CACHE_NAME = 'pace-finance-v4'
 const STATIC_ASSETS = [
   '/manifest.json?v=2',
   '/favicon.svg?v=2',

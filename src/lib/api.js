@@ -17,7 +17,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config
-    if (!config || config._retryCount >= 2) {
+    if (!config || config._noRetry || config._retryCount >= 2) {
       return Promise.reject(error)
     }
     const isNetworkOrServerWakeup =
@@ -172,7 +172,7 @@ export const aiAPI = {
   createConversation: (title) => api.post('/ai/conversations', { title }),
   getMessages: (id) => api.get(`/ai/conversations/${id}/messages`),
   deleteConversation: (id) => api.delete(`/ai/conversations/${id}`),
-  scanStatement: (data) => api.post('/ai/scan-statement', data, { timeout: 60000 }),
+  scanStatement: (data) => api.post('/ai/scan-statement', data, { timeout: 22000, _noRetry: true }),
 }
 
 // Accounts API
