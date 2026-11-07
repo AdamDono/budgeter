@@ -52,6 +52,7 @@ export const transactionsAPI = {
   create: (data) => api.post('/transactions', data),
   update: (id, data) => api.put(`/transactions/${id}`, data),
   delete: (id) => api.delete(`/transactions/${id}`),
+  deduplicate: () => api.post('/transactions/deduplicate'),
   getAnalytics: (period = '30d') => api.get(`/transactions/analytics?period=${period}`),
 }
 

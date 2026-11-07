@@ -112,6 +112,56 @@ export default function Transactions() {
     }
   })
 
+  const unlinkMutation = useMutation({
+    mutationFn: ({ id, payload }) => transactionsAPI.update(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      queryClient.invalidateQueries({ queryKey: ['savings'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      toast.success('Unlinked from transaction & restored balance!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to unlink')
+    }
+  })
+
+  const deduplicateMutation = useMutation({
+    mutationFn: transactionsAPI.deduplicate,
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['analytics'] })
+      queryClient.invalidateQueries({ queryKey: ['debts'] })
+      queryClient.invalidateQueries({ queryKey: ['payoff-plan'] })
+      queryClient.invalidateQueries({ queryKey: ['savings'] })
+      queryClient.invalidateQueries({ queryKey: ['goals'] })
+      queryClient.invalidateQueries({ queryKey: ['ai-briefing'] })
+      toast.success(res.data?.message || 'Duplicates cleaned up!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to clean duplicates')
+    }
+  })
+
+  const handleUnlinkEntity = (tx, fieldToClear) => {
+    unlinkMutation.mutate({
+      id: tx.id,
+      payload: {
+        categoryId: tx.category_id || null,
+        goalId: fieldToClear === 'goalId' ? null : (tx.goal_id || null),
+        debtId: fieldToClear === 'debtId' ? null : (tx.debt_id || null),
+        savingsId: fieldToClear === 'savingsId' ? null : (tx.savings_id || null),
+        type: tx.type,
+        amount: parseFloat(tx.amount),
+        description: tx.description,
+        transactionDate: new Date(tx.transaction_date).toISOString().split('T')[0],
+      }
+    })
+  }
+
   const handleAddTransaction = (formData) => {
     createMutation.mutate(formData)
   }
@@ -148,8 +198,16 @@ export default function Transactions() {
           <h1>Transactions</h1>
           <p className="text-muted dash-subtitle">History for {new Date(selectedMonth + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}</p>
         </div>
-        <div className="header-actions">
-           <button 
+        <div className="header-actions" style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn ghost"
+            onClick={() => deduplicateMutation.mutate()}
+            disabled={deduplicateMutation.isPending}
+            title="Scan and remove duplicate transactions & reconcile balances"
+          >
+            {deduplicateMutation.isPending ? 'Cleaning...' : 'Remove Duplicates'}
+          </button>
+          <button 
             className="btn ghost"
             onClick={() => setShowImport(true)}
           >
@@ -259,18 +317,42 @@ export default function Transactions() {
                   <h4>{transaction.description}</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                     {transaction.goal_name && (
-                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(79, 140, 255, 0.12)', color: '#4f8cff', fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(79, 140, 255, 0.12)', color: '#4f8cff', fontWeight: 600 }}>
                         🎯 Goal: {transaction.goal_name}
+                        <button
+                          type="button"
+                          onClick={() => handleUnlinkEntity(transaction, 'goalId')}
+                          title="Unlink Goal & restore Goal balance"
+                          style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', padding: '0 2px', fontSize: '0.85rem', lineHeight: 1 }}
+                        >
+                          ×
+                        </button>
                       </span>
                     )}
                     {transaction.debt_name && (
-                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', fontWeight: 600 }}>
                         💳 Debt Paid: {transaction.debt_name}
+                        <button
+                          type="button"
+                          onClick={() => handleUnlinkEntity(transaction, 'debtId')}
+                          title="Unlink Debt & restore Debt balance"
+                          style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', padding: '0 2px', fontSize: '0.85rem', lineHeight: 1 }}
+                        >
+                          ×
+                        </button>
                       </span>
                     )}
                     {transaction.savings_name && (
-                      <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', fontWeight: 600 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', fontWeight: 600 }}>
                         🏦 Pot: {transaction.savings_name}
+                        <button
+                          type="button"
+                          onClick={() => handleUnlinkEntity(transaction, 'savingsId')}
+                          title="Unlink Savings Pot & restore Pot balance"
+                          style={{ background: 'none', border: 'none', color: '#6ee7b7', cursor: 'pointer', padding: '0 2px', fontSize: '0.85rem', lineHeight: 1 }}
+                        >
+                          ×
+                        </button>
                       </span>
                     )}
                   </div>

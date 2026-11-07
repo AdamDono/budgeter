@@ -80,6 +80,91 @@ export const ensureDatabaseSchema = async () => {
       INSERT INTO budget_categories (user_id, name, icon, color)
       SELECT NULL, 'Savings Contribution', 'piggy-bank', '#10B981'
       WHERE NOT EXISTS (SELECT 1 FROM budget_categories WHERE user_id IS NULL AND name = 'Savings Contribution');
+
+      -- 9. Clean up any false-positive goal_id links on Card Purchases / Uber transactions
+      --    (e.g., where "(Card 5797)" falsely matched a Goal named "Car") and restore goal current_amount
+      WITH false_goal_tx AS (
+        UPDATE transactions
+        SET goal_id = NULL, updated_at = CURRENT_TIMESTAMP
+        WHERE goal_id IS NOT NULL
+          AND (
+            description ILIKE '%card purchase%'
+            OR description ILIKE '%(card %'
+            OR description ILIKE '%uber%'
+            OR description ILIKE '%bolt%'
+            OR description ILIKE '%pos purchase%'
+          )
+        RETURNING goal_id, amount
+      ),
+      goal_deltas AS (
+        SELECT goal_id, SUM(amount) AS total_falsely_added
+        FROM false_goal_tx
+        GROUP BY goal_id
+      )
+      UPDATE goals g
+      SET current_amount = GREATEST(0, g.current_amount - gd.total_falsely_added),
+          updated_at = CURRENT_TIMESTAMP
+      FROM goal_deltas gd
+      WHERE g.id = gd.goal_id;
+
+      -- 10. Automatically remove duplicate imported transactions (same user, type, amount, date, description)
+      --     and reverse their duplicate impact on account, debt, savings, and goal balances
+      WITH ranked_tx AS (
+        SELECT id, user_id, account_id, debt_id, savings_id, goal_id, type, amount,
+               ROW_NUMBER() OVER (
+                 PARTITION BY user_id, type, amount, transaction_date, LOWER(TRIM(description))
+                 ORDER BY id ASC
+               ) AS rn
+        FROM transactions
+      ),
+      deleted_dups AS (
+        DELETE FROM transactions t
+        USING ranked_tx r
+        WHERE t.id = r.id AND r.rn > 1
+        RETURNING t.account_id, t.debt_id, t.savings_id, t.goal_id, t.type, t.amount
+      ),
+      acct_fix AS (
+        UPDATE accounts a
+        SET balance = a.balance + sub.delta
+        FROM (
+          SELECT account_id, SUM(CASE WHEN type = 'income' THEN -amount ELSE amount END) AS delta
+          FROM deleted_dups
+          WHERE account_id IS NOT NULL
+          GROUP BY account_id
+        ) sub
+        WHERE a.id = sub.account_id
+      ),
+      debt_fix AS (
+        UPDATE debts d
+        SET balance = d.balance + sub.delta
+        FROM (
+          SELECT debt_id, SUM(amount) AS delta
+          FROM deleted_dups
+          WHERE debt_id IS NOT NULL AND type = 'expense'
+          GROUP BY debt_id
+        ) sub
+        WHERE d.id = sub.debt_id
+      ),
+      sav_fix AS (
+        UPDATE savings s
+        SET balance = GREATEST(0, s.balance - sub.delta)
+        FROM (
+          SELECT savings_id, SUM(CASE WHEN type = 'expense' THEN amount ELSE -amount END) AS delta
+          FROM deleted_dups
+          WHERE savings_id IS NOT NULL
+          GROUP BY savings_id
+        ) sub
+        WHERE s.id = sub.savings_id
+      )
+      UPDATE goals g
+      SET current_amount = GREATEST(0, g.current_amount - sub.delta)
+      FROM (
+        SELECT goal_id, SUM(amount) AS delta
+        FROM deleted_dups
+        WHERE goal_id IS NOT NULL
+        GROUP BY goal_id
+      ) sub
+      WHERE g.id = sub.goal_id;
     `
 
     await pool.query(queries)

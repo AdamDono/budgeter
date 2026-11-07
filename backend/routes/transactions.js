@@ -522,7 +522,76 @@ router.get('/analytics', async (req, res, next) => {
   }
 })
 
-// Bulk import transactions from CSV/PDF
+// Helper: normalize description for duplicate & manual-vs-statement reconciliation
+function normalizeTxDesc(desc) {
+  return String(desc || '')
+    .toLowerCase()
+    .replace(/\(card\s*\d+\)/gi, ' ')
+    .replace(/\b(recurring\s+card\s+purchase|card\s+purchase|pos\s+purchase|eft\s+payment|immediate\s+payment|debit\s+order|debt\s+payment|bill\s+payment|savings\s+deposit|savings\s+withdrawal|payment\s+to|transfer\s+to|other\s+transport)\b/gi, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function getDistinctTokens(desc) {
+  const stop = new Set(['the', 'and', 'for', 'from', 'into', 'with', 'card', 'purchase', 'payment', 'paid', 'debit', 'credit', 'order', 'eft', 'pos', 'atm', 'zar', 'pty', 'ltd', 'south', 'africa'])
+  return normalizeTxDesc(desc)
+    .split(' ')
+    .filter(w => w.length >= 3 && !stop.has(w) && !/^\d+$/.test(w))
+}
+
+function isReconciledDuplicate(incoming, existing) {
+  if (incoming.type !== existing.type) return false
+  const amtA = parseFloat(incoming.amount) || 0
+  const amtB = parseFloat(existing.amount) || 0
+  if (Math.abs(amtA - amtB) > 0.01) return false
+
+  const dateA = new Date(incoming.transactionDate || incoming.transaction_date)
+  const dateB = new Date(existing.transaction_date || existing.transactionDate)
+  const diffDays = Math.abs(dateA - dateB) / (1000 * 60 * 60 * 24)
+
+  const rawA = String(incoming.description || '').toLowerCase().trim()
+  const rawB = String(existing.description || '').toLowerCase().trim()
+
+  // 1. Exact or near-exact statement re-upload (same date or ±1 day + same description)
+  if (diffDays <= 1 && (rawA === rawB || normalizeTxDesc(rawA) === normalizeTxDesc(rawB))) {
+    return true
+  }
+
+  // 2. Manual entry <-> Bank Statement reconciliation within ±5 days:
+  //    - Same linked entity (debt_id, bill_id, savings_id, goal_id), OR
+  //    - Shared merchant/payee keyword (e.g. manual "Paid Maki" vs statement "Immediate Payment Maki"), OR
+  //    - Exact same date + exact same amount + same type
+  if (diffDays <= 5) {
+    if (incoming.debtId && existing.debt_id && Number(incoming.debtId) === Number(existing.debt_id)) return true
+    if (incoming.billId && existing.bill_id && Number(incoming.billId) === Number(existing.bill_id)) return true
+    if (incoming.savingsId && existing.savings_id && Number(incoming.savingsId) === Number(existing.savings_id)) return true
+    if (incoming.goalId && existing.goal_id && Number(incoming.goalId) === Number(existing.goal_id)) return true
+
+    const tokensA = getDistinctTokens(rawA)
+    const tokensB = getDistinctTokens(rawB)
+    if (tokensA.length > 0 && tokensB.length > 0 && tokensA.some(t => tokensB.includes(t))) {
+      return true
+    }
+  }
+
+  // 3. Same day, exact same amount & type where one is a short manual note
+  if (diffDays === 0 && (tokensOverlapOrShortManual(rawA, rawB))) {
+    return true
+  }
+
+  return false
+}
+
+function tokensOverlapOrShortManual(rawA, rawB) {
+  const normA = normalizeTxDesc(rawA)
+  const normB = normalizeTxDesc(rawB)
+  if (!normA || !normB) return true
+  if (normA.includes(normB) || normB.includes(normA)) return true
+  return false
+}
+
+// Bulk import transactions from CSV/PDF with automatic duplicate & manual-entry reconciliation
 router.post('/import', async (req, res, next) => {
   const client = await pool.connect()
   try {
@@ -544,11 +613,51 @@ router.post('/import', async (req, res, next) => {
     const accountId = accountResult.rows[0]?.id || null
 
     // Filter valid transactions first
-    const valid = transactions.filter(tx => tx.type && tx.amount && tx.description && tx.transactionDate)
-    const failed = transactions.length - valid.length
+    const validRaw = transactions.filter(tx => tx.type && tx.amount && tx.description && tx.transactionDate)
+    const failed = transactions.length - validRaw.length
+
+    if (validRaw.length === 0) {
+      return res.json({ message: 'No valid transactions to import', imported: 0, skippedDuplicates: 0, failed })
+    }
+
+    // Fetch user's existing transactions to prevent duplicate imports & reconcile manual entries
+    const existingRes = await client.query(
+      `SELECT id, type, amount, transaction_date, description, debt_id, bill_id, savings_id, goal_id
+       FROM transactions
+       WHERE user_id = $1
+       ORDER BY transaction_date DESC`,
+      [req.user.id]
+    )
+    const existingPool = [...existingRes.rows]
+    const usedExistingIds = new Set()
+
+    const valid = []
+    let skippedDuplicates = 0
+
+    for (const tx of validRaw) {
+      const matchIdx = existingPool.findIndex(
+        ex => !usedExistingIds.has(ex.id) && isReconciledDuplicate(tx, ex)
+      )
+      if (matchIdx !== -1) {
+        usedExistingIds.add(existingPool[matchIdx].id)
+        skippedDuplicates++
+      } else {
+        valid.push(tx)
+        // Also add to in-memory pool so identical duplicate rows inside the same broken upload don't double-insert
+      }
+    }
 
     if (valid.length === 0) {
-      return res.json({ message: 'No valid transactions to import', imported: 0, failed })
+      return res.json({
+        message: `All ${skippedDuplicates} transaction(s) were already recorded — 0 duplicates imported.`,
+        imported: 0,
+        skippedDuplicates,
+        failed,
+        debtsUpdated: 0,
+        billsPaid: 0,
+        savingsUpdated: 0,
+        goalsUpdated: 0
+      })
     }
 
     await client.query('BEGIN')
@@ -662,13 +771,83 @@ router.post('/import', async (req, res, next) => {
     await client.query('COMMIT')
 
     res.json({
-      message: `Import complete: ${valid.length} imported, ${failed} failed`,
+      message: `Import complete: ${valid.length} imported, ${skippedDuplicates} duplicate(s) skipped`,
       imported: valid.length,
+      skippedDuplicates,
       failed,
       debtsUpdated,
       billsPaid,
       savingsUpdated,
       goalsUpdated
+    })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    next(error)
+  } finally {
+    client.release()
+  }
+})
+
+// ─── POST /api/transactions/deduplicate (1-Click Cleanup of Duplicate Transactions) ───
+router.post('/deduplicate', async (req, res, next) => {
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+
+    const allRes = await client.query(
+      `SELECT id, account_id, debt_id, savings_id, goal_id, type, amount, transaction_date, description
+       FROM transactions
+       WHERE user_id = $1
+       ORDER BY id ASC`,
+      [req.user.id]
+    )
+
+    const kept = []
+    const duplicateRows = []
+
+    for (const row of allRes.rows) {
+      const isDup = kept.some(k => isReconciledDuplicate(row, k))
+      if (isDup) {
+        duplicateRows.push(row)
+      } else {
+        kept.push(row)
+      }
+    }
+
+    if (duplicateRows.length === 0) {
+      await client.query('COMMIT')
+      return res.json({ removed: 0, message: 'No duplicate transactions found!' })
+    }
+
+    const dupIds = duplicateRows.map(r => r.id)
+    await client.query(
+      'DELETE FROM transactions WHERE user_id = $1 AND id = ANY($2::int[])',
+      [req.user.id, dupIds]
+    )
+
+    // Reverse balance impact of deleted duplicates
+    for (const dup of duplicateRows) {
+      const amt = parseFloat(dup.amount) || 0
+      if (dup.account_id) {
+        const delta = dup.type === 'income' ? -amt : amt
+        await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [delta, dup.account_id])
+      }
+      if (dup.debt_id && dup.type === 'expense') {
+        await client.query('UPDATE debts SET balance = balance + $1 WHERE id = $2', [amt, dup.debt_id])
+      }
+      if (dup.savings_id) {
+        const delta = dup.type === 'expense' ? amt : -amt
+        await client.query('UPDATE savings SET balance = GREATEST(0, balance - $1) WHERE id = $2', [delta, dup.savings_id])
+      }
+      if (dup.goal_id) {
+        await client.query('UPDATE goals SET current_amount = GREATEST(0, current_amount - $1) WHERE id = $2', [amt, dup.goal_id])
+      }
+    }
+
+    await client.query('COMMIT')
+    res.json({
+      removed: duplicateRows.length,
+      message: `Removed ${duplicateRows.length} duplicate transaction(s) and reconciled balances!`
     })
   } catch (error) {
     await client.query('ROLLBACK')

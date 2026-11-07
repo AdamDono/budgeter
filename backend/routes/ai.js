@@ -627,10 +627,10 @@ If the document is a Payslip or Salary Advice:
 
 === CRITICAL ENTITY LINKING (BOTH STATEMENTS & PAYSLIPS) ===
 - "categoryId": matching category ID as a string if obvious, or "".
-- If a payment/deduction matches one of the User's Active Debts (e.g. "Maki", "WesBank", "Staff Loan", etc.), set "debtId" to that Debt's ID as a string (otherwise "").
-- If it matches one of the User's Unpaid Bills, set "billId" to that Bill's ID as a string (otherwise "").
-- If it transfers into one of the User's Savings Pots, set "savingsId" to that Savings Pot's ID as a string (otherwise "").
-- If it contributes to one of the User's Financial Goals, set "goalId" to that Goal's ID as a string (otherwise "").
+- NEVER link normal merchant card purchases (e.g., "Card Purchase", "Recurring Card Purchase", "(Card 5797)", Uber, Bolt, groceries, fuel, restaurants) to a Goal, Savings Pot, or Debt! In particular, the word "Card" must NEVER match a Goal or Debt named "Car".
+- If an EFT / Debit Order / repayment explicitly pays one of the User's Active Debts (e.g. "Maki", "WesBank", "Staff Loan", etc.), set "debtId" to that Debt's ID as a string (otherwise "").
+- If it explicitly pays one of the User's Unpaid Bills, set "billId" to that Bill's ID as a string (otherwise "").
+- ONLY set "savingsId" or "goalId" when the transaction is an explicit savings transfer / deposit / contribution to that specific Savings Pot or Goal (otherwise "").
 
 Return JSON in this exact structure:
 {

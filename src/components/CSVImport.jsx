@@ -4,7 +4,7 @@ import * as pdfjs from 'pdfjs-dist'
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url'
 import { useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { aiAPI, billsAPI, budgetsAPI, debtsAPI, goalsAPI, importAPI, savingsAPI, taxAPI } from '../lib/api'
+import { aiAPI, billsAPI, budgetsAPI, debtsAPI, goalsAPI, importAPI, savingsAPI, taxAPI, transactionsAPI } from '../lib/api'
 
 // Set up PDF.js worker using local bundle
 try {
@@ -175,37 +175,86 @@ function autoCategorize(description, categories) {
 }
 
 // ─── Smart Entity Matcher (Matches statement/payslip rows to User's Debts, Bills, Savings, Goals) ───
+function escapeRegExp(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function hasWholeWord(text, phrase) {
+  if (!text || !phrase) return false
+  const pattern = new RegExp(`\\b${escapeRegExp(phrase.trim())}\\b`, 'i')
+  return pattern.test(text)
+}
+
+const GENERIC_FINANCE_WORDS = new Set([
+  'car', 'auto', 'vehicle', 'home', 'house', 'rent', 'bond', 'loan', 'card',
+  'credit', 'debt', 'bank', 'account', 'pot', 'bill', 'goal', 'savings',
+  'saving', 'emergency', 'fund', 'holiday', 'travel', 'trip', 'wedding',
+  'education', 'school', 'medical', 'health', 'insurance', 'tax', 'cash',
+  'money', 'personal', 'store', 'finance', 'payment', 'pay', 'monthly',
+  'other', 'transport', 'food', 'groceries', 'shopping', 'new', 'my',
+  'the', 'and', 'for', 'with', 'from', 'into'
+])
+
 function autoMatchEntities(description, type, { debts = [], bills = [], savings = [], goals = [], categories = [] }, aiHints = {}) {
-  const d = (description || '').toLowerCase()
-  const findNameMatch = (items) => {
+  const rawDesc = (description || '').toLowerCase()
+
+  // Strip bank statement boilerplate (like "Recurring Card Purchase", "(Card 5797)", "POS Purchase")
+  // so words like "Card" or "Transport" never trigger false entity matches
+  const cleanedDesc = rawDesc
+    .replace(/\(card\s*\d+\)/gi, ' ')
+    .replace(/\b(recurring\s+card\s+purchase|card\s+purchase|pos\s+purchase|contactless\s+purchase|other\s+transport|atm\s+cash\s+withdrawal|atm\s+withdrawal)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Merchant card purchases, ride-hailing, groceries, fuel, fast food, and ATM withdrawals
+  // should NEVER be linked to Goals, Savings Pots, or Debts
+  const isCardOrMerchantSpend = /\b(card\s+purchase|recurring\s+card|pos\s+purchase|\(card\s*\d+\)|uber|bolt|taxify|checkers|woolworths|woolies|pick\s+n\s+pay|pnp|spar|shoprite|makro|kfc|mcdonalds|nandos|steers|wimpy|debonairs|engen|shell|caltex|bp|sasol|astron|netflix|spotify|showmax|clicks|dischem|dis-chem|takealot|mr\s+price|edgars|pep|ackermans|atm)\b/i.test(rawDesc)
+
+  // Goals and Savings Pots only auto-link when the transaction looks like an actual transfer / saving / contribution
+  const isTransferOrSaving = /\b(transfer|trf|saving|savings|pot|goal|pocket|stash|invest|contribution|deposit\s+to|payment\s+to)\b/i.test(rawDesc)
+
+  // Strict whole-word matcher for Debts & Bills (e.g. "Maki", "WesBank", "Vodacom")
+  const findStrictEntityMatch = (items, allowSingleGeneric = false) => {
     for (const item of items) {
       const name = (item.name || '').toLowerCase().trim()
-      if (!name || name.length < 2) continue
-      if (d.includes(name)) return String(item.id)
-      const tokens = name.split(/[\s\-_\/]+/).filter(t => t.length >= 3 && !['loan', 'card', 'bank', 'account', 'pot', 'bill', 'the', 'and'].includes(t))
-      if (tokens.length > 0 && tokens.some(tok => d.includes(tok))) {
+      if (!name || name.length < 3) continue
+
+      // 1. Full name whole-word match (unless it's a single generic word like "Car" or "Loan")
+      const words = name.split(/[\s\-_\/]+/).filter(Boolean)
+      const isSingleGenericWord = words.length === 1 && GENERIC_FINANCE_WORDS.has(words[0])
+
+      if (!isSingleGenericWord && hasWholeWord(cleanedDesc, name)) {
+        return String(item.id)
+      }
+      if (isSingleGenericWord && allowSingleGeneric && hasWholeWord(cleanedDesc, name)) {
+        return String(item.id)
+      }
+
+      // 2. Match distinctive proper-noun tokens (>= 4 chars and NOT in generic stopword list, e.g. "Maki" in "Maki Loan")
+      const distinctiveTokens = words.filter(t => t.length >= 4 && !GENERIC_FINANCE_WORDS.has(t))
+      if (distinctiveTokens.length > 0 && distinctiveTokens.some(tok => hasWholeWord(cleanedDesc, tok))) {
         return String(item.id)
       }
     }
     return ''
   }
 
-  let debtId = aiHints.debtId ? String(aiHints.debtId) : ''
+  let debtId = !isCardOrMerchantSpend && aiHints.debtId ? String(aiHints.debtId) : ''
   let billId = aiHints.billId ? String(aiHints.billId) : ''
-  let savingsId = aiHints.savingsId ? String(aiHints.savingsId) : ''
-  let goalId = aiHints.goalId ? String(aiHints.goalId) : ''
+  let savingsId = !isCardOrMerchantSpend && isTransferOrSaving && aiHints.savingsId ? String(aiHints.savingsId) : ''
+  let goalId = !isCardOrMerchantSpend && isTransferOrSaving && aiHints.goalId ? String(aiHints.goalId) : ''
 
-  if (!debtId && type === 'expense') {
-    debtId = findNameMatch(debts.filter(x => parseFloat(x.balance) > 0))
+  if (!debtId && type === 'expense' && !isCardOrMerchantSpend) {
+    debtId = findStrictEntityMatch(debts.filter(x => parseFloat(x.balance) > 0), false)
   }
-  if (!billId && !debtId && type === 'expense') {
-    billId = findNameMatch(bills.filter(x => !x.is_paid))
+  if (!billId && !debtId && type === 'expense' && !isCardOrMerchantSpend) {
+    billId = findStrictEntityMatch(bills.filter(x => !x.is_paid), false)
   }
-  if (!savingsId && !debtId && !billId) {
-    savingsId = findNameMatch(savings)
+  if (!savingsId && !debtId && !billId && !isCardOrMerchantSpend && isTransferOrSaving) {
+    savingsId = findStrictEntityMatch(savings, true)
   }
-  if (!goalId && !debtId && !billId && !savingsId) {
-    goalId = findNameMatch(goals.filter(x => !x.is_achieved))
+  if (!goalId && !debtId && !billId && !savingsId && !isCardOrMerchantSpend && isTransferOrSaving) {
+    goalId = findStrictEntityMatch(goals.filter(x => !x.is_achieved), true)
   }
 
   let linkTarget = ''
@@ -647,6 +696,78 @@ export default function CSVImport({ onClose, onSuccess }) {
   })
   const goals = goalsData?.goals || []
 
+  const { data: existingTxData } = useQuery({
+    queryKey: ['transactions-reconcile'],
+    queryFn: async () => (await transactionsAPI.getAll({ limit: 500, page: 1 })).data,
+  })
+  const existingTransactions = existingTxData?.transactions || []
+
+  // Reconcile extracted statement rows against existing DB transactions (both manual entries & previous uploads)
+  const reconcileRows = (rows) => {
+    const usedIds = new Set()
+    const normalize = (s) =>
+      String(s || '')
+        .toLowerCase()
+        .replace(/\(card\s*\d+\)/gi, ' ')
+        .replace(/\b(recurring\s+card\s+purchase|card\s+purchase|pos\s+purchase|eft\s+payment|immediate\s+payment|debit\s+order|debt\s+payment|bill\s+payment|savings\s+deposit|payment\s+to|transfer\s+to|other\s+transport)\b/gi, ' ')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+    const getTokens = (s) =>
+      normalize(s)
+        .split(' ')
+        .filter(w => w.length >= 3 && !GENERIC_FINANCE_WORDS.has(w) && !/^\d+$/.test(w))
+
+    return rows.map(row => {
+      const [linkType, linkId] = (row.linkTarget || '').split(':')
+      const match = existingTransactions.find(ex => {
+        if (usedIds.has(ex.id)) return false
+        if (ex.type !== row.type) return false
+        if (Math.abs((parseFloat(ex.amount) || 0) - (parseFloat(row.amount) || 0)) > 0.01) return false
+
+        const dA = new Date(row.transactionDate)
+        const dB = new Date(ex.transaction_date)
+        const diffDays = Math.abs(dA - dB) / (1000 * 60 * 60 * 24)
+
+        const normA = normalize(row.description)
+        const normB = normalize(ex.description)
+
+        // 1. Exact or re-uploaded statement match within ±1 day
+        if (diffDays <= 1 && (normA === normB || normA.includes(normB) || normB.includes(normA))) {
+          return true
+        }
+
+        // 2. Manual entry <-> Statement reconciliation within ±5 days
+        if (diffDays <= 5) {
+          if (linkType === 'debt' && ex.debt_id && Number(linkId) === Number(ex.debt_id)) return true
+          if (linkType === 'bill' && ex.bill_id && Number(linkId) === Number(ex.bill_id)) return true
+          if (linkType === 'savings' && ex.savings_id && Number(linkId) === Number(ex.savings_id)) return true
+          if (linkType === 'goal' && ex.goal_id && Number(linkId) === Number(ex.goal_id)) return true
+
+          const tokA = getTokens(row.description)
+          const tokB = getTokens(ex.description)
+          if (tokA.length > 0 && tokB.length > 0 && tokA.some(t => tokB.includes(t))) {
+            return true
+          }
+        }
+
+        return false
+      })
+
+      if (match) {
+        usedIds.add(match.id)
+        return {
+          ...row,
+          _include: false,
+          _isDuplicate: true,
+          _duplicateMatch: `${match.description} (${new Date(match.transaction_date).toLocaleDateString('en-ZA')})`
+        }
+      }
+      return { ...row, _isDuplicate: false, _duplicateMatch: '' }
+    })
+  }
+
   // Optional AI Deep Scan (used automatically for images/scanned PDFs, or on-demand via button)
   const runAIScan = async (file, rawText) => {
     const entitiesContext = { debts, bills, savings, goals, categories }
@@ -684,7 +805,7 @@ export default function CSVImport({ onClose, onSuccess }) {
         throw new Error('AI could not find any transactions in this document.')
       }
 
-      const parsed = transactions.map((r, i) => {
+      const parsed = reconcileRows(transactions.map((r, i) => {
         const matched = autoMatchEntities(r.description, r.type, entitiesContext, r)
         return {
           _id: i,
@@ -697,7 +818,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           linkTarget: matched.linkTarget,
           taxCategory: r.taxCategory || ''
         }
-      }).filter(r => r.amount > 0)
+      }).filter(r => r.amount > 0))
 
       const autoLinkedCount = parsed.filter(p => p.linkTarget).length
       setPayslipSummary(docType === 'payslip' ? summary : null)
@@ -776,7 +897,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           .filter(r => r._valid && r.amount > 0)
 
         if (parsed.length > 0) {
-          const enriched = parsed.map((r, i) => {
+          const enriched = reconcileRows(parsed.map((r, i) => {
             const matched = autoMatchEntities(r.description, r.type, entitiesContext)
             return {
               ...r,
@@ -786,16 +907,19 @@ export default function CSVImport({ onClose, onSuccess }) {
               linkTarget: matched.linkTarget,
               taxCategory: ''
             }
-          })
-          const autoLinkedCount = enriched.filter(p => p.linkTarget).length
+          }))
+          const autoLinkedCount = enriched.filter(p => p.linkTarget && p._include).length
+          const dupCount = enriched.filter(p => p._isDuplicate).length
           setFormat(detectedFormat)
           setEditedRows(enriched)
           setIsScanning(false)
           setStep('preview')
           toast.success(
-            autoLinkedCount > 0
-              ? `Extracted ${enriched.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
-              : `Extracted ${enriched.length} transactions from CSV!`
+            dupCount > 0
+              ? `Scanned ${enriched.length} rows (${dupCount} already-recorded duplicates auto-skipped)!`
+              : autoLinkedCount > 0
+                ? `Extracted ${enriched.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
+                : `Extracted ${enriched.length} transactions from CSV!`
           )
           return
         }
@@ -815,7 +939,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           // 2a. Check if it's a Payslip first
           const payslipResult = extractPayslipFromText(rawText)
           if (payslipResult && payslipResult.transactions.length > 0) {
-            const parsed = payslipResult.transactions.map((r, i) => {
+            const parsed = reconcileRows(payslipResult.transactions.map((r, i) => {
               const matched = autoMatchEntities(r.description, r.type, entitiesContext)
               return {
                 _id: i,
@@ -828,7 +952,7 @@ export default function CSVImport({ onClose, onSuccess }) {
                 linkTarget: matched.linkTarget,
                 taxCategory: r.taxCategory || ''
               }
-            })
+            }))
             setPayslipSummary(payslipResult.payslipSummary)
             setFormat('Payslip (Smart Scan)')
             setEditedRows(parsed)
@@ -841,7 +965,7 @@ export default function CSVImport({ onClose, onSuccess }) {
           // 2b. Otherwise parse as Bank Statement
           const pdfRows = extractTransactionsFromRawText(rawText)
           if (pdfRows.length > 0) {
-            const parsed = pdfRows.map((r, i) => {
+            const parsed = reconcileRows(pdfRows.map((r, i) => {
               const matched = autoMatchEntities(r.description, r.type, entitiesContext)
               return {
                 _id: i,
@@ -854,16 +978,19 @@ export default function CSVImport({ onClose, onSuccess }) {
                 linkTarget: matched.linkTarget,
                 taxCategory: ''
               }
-            })
-            const autoLinkedCount = parsed.filter(p => p.linkTarget).length
+            }))
+            const autoLinkedCount = parsed.filter(p => p.linkTarget && p._include).length
+            const dupCount = parsed.filter(p => p._isDuplicate).length
             setFormat('PDF Statement (Smart Scan)')
             setEditedRows(parsed)
             setIsScanning(false)
             setStep('preview')
             toast.success(
-              autoLinkedCount > 0
-                ? `Extracted ${parsed.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
-                : `Extracted ${parsed.length} transactions from PDF!`
+              dupCount > 0
+                ? `Scanned ${parsed.length} rows (${dupCount} already-recorded duplicates auto-skipped)!`
+                : autoLinkedCount > 0
+                  ? `Extracted ${parsed.length} transactions & auto-linked ${autoLinkedCount} debt/bill payments!`
+                  : `Extracted ${parsed.length} transactions from PDF!`
             )
             return
           }
@@ -961,6 +1088,7 @@ export default function CSVImport({ onClose, onSuccess }) {
 
       setResult({
         imported: res.data.imported,
+        skippedDuplicates: (res.data.skippedDuplicates || 0) + editedRows.filter(r => r._isDuplicate && !r._include).length,
         failed: res.data.failed || 0,
         debtsUpdated: res.data.debtsUpdated || 0,
         billsPaid: res.data.billsPaid || 0,
@@ -1220,6 +1348,14 @@ export default function CSVImport({ onClose, onSuccess }) {
                       <td className="date-cell">{row.transactionDate}</td>
                       <td>
                         <input className="inline-edit" value={row.description} onChange={e => updateRow(row._id, 'description', e.target.value)} />
+                        {row._isDuplicate && (
+                          <span
+                            title={`Matches: ${row._duplicateMatch}`}
+                            style={{ display: 'inline-block', marginLeft: '6px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 600 }}
+                          >
+                            ⚠️ Already Recorded (Skipped)
+                          </span>
+                        )}
                         {row.taxCategory && (
                           <span style={{ display: 'inline-block', marginLeft: '6px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16,185,129,0.15)', color: '#10b981' }}>
                             SARS: {row.taxCategory}
@@ -1308,7 +1444,10 @@ export default function CSVImport({ onClose, onSuccess }) {
           <div className="import-done">
             <CheckCircle size={64} className="import-success-icon" />
             <h3>Import Complete!</h3>
-            <p>Successfully imported <strong>{result.imported}</strong> transaction(s).</p>
+            <p>
+              Successfully imported <strong>{result.imported}</strong> transaction(s)
+              {result.skippedDuplicates > 0 ? ` (${result.skippedDuplicates} already-recorded duplicate(s) skipped)` : ''}.
+            </p>
             {(result.debtsUpdated > 0 || result.billsPaid > 0 || result.savingsUpdated > 0 || result.goalsUpdated > 0 || result.taxLoggedCount > 0) && (
               <div style={{ margin: '1rem auto', padding: '0.85rem 1.25rem', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#10b981', fontSize: '0.9rem' }}>
                 ⚡ <strong>Auto-Synced Balances:</strong>{' '}
